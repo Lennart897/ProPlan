@@ -2,12 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Professional Project Management Design System
+All colors MUST be HSL for perfect theming.
 */
 
 @layer base {
   :root {
+    /* Brand Colors - Professional Blue Theme */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
@@ -17,8 +18,17 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 217 91% 35%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 217 91% 60%;
+
+    /* Status Colors */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
