@@ -26,7 +26,7 @@ interface AIResponse {
 }
 
 const standorte = [
-  { value: "gudensberg", label: "Gudensberg" },
+  { value: "muenchen", label: "München" },
   { value: "berlin", label: "Berlin" },
   { value: "hamburg", label: "Hamburg" },
   { value: "koeln", label: "Köln" },
