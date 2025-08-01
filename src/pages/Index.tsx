@@ -12,7 +12,7 @@ interface User {
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
+  
 
   // Mock user for development - will be replaced with Supabase auth
   const mockLogin = () => {
@@ -47,19 +47,7 @@ const Index = () => {
           </p>
         </div>
         
-        <AuthForm mode={authMode} onSuccess={handleAuthSuccess} />
-        
-        <div className="text-center">
-          <Button
-            variant="link"
-            onClick={() => setAuthMode(authMode === "signin" ? "signup" : "signin")}
-          >
-            {authMode === "signin" 
-              ? "Noch kein Account? Jetzt registrieren" 
-              : "Bereits registriert? Anmelden"
-            }
-          </Button>
-        </div>
+        <AuthForm mode="signin" onSuccess={handleAuthSuccess} />
 
         {/* Demo Login for Testing */}
         <div className="text-center pt-4 border-t">
