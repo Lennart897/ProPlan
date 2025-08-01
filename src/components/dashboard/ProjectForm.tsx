@@ -11,11 +11,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 
 const locations = [
-  { value: "muenchen", label: "München" },
-  { value: "berlin", label: "Berlin" },
-  { value: "hamburg", label: "Hamburg" },
-  { value: "koeln", label: "Köln" },
-  { value: "frankfurt", label: "Frankfurt" },
+  { value: "gudensberg", label: "Gudensberg" },
+  { value: "brenz", label: "Brenz" },
+  { value: "storkow", label: "Storkow" },
+  { value: "visbek", label: "Visbek" },
+  { value: "doebeln", label: "Döbeln" },
 ];
 
 const projectSchema = z.object({
