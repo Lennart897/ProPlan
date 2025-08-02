@@ -19,8 +19,8 @@ const Index = () => {
     setUser({
       id: "1",
       email: "admin@projektmanagement.de",
-      role: "vertrieb",
-      full_name: "Max Mustermann"
+      role: "supply_chain",
+      full_name: "Lennart Debbeler"
     });
   };
 
