@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { Dashboard } from "@/components/dashboard/Dashboard";
@@ -19,7 +20,7 @@ const Index = () => {
     setUser({
       id: "1",
       email: "admin@projektmanagement.de",
-      role: "supply_chain",
+      role: "planung",
       full_name: "Lennart Debbele"
     });
   };
@@ -53,7 +54,7 @@ const Index = () => {
         <div className="text-center pt-4 border-t">
           <p className="text-sm text-muted-foreground mb-2">Demo-Zugang:</p>
           <Button variant="outline" onClick={mockLogin} className="w-full">
-            Als Demo-User anmelden
+            Als Demo-User anmelden (Planung)
           </Button>
         </div>
       </div>
