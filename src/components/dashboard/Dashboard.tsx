@@ -103,7 +103,22 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                          project.artikel_nummer.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.artikel_bezeichnung.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || project.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    
+    // Rollenbasierte Filterung: nur relevante Projekte für die eigene Rolle anzeigen
+    const matchesRole = () => {
+      switch (user.role) {
+        case "supply_chain":
+          return project.status === "pending"; // SupplyChain sieht nur Projekte zur ersten Prüfung
+        case "planung":
+          return project.status === "approved"; // Planung sieht nur von SupplyChain genehmigte Projekte
+        case "vertrieb":
+          return true; // Vertrieb sieht alle Projekte (Überwachung)
+        default:
+          return true;
+      }
+    };
+    
+    return matchesSearch && matchesStatus && matchesRole();
   });
 
   const handleProjectAction = (projectId: string, action: string) => {
