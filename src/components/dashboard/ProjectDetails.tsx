@@ -84,6 +84,13 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
       title: "Projekt aktualisiert",
       description: `Das Projekt wurde ${actionLabels[action as keyof typeof actionLabels]}.`,
     });
+
+    // Nach Freigabe zurück zum Dashboard
+    if (action === "approve") {
+      setTimeout(() => {
+        onBack();
+      }, 1500);
+    }
   };
 
   const handleCorrection = () => {
