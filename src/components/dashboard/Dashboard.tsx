@@ -142,7 +142,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       case "in_progress":
         return "Planung";
       case "completed":
-        return "Abgeschlossen";
+        return null;
       default:
         return "Unbekannt";
     }
@@ -278,11 +278,13 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                           {project.artikel_nummer} - {project.artikel_bezeichnung}
                         </CardDescription>
                       </div>
-                       <div className="text-right text-sm text-muted-foreground">
+                        <div className="text-right text-sm text-muted-foreground">
                          <p>Menge: {project.gesamtmenge}</p>
                          <p>Erstellt: {new Date(project.created_at).toLocaleDateString("de-DE")}</p>
                          <p>Von: {project.created_by}</p>
-                         <p><strong>Zuständig:</strong> {getCurrentResponsibleRole(project.status)}</p>
+                         {getCurrentResponsibleRole(project.status) && (
+                           <p><strong>Zuständig:</strong> {getCurrentResponsibleRole(project.status)}</p>
+                         )}
                        </div>
                     </div>
                   </CardHeader>
