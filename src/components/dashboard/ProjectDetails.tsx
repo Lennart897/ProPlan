@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, User, Calendar, Package, Building2 } from "lucide-react";
+import { ArrowLeft, User, Calendar, Package, Building2, Truck, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,7 +15,10 @@ interface Project {
   customer: string;
   artikel_nummer: string;
   artikel_bezeichnung: string;
+  produktgruppe?: string;
   gesamtmenge: number;
+  erste_anlieferung?: string;
+  letzte_anlieferung?: string;
   status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed";
   created_at: string;
   created_by: string;
@@ -251,7 +254,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="flex items-center gap-3">
                   <Package className="h-5 w-5 text-muted-foreground" />
                   <div>
@@ -273,6 +276,13 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                     <p className="font-semibold">{project.created_by}</p>
                   </div>
                 </div>
+                <div className="flex items-center gap-3">
+                  <Clock className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Menge fix</p>
+                    <p className="font-semibold">{project.menge_fix ? "Ja" : "Nein"}</p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -288,10 +298,12 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                   <label className="text-sm font-medium text-muted-foreground">Artikelnummer</label>
                   <p className="text-lg font-mono">{project.artikel_nummer}</p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Menge fix</label>
-                  <p className="text-lg">{project.menge_fix ? "Ja" : "Nein"}</p>
-                </div>
+                {project.produktgruppe && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Produktgruppe</label>
+                    <p className="text-lg">{project.produktgruppe}</p>
+                  </div>
+                )}
                 <div className="md:col-span-2">
                   <label className="text-sm font-medium text-muted-foreground">Artikelbezeichnung</label>
                   <p className="text-lg">{project.artikel_bezeichnung}</p>
@@ -299,6 +311,34 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
               </div>
             </CardContent>
           </Card>
+
+          {/* Anlieferungsdetails */}
+          {(project.erste_anlieferung || project.letzte_anlieferung) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Truck className="h-5 w-5" />
+                  Anlieferungszeitraum
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {project.erste_anlieferung && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Erste Anlieferung</label>
+                      <p className="text-lg">{new Date(project.erste_anlieferung).toLocaleDateString("de-DE")}</p>
+                    </div>
+                  )}
+                  {project.letzte_anlieferung && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Letzte Anlieferung</label>
+                      <p className="text-lg">{new Date(project.letzte_anlieferung).toLocaleDateString("de-DE")}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Standortverteilung */}
           {project.standort_verteilung && (
