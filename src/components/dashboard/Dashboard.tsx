@@ -110,7 +110,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
         case "supply_chain":
           return project.status === "pending"; // SupplyChain sieht nur Projekte zur ersten Prüfung
         case "planung":
-          return project.status === "approved"; // Planung sieht nur von SupplyChain genehmigte Projekte
+          return project.status === "in_progress"; // Planung sieht nur von SupplyChain weitergeleitete Projekte
         case "vertrieb":
           return true; // Vertrieb sieht alle Projekte (Überwachung)
         default:
