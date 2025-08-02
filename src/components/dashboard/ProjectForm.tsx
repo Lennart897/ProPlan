@@ -205,7 +205,6 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               <Input
                 id="customer"
                 {...form.register("customer")}
-                placeholder="z.B. BMW AG"
               />
               {form.formState.errors.customer && (
                 <p className="text-sm text-destructive">
@@ -219,7 +218,6 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               <Input
                 id="artikel_nummer"
                 {...form.register("artikel_nummer")}
-                placeholder="z.B. ART-001"
               />
               {form.formState.errors.artikel_nummer && (
                 <p className="text-sm text-destructive">
@@ -233,7 +231,6 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               <Input
                 id="artikel_bezeichnung"
                 {...form.register("artikel_bezeichnung")}
-                placeholder="z.B. Hochwertige Metallkomponente"
               />
               {form.formState.errors.artikel_bezeichnung && (
                 <p className="text-sm text-destructive">
@@ -247,7 +244,6 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               <Input
                 id="produktgruppe"
                 {...form.register("produktgruppe")}
-                placeholder="z.B. Automotive Teile"
               />
               {form.formState.errors.produktgruppe && (
                 <p className="text-sm text-destructive">
@@ -334,7 +330,6 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
                 type="number"
                 step="0.1"
                 {...form.register("gesamtmenge", { valueAsNumber: true })}
-                placeholder="1000.0"
               />
               {form.formState.errors.gesamtmenge && (
                 <p className="text-sm text-destructive">
@@ -381,7 +376,6 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
                     onChange={(e) => 
                       handleLocationQuantityChange(location.value, parseFloat(e.target.value) || 0)
                     }
-                    placeholder="0.0"
                   />
                 </div>
               ))}
