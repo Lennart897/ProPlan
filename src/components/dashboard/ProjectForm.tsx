@@ -263,36 +263,6 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               )}
             </div>
 
-            {/* Gesamtmenge und Menge fix nebeneinander */}
-            <div className="space-y-2">
-              <Label htmlFor="gesamtmenge">Gesamtmenge</Label>
-              <Input
-                id="gesamtmenge"
-                type="number"
-                {...form.register("gesamtmenge", { valueAsNumber: true })}
-                placeholder="1000"
-              />
-              {form.formState.errors.gesamtmenge && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.gesamtmenge.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2 flex flex-col justify-end">
-              <div className="flex items-center space-x-2 h-10">
-                <Checkbox
-                  id="menge_fix"
-                  checked={form.watch("menge_fix")}
-                  onCheckedChange={(checked) => form.setValue("menge_fix", !!checked)}
-                />
-                <Label htmlFor="menge_fix">Menge fix</Label>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Wenn aktiviert, kann die Menge nicht mehr geändert werden
-              </p>
-            </div>
-
             {/* Erste und letzte Anlieferung nebeneinander */}
             <div className="space-y-2">
               <Label>Erste Anlieferung</Label>
@@ -360,6 +330,36 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
                   {form.formState.errors.letzte_anlieferung.message}
                 </p>
               )}
+            </div>
+
+            {/* Gesamtmenge und Menge fix nebeneinander - nach Anlieferungsdaten */}
+            <div className="space-y-2">
+              <Label htmlFor="gesamtmenge">Gesamtmenge</Label>
+              <Input
+                id="gesamtmenge"
+                type="number"
+                {...form.register("gesamtmenge", { valueAsNumber: true })}
+                placeholder="1000"
+              />
+              {form.formState.errors.gesamtmenge && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.gesamtmenge.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2 flex flex-col justify-end">
+              <div className="flex items-center space-x-2 h-10">
+                <Checkbox
+                  id="menge_fix"
+                  checked={form.watch("menge_fix")}
+                  onCheckedChange={(checked) => form.setValue("menge_fix", !!checked)}
+                />
+                <Label htmlFor="menge_fix">Menge fix</Label>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Wenn aktiviert, kann die Menge nicht mehr geändert werden
+              </p>
             </div>
           </div>
 
