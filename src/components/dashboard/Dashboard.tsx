@@ -11,6 +11,7 @@ import { ProjectDetails } from "./ProjectDetails";
 import { WeeklyCalendar } from "./WeeklyCalendar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 interface Project {
   id: string;
@@ -314,7 +315,8 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
               <Button variant="ghost" size="sm">
                 <Bell className="h-4 w-4" />
               </Button>
@@ -322,7 +324,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                 <User className="h-4 w-4" />
               </Button>
               <Button variant="ghost" size="sm" onClick={onSignOut}>
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-4 w-4 mr-2" />
                 Abmelden
               </Button>
             </div>
