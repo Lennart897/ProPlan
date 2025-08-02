@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const locations = [
   { value: "gudensberg", label: "Gudensberg" },
@@ -19,7 +20,7 @@ const locations = [
 ];
 
 const projectSchema = z.object({
-  customer_id: z.string().min(1, "Kunde muss ausgewählt werden"),
+  customer: z.string().min(1, "Kunde ist erforderlich"),
   artikel_nummer: z.string().min(1, "Artikelnummer ist erforderlich"),
   artikel_bezeichnung: z.string().min(1, "Artikelbezeichnung ist erforderlich"),
   gesamtmenge: z.number().min(1, "Gesamtmenge muss größer als 0 sein"),
@@ -35,25 +36,27 @@ const projectSchema = z.object({
 
 type ProjectFormData = z.infer<typeof projectSchema>;
 
-interface Customer {
+interface User {
   id: string;
-  name: string;
+  email: string;
+  role: "vertrieb" | "supply_chain" | "planung";
+  full_name?: string;
 }
 
 interface ProjectFormProps {
+  user: User;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export const ProjectForm = ({ onSuccess, onCancel }: ProjectFormProps) => {
+export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [customers, setCustomers] = useState<Customer[]>([]);
   const [locationQuantities, setLocationQuantities] = useState<Record<string, number>>({
-    muenchen: 0,
-    berlin: 0,
-    hamburg: 0,
-    koeln: 0,
-    frankfurt: 0,
+    gudensberg: 0,
+    brenz: 0,
+    storkow: 0,
+    visbek: 0,
+    doebeln: 0,
   });
   
   const { toast } = useToast();
@@ -61,7 +64,7 @@ export const ProjectForm = ({ onSuccess, onCancel }: ProjectFormProps) => {
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
-      customer_id: "",
+      customer: "",
       artikel_nummer: "",
       artikel_bezeichnung: "",
       gesamtmenge: 0,
@@ -70,14 +73,16 @@ export const ProjectForm = ({ onSuccess, onCancel }: ProjectFormProps) => {
     },
   });
 
-  // Mock customers data - will be replaced with actual Supabase query
+  // Remove mock customers - we'll use direct input for customer name
   useEffect(() => {
-    setCustomers([
-      { id: "1", name: "BMW AG" },
-      { id: "2", name: "Siemens AG" },
-      { id: "3", name: "SAP SE" },
-    ]);
-  }, []);
+    // Auto-distribute quantities when gesamtmenge changes
+    const subscription = form.watch((value, { name }) => {
+      if (name === "gesamtmenge" && value.gesamtmenge) {
+        // Keep existing distribution if already set
+      }
+    });
+    return subscription.unsubscribe;
+  }, [form.watch]);
 
   const gesamtmenge = form.watch("gesamtmenge");
   const totalDistributed = Object.values(locationQuantities).reduce((sum, val) => sum + val, 0);
@@ -110,8 +115,27 @@ export const ProjectForm = ({ onSuccess, onCancel }: ProjectFormProps) => {
     setIsLoading(true);
     
     try {
-      // Here we would save to Supabase
-      console.log("Projekt erstellen:", data);
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      if (!currentUser) {
+        throw new Error("Nicht angemeldet");
+      }
+
+      const { error } = await supabase
+        .from('manufacturing_projects')
+        .insert({
+          customer: data.customer,
+          artikel_nummer: data.artikel_nummer,
+          artikel_bezeichnung: data.artikel_bezeichnung,
+          gesamtmenge: data.gesamtmenge,
+          menge_fix: data.menge_fix,
+          standort_verteilung: data.standort_verteilung,
+          status: 'pending', // Start as pending for SupplyChain review
+          created_by_id: currentUser.id,
+          created_by_name: user.full_name || user.email
+        });
+
+      if (error) throw error;
       
       toast({
         title: "Projekt erstellt",
@@ -143,21 +167,14 @@ export const ProjectForm = ({ onSuccess, onCancel }: ProjectFormProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="customer">Kunde</Label>
-              <Select onValueChange={(value) => form.setValue("customer_id", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Kunde auswählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {form.formState.errors.customer_id && (
+              <Input
+                id="customer"
+                {...form.register("customer")}
+                placeholder="z.B. BMW AG"
+              />
+              {form.formState.errors.customer && (
                 <p className="text-sm text-destructive">
-                  {form.formState.errors.customer_id.message}
+                  {form.formState.errors.customer.message}
                 </p>
               )}
             </div>

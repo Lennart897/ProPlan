@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      manufacturing_projects: {
+        Row: {
+          artikel_bezeichnung: string
+          artikel_nummer: string
+          created_at: string
+          created_by_id: string
+          created_by_name: string
+          customer: string
+          gesamtmenge: number
+          id: string
+          menge_fix: boolean | null
+          standort_verteilung: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          artikel_bezeichnung: string
+          artikel_nummer: string
+          created_at?: string
+          created_by_id: string
+          created_by_name: string
+          customer: string
+          gesamtmenge: number
+          id?: string
+          menge_fix?: boolean | null
+          standort_verteilung?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          artikel_bezeichnung?: string
+          artikel_nummer?: string
+          created_at?: string
+          created_by_id?: string
+          created_by_name?: string
+          customer?: string
+          gesamtmenge?: number
+          id?: string
+          menge_fix?: boolean | null
+          standort_verteilung?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -138,7 +183,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { user_uuid: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

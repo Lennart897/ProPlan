@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProjectForm } from "./ProjectForm";
 import { ProjectDetails } from "./ProjectDetails";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface Project {
   id: string;
@@ -92,11 +94,53 @@ interface DashboardProps {
 }
 
 export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
-  const [projects, setProjects] = useState<Project[]>(mockProjects);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  // Load projects from database
+  const loadProjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('manufacturing_projects')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      const formattedProjects: Project[] = data?.map(project => ({
+        id: project.id,
+        customer: project.customer,
+        artikel_nummer: project.artikel_nummer,
+        artikel_bezeichnung: project.artikel_bezeichnung,
+        gesamtmenge: project.gesamtmenge,
+        status: project.status as Project['status'],
+        created_at: project.created_at,
+        created_by: project.created_by_name,
+        standort_verteilung: project.standort_verteilung as Record<string, number> | undefined,
+        menge_fix: project.menge_fix
+      })) || [];
+      
+      setProjects(formattedProjects);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+      toast({
+        title: "Fehler",
+        description: "Projekte konnten nicht geladen werden",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -121,27 +165,58 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
     return matchesSearch && matchesStatus && matchesRole();
   });
 
-  const handleProjectAction = (projectId: string, action: string) => {
-    setProjects(prev => prev.map(p => {
-      if (p.id === projectId) {
-        let newStatus = p.status;
-        switch (action) {
-          case "approve":
+  const handleProjectAction = async (projectId: string, action: string) => {
+    try {
+      let newStatus = projects.find(p => p.id === projectId)?.status;
+      
+      switch (action) {
+        case "approve":
+          // SupplyChain approval → in_progress, Planung approval → approved
+          const project = projects.find(p => p.id === projectId);
+          if (project?.status === "pending" && user.role === "supply_chain") {
+            newStatus = "in_progress";
+          } else if (project?.status === "in_progress" && user.role === "planung") {
             newStatus = "approved";
-            break;
-          case "reject":
-            newStatus = "rejected";
-            break;
-          case "correct":
-            newStatus = "pending";
-            break;
-          default:
-            break;
-        }
-        return { ...p, status: newStatus };
+          }
+          break;
+        case "reject":
+          newStatus = "rejected";
+          break;
+        case "correct":
+          // Go back one step
+          const currentProject = projects.find(p => p.id === projectId);
+          if (currentProject?.status === "in_progress") {
+            newStatus = "pending"; // Back to SupplyChain
+          }
+          break;
+        default:
+          break;
       }
-      return p;
-    }));
+
+      if (newStatus) {
+        const { error } = await supabase
+          .from('manufacturing_projects')
+          .update({ status: newStatus })
+          .eq('id', projectId);
+
+        if (error) throw error;
+
+        // Reload projects to get fresh data
+        await loadProjects();
+        
+        toast({
+          title: "Erfolgreich",
+          description: "Projektstatus wurde aktualisiert",
+        });
+      }
+    } catch (error) {
+      console.error('Error updating project:', error);
+      toast({
+        title: "Fehler",
+        description: "Projektstatus konnte nicht aktualisiert werden",
+        variant: "destructive"
+      });
+    }
   };
 
   const getCurrentResponsibleRole = (status: Project['status']) => {
@@ -183,9 +258,10 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
     return (
       <div className="min-h-screen bg-background p-6">
         <ProjectForm
+          user={user}
           onSuccess={() => {
             setShowProjectForm(false);
-            // Refresh projects list
+            loadProjects(); // Reload projects after creating new one
           }}
           onCancel={() => setShowProjectForm(false)}
         />
@@ -271,7 +347,13 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
 
           {/* Projects Grid */}
           <div className="grid gap-6">
-            {filteredProjects.length === 0 ? (
+            {loading ? (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <p className="text-muted-foreground">Lade Projekte...</p>
+                </CardContent>
+              </Card>
+            ) : filteredProjects.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-12">
                   <p className="text-muted-foreground">Keine Projekte gefunden</p>

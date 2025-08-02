@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, User, Calendar, Package, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Project {
   id: string;
@@ -71,63 +72,105 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
     locationDistribution: project.standort_verteilung || {}
   });
 
-  const handleAction = (action: string) => {
-    let newStatus = project.status;
-    let actionLabel = "";
-    
-    // Workflow-Logik basierend auf Rolle und Aktion
-    if (user.role === "supply_chain") {
-      if (action === "approve") {
-        newStatus = "approved"; // Geht an Planung
-        actionLabel = "genehmigt und an Planung weitergeleitet";
-      } else if (action === "reject") {
-        newStatus = "rejected";
-        actionLabel = "abgelehnt";
-      } else if (action === "correct") {
-        newStatus = "draft"; // Zurück an Vertrieb
-        actionLabel = "zur Korrektur an Vertrieb zurückgewiesen";
+  const handleAction = async (action: string) => {
+    try {
+      let newStatus = project.status;
+      let actionLabel = "";
+      
+      // Workflow-Logik basierend auf Rolle und Aktion
+      if (user.role === "supply_chain") {
+        if (action === "approve") {
+          newStatus = "in_progress"; // Geht an Planung
+          actionLabel = "genehmigt und an Planung weitergeleitet";
+        } else if (action === "reject") {
+          newStatus = "rejected";
+          actionLabel = "abgelehnt";
+        } else if (action === "correct") {
+          newStatus = "draft"; // Zurück an Vertrieb
+          actionLabel = "zur Korrektur an Vertrieb zurückgewiesen";
+        }
+      } else if (user.role === "planung") {
+        if (action === "approve") {
+          newStatus = "approved"; // Final freigegeben
+          actionLabel = "final freigegeben";
+        } else if (action === "reject") {
+          newStatus = "pending"; // Zurück an SupplyChain
+          actionLabel = "abgelehnt und an SupplyChain zurückgewiesen";
+        } else if (action === "correct") {
+          newStatus = "pending"; // Zurück an SupplyChain
+          actionLabel = "zur Korrektur an SupplyChain zurückgewiesen";
+        }
       }
-    } else if (user.role === "planung") {
-      if (action === "approve") {
-        newStatus = "completed"; // Final freigegeben
-        actionLabel = "final freigegeben";
-      } else if (action === "reject") {
-        newStatus = "pending"; // Zurück an SupplyChain
-        actionLabel = "abgelehnt und an SupplyChain zurückgewiesen";
-      } else if (action === "correct") {
-        newStatus = "pending"; // Zurück an SupplyChain
-        actionLabel = "zur Korrektur an SupplyChain zurückgewiesen";
+      
+      if (newStatus && newStatus !== project.status) {
+        const { error } = await supabase
+          .from('manufacturing_projects')
+          .update({ status: newStatus })
+          .eq('id', project.id);
+
+        if (error) throw error;
+
+        onProjectAction(project.id, action);
+
+        toast({
+          title: "Projekt aktualisiert",
+          description: `Das Projekt wurde ${actionLabel}.`,
+        });
+
+        // Nach Aktion zurück zum Dashboard
+        setTimeout(() => {
+          onBack();
+        }, 1500);
       }
+    } catch (error) {
+      console.error('Error updating project:', error);
+      toast({
+        title: "Fehler",
+        description: "Projektstatus konnte nicht aktualisiert werden",
+        variant: "destructive"
+      });
     }
-    
-    onProjectAction(project.id, action);
-
-    toast({
-      title: "Projekt aktualisiert",
-      description: `Das Projekt wurde ${actionLabel}.`,
-    });
-
-    // Nach Aktion zurück zum Dashboard
-    setTimeout(() => {
-      onBack();
-    }, 1500);
   };
 
-  const handleCorrection = () => {
-    // Hier würde normalerweise die API-Anfrage für die Korrektur mit neuer Menge und Beschreibung erfolgen
-    onProjectAction(project.id, "correct");
-    
-    toast({
-      title: "Korrektur gesendet",
-      description: `Das Projekt wurde zur Korrektur zurückgewiesen. Neue Menge: ${correctionData.newQuantity}`,
-    });
-    
-    setShowCorrectionDialog(false);
-    setCorrectionData({ 
-      newQuantity: project.gesamtmenge, 
-      description: "",
-      locationDistribution: project.standort_verteilung || {}
-    });
+  const handleCorrection = async () => {
+    try {
+      const { error } = await supabase
+        .from('manufacturing_projects')
+        .update({
+          gesamtmenge: correctionData.newQuantity,
+          standort_verteilung: correctionData.locationDistribution,
+          status: user.role === "supply_chain" ? "draft" : "pending" // Back to previous stage
+        })
+        .eq('id', project.id);
+
+      if (error) throw error;
+
+      onProjectAction(project.id, "correct");
+      
+      toast({
+        title: "Korrektur gesendet",
+        description: `Das Projekt wurde zur Korrektur zurückgewiesen. Neue Menge: ${correctionData.newQuantity}`,
+      });
+      
+      setShowCorrectionDialog(false);
+      setCorrectionData({ 
+        newQuantity: project.gesamtmenge, 
+        description: "",
+        locationDistribution: project.standort_verteilung || {}
+      });
+
+      // Nach Aktion zurück zum Dashboard
+      setTimeout(() => {
+        onBack();
+      }, 1500);
+    } catch (error) {
+      console.error('Error correcting project:', error);
+      toast({
+        title: "Fehler",
+        description: "Korrektur konnte nicht gespeichert werden",
+        variant: "destructive"
+      });
+    }
   };
 
   const getActionButtons = () => {
@@ -150,7 +193,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
         }
         break;
       case "planung":
-        if (project.status === "approved") {
+        if (project.status === "in_progress") {
           return (
             <div className="flex gap-3">
               <Button onClick={() => handleAction("approve")} className="flex-1">
