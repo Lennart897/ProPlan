@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Calendar, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay } from "date-fns";
+import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, getWeek } from "date-fns";
 import { de } from "date-fns/locale";
 
 interface Project {
@@ -182,7 +182,7 @@ export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <span className="font-medium ml-4">
-                {format(weekStart, "dd.MM.yyyy", { locale: de })} - {format(addDays(weekStart, 6), "dd.MM.yyyy", { locale: de })}
+                KW {getWeek(weekStart, { locale: de })} | {format(weekStart, "dd.MM.yyyy", { locale: de })} - {format(addDays(weekStart, 6), "dd.MM.yyyy", { locale: de })}
               </span>
             </div>
 
