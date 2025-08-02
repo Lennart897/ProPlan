@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Filter, Search, Bell, User, LogOut } from "lucide-react";
+import { Plus, Filter, Search, Bell, User, LogOut, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProjectForm } from "./ProjectForm";
 import { ProjectDetails } from "./ProjectDetails";
+import { WeeklyCalendar } from "./WeeklyCalendar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -97,6 +98,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
@@ -280,6 +282,15 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
     );
   }
 
+  if (showCalendar) {
+    return (
+      <WeeklyCalendar
+        user={user}
+        onBack={() => setShowCalendar(false)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -337,12 +348,19 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
               </Select>
             </div>
             
-            {user.role === "vertrieb" && (
-              <Button onClick={() => setShowProjectForm(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Neues Projekt
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowCalendar(true)}>
+                <Calendar className="h-4 w-4 mr-2" />
+                Wochenkalender
               </Button>
-            )}
+              
+              {user.role === "vertrieb" && (
+                <Button onClick={() => setShowProjectForm(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Neues Projekt
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Projects Grid */}
