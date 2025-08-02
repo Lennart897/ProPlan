@@ -67,7 +67,8 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
   const [showCorrectionDialog, setShowCorrectionDialog] = useState(false);
   const [correctionData, setCorrectionData] = useState({
     newQuantity: project.gesamtmenge,
-    description: ""
+    description: "",
+    locationDistribution: project.standort_verteilung || {}
   });
 
   const handleAction = (action: string) => {
@@ -95,7 +96,11 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
     });
     
     setShowCorrectionDialog(false);
-    setCorrectionData({ newQuantity: project.gesamtmenge, description: "" });
+    setCorrectionData({ 
+      newQuantity: project.gesamtmenge, 
+      description: "",
+      locationDistribution: project.standort_verteilung || {}
+    });
   };
 
   const getActionButtons = () => {
@@ -281,20 +286,71 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="newQuantity">Neue Gesamtmenge</Label>
-              <Input
-                id="newQuantity"
-                type="number"
-                value={correctionData.newQuantity}
-                onChange={(e) => setCorrectionData(prev => ({ 
-                  ...prev, 
-                  newQuantity: parseInt(e.target.value) || 0 
-                }))}
-                placeholder="Neue Menge eingeben"
-                min={1}
-              />
-            </div>
+            {/* Gesamtmenge - nur für Supply Chain */}
+            {user.role === "supply_chain" && (
+              <div className="space-y-2">
+                <Label htmlFor="newQuantity">Neue Gesamtmenge</Label>
+                <Input
+                  id="newQuantity"
+                  type="number"
+                  value={correctionData.newQuantity}
+                  onChange={(e) => setCorrectionData(prev => ({ 
+                    ...prev, 
+                    newQuantity: parseInt(e.target.value) || 0 
+                  }))}
+                  placeholder="Neue Menge eingeben"
+                  min={1}
+                />
+              </div>
+            )}
+
+            {/* Standortverteilung */}
+            {project.standort_verteilung && (
+              <div className="space-y-4">
+                <div>
+                  <Label>Standortverteilung anpassen</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Passen Sie die Mengen pro Standort an
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  {Object.entries(project.standort_verteilung).map(([location, originalQuantity]) => (
+                    <div key={location} className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <Label className="text-sm">
+                          {locationLabels[location as keyof typeof locationLabels] || location}
+                        </Label>
+                      </div>
+                      <div className="w-24">
+                        <Input
+                          type="number"
+                          value={correctionData.locationDistribution[location] || 0}
+                          onChange={(e) => setCorrectionData(prev => ({
+                            ...prev,
+                            locationDistribution: {
+                              ...prev.locationDistribution,
+                              [location]: parseInt(e.target.value) || 0
+                            }
+                          }))}
+                          min={0}
+                          className="text-center"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 p-3 bg-muted/50 rounded-lg">
+                  <div className="flex justify-between items-center text-sm">
+                    <span>Gesamt verteilt:</span>
+                    <span className="font-semibold">
+                      {Object.values(correctionData.locationDistribution).reduce((sum, val) => sum + val, 0).toLocaleString()}
+                      {user.role === "supply_chain" && ` / ${correctionData.newQuantity.toLocaleString()}`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="description">Beschreibung der Änderungen</Label>
               <Textarea
