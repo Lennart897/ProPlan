@@ -93,13 +93,46 @@ const Index = () => {
   };
 
   const demoLogin = async (email: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password: "demo123" // Demo password
-    });
-    
-    if (error) {
-      console.error("Demo login error:", error);
+    try {
+      // First try to sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: "demo123"
+      });
+      
+      if (signInError) {
+        // If sign in fails, try to create the demo user first
+        if (signInError.message.includes("Invalid login credentials")) {
+          const redirectUrl = `${window.location.origin}/`;
+          
+          const { error: signUpError } = await supabase.auth.signUp({
+            email,
+            password: "demo123",
+            options: {
+              emailRedirectTo: redirectUrl
+            }
+          });
+          
+          if (signUpError) {
+            console.error("Demo signup error:", signUpError);
+            return;
+          }
+          
+          // After signup, try to sign in again
+          const { error: retrySignInError } = await supabase.auth.signInWithPassword({
+            email,
+            password: "demo123"
+          });
+          
+          if (retrySignInError) {
+            console.error("Demo login retry error:", retrySignInError);
+          }
+        } else {
+          console.error("Demo login error:", signInError);
+        }
+      }
+    } catch (error) {
+      console.error("Demo login process error:", error);
     }
   };
 
