@@ -130,33 +130,13 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   };
 
   const getActionsForRole = (project: Project) => {
-    switch (user.role) {
-      case "supply_chain":
-        if (project.status === "pending") {
-          return (
-            <div className="flex gap-2">
-              <Button size="sm" onClick={() => setSelectedProject(project)}>
-                Prüfen
-              </Button>
-            </div>
-          );
-        }
-        break;
-      case "planung":
-        if (project.status === "approved") {
-          return (
-            <div className="flex gap-2">
-              <Button size="sm" onClick={() => setSelectedProject(project)}>
-                Prüfen
-              </Button>
-            </div>
-          );
-        }
-        break;
-      default:
-        return null;
-    }
-    return null;
+    return (
+      <div className="flex gap-2">
+        <Button size="sm" onClick={() => setSelectedProject(project)}>
+          Prüfen
+        </Button>
+      </div>
+    );
   };
 
   const roleLabel = {
