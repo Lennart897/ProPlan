@@ -233,7 +233,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               )}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="produktgruppe">Produktgruppe</Label>
               <Input
                 id="produktgruppe"
