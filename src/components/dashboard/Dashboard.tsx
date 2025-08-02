@@ -7,6 +7,7 @@ import { Plus, Filter, Search, Bell, User, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProjectForm } from "./ProjectForm";
+import { ProjectDetails } from "./ProjectDetails";
 
 interface Project {
   id: string;
@@ -17,6 +18,8 @@ interface Project {
   status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed";
   created_at: string;
   created_by: string;
+  standort_verteilung?: Record<string, number>;
+  menge_fix?: boolean;
 }
 
 interface User {
@@ -35,7 +38,15 @@ const mockProjects: Project[] = [
     gesamtmenge: 1000,
     status: "pending",
     created_at: "2024-01-15T10:00:00Z",
-    created_by: "Max Mustermann"
+    created_by: "Max Mustermann",
+    standort_verteilung: {
+      gudensberg: 300,
+      brenz: 250,
+      storkow: 200,
+      visbek: 150,
+      doebeln: 100
+    },
+    menge_fix: false
   },
   {
     id: "2", 
@@ -45,7 +56,15 @@ const mockProjects: Project[] = [
     gesamtmenge: 500,
     status: "approved",
     created_at: "2024-01-14T15:30:00Z",
-    created_by: "Anna Schmidt"
+    created_by: "Anna Schmidt",
+    standort_verteilung: {
+      gudensberg: 200,
+      brenz: 150,
+      storkow: 100,
+      visbek: 50,
+      doebeln: 0
+    },
+    menge_fix: true
   },
 ];
 
@@ -75,6 +94,7 @@ interface DashboardProps {
 export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const [projects, setProjects] = useState<Project[]>(mockProjects);
   const [showProjectForm, setShowProjectForm] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
@@ -115,14 +135,8 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
         if (project.status === "pending") {
           return (
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => handleProjectAction(project.id, "approve")}>
-                Zusage
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => handleProjectAction(project.id, "correct")}>
-                Korrektur
-              </Button>
-              <Button size="sm" variant="destructive" onClick={() => handleProjectAction(project.id, "reject")}>
-                Absage
+              <Button size="sm" onClick={() => setSelectedProject(project)}>
+                Prüfen
               </Button>
             </div>
           );
@@ -132,11 +146,8 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
         if (project.status === "approved") {
           return (
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => handleProjectAction(project.id, "approve")}>
-                Bestätigen
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => handleProjectAction(project.id, "correct")}>
-                Rückgabe
+              <Button size="sm" onClick={() => setSelectedProject(project)}>
+                Prüfen
               </Button>
             </div>
           );
@@ -165,6 +176,17 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
           onCancel={() => setShowProjectForm(false)}
         />
       </div>
+    );
+  }
+
+  if (selectedProject) {
+    return (
+      <ProjectDetails
+        project={selectedProject}
+        user={user}
+        onBack={() => setSelectedProject(null)}
+        onProjectAction={handleProjectAction}
+      />
     );
   }
 
