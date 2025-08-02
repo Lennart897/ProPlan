@@ -72,25 +72,45 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
   });
 
   const handleAction = (action: string) => {
-    onProjectAction(project.id, action);
+    let newStatus = project.status;
+    let actionLabel = "";
     
-    const actionLabels = {
-      approve: "genehmigt",
-      reject: "abgelehnt", 
-      correct: "zur Korrektur zurückgewiesen"
-    };
+    // Workflow-Logik basierend auf Rolle und Aktion
+    if (user.role === "supply_chain") {
+      if (action === "approve") {
+        newStatus = "approved"; // Geht an Planung
+        actionLabel = "genehmigt und an Planung weitergeleitet";
+      } else if (action === "reject") {
+        newStatus = "rejected";
+        actionLabel = "abgelehnt";
+      } else if (action === "correct") {
+        newStatus = "draft"; // Zurück an Vertrieb
+        actionLabel = "zur Korrektur an Vertrieb zurückgewiesen";
+      }
+    } else if (user.role === "planung") {
+      if (action === "approve") {
+        newStatus = "completed"; // Final freigegeben
+        actionLabel = "final freigegeben";
+      } else if (action === "reject") {
+        newStatus = "pending"; // Zurück an SupplyChain
+        actionLabel = "abgelehnt und an SupplyChain zurückgewiesen";
+      } else if (action === "correct") {
+        newStatus = "pending"; // Zurück an SupplyChain
+        actionLabel = "zur Korrektur an SupplyChain zurückgewiesen";
+      }
+    }
+    
+    onProjectAction(project.id, action);
 
     toast({
       title: "Projekt aktualisiert",
-      description: `Das Projekt wurde ${actionLabels[action as keyof typeof actionLabels]}.`,
+      description: `Das Projekt wurde ${actionLabel}.`,
     });
 
-    // Nach Freigabe zurück zum Dashboard
-    if (action === "approve") {
-      setTimeout(() => {
-        onBack();
-      }, 1500);
-    }
+    // Nach Aktion zurück zum Dashboard
+    setTimeout(() => {
+      onBack();
+    }, 1500);
   };
 
   const handleCorrection = () => {
