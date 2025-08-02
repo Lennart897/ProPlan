@@ -20,7 +20,7 @@ const Index = () => {
       id: "1",
       email: "admin@projektmanagement.de",
       role: "supply_chain",
-      full_name: "Lennart Debbeler"
+      full_name: "Lennart Debbele"
     });
   };
 
