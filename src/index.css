@@ -19,17 +19,17 @@ All colors MUST be HSL for perfect theming.
     --popover: 0 0% 100%;
     --popover-foreground: 240 6% 13%;
 
-    /* Warm Primary - Not Cold Blue */
-    --primary: 217 32% 17%;
+    /* RAL 6000 Patinagrün - Warm Primary */
+    --primary: 163 39% 33%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 217 32% 35%;
+    --primary-glow: 163 39% 45%;
 
     /* Warm Status Colors */
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    --info: 217 32% 45%;
+    --info: 163 39% 40%;
     --info-foreground: 0 0% 100%;
 
     /* Subtle Warm Grays */
@@ -48,7 +48,7 @@ All colors MUST be HSL for perfect theming.
     /* Apple-like Borders - Very Subtle */
     --border: 30 12% 90%;
     --input: 30 12% 94%;
-    --ring: 217 32% 17%;
+    --ring: 163 39% 33%;
 
     /* Apple Radius - Slightly More Rounded */
     --radius: 0.75rem;
@@ -61,7 +61,7 @@ All colors MUST be HSL for perfect theming.
     --sidebar-accent: 30 15% 95%;
     --sidebar-accent-foreground: 240 6% 10%;
     --sidebar-border: 30 12% 88%;
-    --sidebar-ring: 217 32% 17%;
+    --sidebar-ring: 163 39% 33%;
 
     /* Apple-inspired Shadows and Effects */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -84,8 +84,8 @@ All colors MUST be HSL for perfect theming.
     --popover: 30 8% 6%;
     --popover-foreground: 30 15% 95%;
 
-    --primary: 30 15% 95%;
-    --primary-foreground: 30 8% 8%;
+    --primary: 163 39% 85%;
+    --primary-foreground: 163 39% 15%;
 
     --secondary: 30 6% 15%;
     --secondary-foreground: 30 15% 95%;
@@ -101,16 +101,16 @@ All colors MUST be HSL for perfect theming.
 
     --border: 30 6% 18%;
     --input: 30 6% 18%;
-    --ring: 30 15% 85%;
+    --ring: 163 39% 75%;
     
     --sidebar-background: 30 8% 8%;
     --sidebar-foreground: 30 15% 90%;
-    --sidebar-primary: 30 20% 90%;
-    --sidebar-primary-foreground: 30 8% 8%;
+    --sidebar-primary: 163 39% 85%;
+    --sidebar-primary-foreground: 163 39% 15%;
     --sidebar-accent: 30 6% 12%;
     --sidebar-accent-foreground: 30 15% 90%;
     --sidebar-border: 30 6% 15%;
-    --sidebar-ring: 30 15% 85%;
+    --sidebar-ring: 163 39% 75%;
 
     /* Dark Glass Effect */
     --glass-bg: rgba(0, 0, 0, 0.8);
