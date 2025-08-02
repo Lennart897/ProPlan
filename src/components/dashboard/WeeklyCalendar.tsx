@@ -226,8 +226,8 @@ export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
                 <CardTitle className="text-sm font-medium">Gesamtmenge</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{totals.totalQuantity.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">Stück</p>
+                <div className="text-2xl font-bold">{totals.totalQuantity.toFixed(1)} kg</div>
+                <p className="text-xs text-muted-foreground">Kilogramm</p>
               </CardContent>
             </Card>
 
@@ -289,7 +289,7 @@ export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
                             {project.produktgruppe || project.artikel_bezeichnung}
                           </div>
                           <div className="text-xs font-medium">
-                            {project.gesamtmenge.toLocaleString()} Stück
+                            {project.gesamtmenge.toFixed(1)} kg
                           </div>
                           {project.standort_verteilung && typeof project.standort_verteilung === 'object' && (
                             <div className="flex flex-wrap gap-1 mt-1">
@@ -297,7 +297,7 @@ export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
                                 .filter(([_, quantity]) => Number(quantity) > 0)
                                 .map(([location, quantity]) => (
                                 <Badge key={location} variant="secondary" className="text-xs">
-                                  {locationLabels[location as keyof typeof locationLabels]}: {Number(quantity)}
+                                  {locationLabels[location as keyof typeof locationLabels]}: {Number(quantity).toFixed(1)} kg
                                 </Badge>
                               ))}
                             </div>
@@ -324,7 +324,7 @@ export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
                   {Object.entries(totals.byLocation).map(([location, quantity]) => (
                     <div key={location} className="flex justify-between items-center">
                       <span>{locationLabels[location as keyof typeof locationLabels] || location}</span>
-                      <Badge variant="outline">{quantity.toLocaleString()} Stück</Badge>
+                      <Badge variant="outline">{quantity.toFixed(1)} kg</Badge>
                     </div>
                   ))}
                   {Object.keys(totals.byLocation).length === 0 && (
@@ -345,7 +345,7 @@ export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
                   {Object.entries(totals.byProduct).map(([product, quantity]) => (
                     <div key={product} className="flex justify-between items-center">
                       <span className="text-sm">{product}</span>
-                      <Badge variant="outline">{quantity.toLocaleString()} Stück</Badge>
+                      <Badge variant="outline">{quantity.toFixed(1)} kg</Badge>
                     </div>
                   ))}
                   {Object.keys(totals.byProduct).length === 0 && (

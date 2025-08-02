@@ -152,7 +152,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
       
       toast({
         title: "Korrektur gesendet",
-        description: `Das Projekt wurde zur Korrektur zurückgewiesen. Neue Menge: ${correctionData.newQuantity}`,
+        description: `Das Projekt wurde zur Korrektur zurückgewiesen. Neue Menge: ${correctionData.newQuantity.toFixed(1)} kg`,
       });
       
       setShowCorrectionDialog(false);
@@ -258,8 +258,8 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                 <div className="flex items-center gap-3">
                   <Package className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="text-sm text-muted-foreground">Gesamtmenge</p>
-                    <p className="font-semibold">{project.gesamtmenge.toLocaleString()} Stück</p>
+                    <p className="text-sm text-muted-foreground">Gesamtmenge (kg)</p>
+                    <p className="font-semibold">{project.gesamtmenge.toFixed(1)} kg</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -353,7 +353,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                       <p className="text-sm font-medium text-muted-foreground">
                         {locationLabels[location as keyof typeof locationLabels] || location}
                       </p>
-                      <p className="text-2xl font-bold text-primary">{quantity.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-primary">{quantity.toFixed(1)} kg</p>
                     </div>
                   ))}
                 </div>
@@ -361,7 +361,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Gesamt verteilt:</span>
                     <span className="font-semibold">
-                      {Object.values(project.standort_verteilung).reduce((sum, val) => sum + val, 0).toLocaleString()} / {project.gesamtmenge.toLocaleString()}
+                      {Object.values(project.standort_verteilung).reduce((sum, val) => sum + val, 0).toFixed(1)} kg / {project.gesamtmenge.toFixed(1)} kg
                     </span>
                   </div>
                 </div>
@@ -399,17 +399,18 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
             {/* Gesamtmenge - nur für Supply Chain */}
             {user.role === "supply_chain" && (
               <div className="space-y-2">
-                <Label htmlFor="newQuantity">Neue Gesamtmenge</Label>
+                <Label htmlFor="newQuantity">Neue Gesamtmenge (kg)</Label>
                 <Input
                   id="newQuantity"
                   type="number"
+                  step="0.1"
                   value={correctionData.newQuantity}
                   onChange={(e) => setCorrectionData(prev => ({ 
                     ...prev, 
-                    newQuantity: parseInt(e.target.value) || 0 
+                    newQuantity: parseFloat(e.target.value) || 0 
                   }))}
                   placeholder="Neue Menge eingeben"
-                  min={1}
+                  min={0.1}
                 />
               </div>
             )}
@@ -428,18 +429,19 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                     <div key={location} className="flex items-center gap-3">
                       <div className="flex-1">
                         <Label className="text-sm">
-                          {locationLabels[location as keyof typeof locationLabels] || location}
+                          {locationLabels[location as keyof typeof locationLabels] || location} (kg)
                         </Label>
                       </div>
                       <div className="w-24">
                         <Input
                           type="number"
+                          step="0.1"
                           value={correctionData.locationDistribution[location] || 0}
                           onChange={(e) => setCorrectionData(prev => ({
                             ...prev,
                             locationDistribution: {
                               ...prev.locationDistribution,
-                              [location]: parseInt(e.target.value) || 0
+                              [location]: parseFloat(e.target.value) || 0
                             }
                           }))}
                           min={0}
@@ -453,8 +455,8 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                   <div className="flex justify-between items-center text-sm">
                     <span>Gesamt verteilt:</span>
                     <span className="font-semibold">
-                      {Object.values(correctionData.locationDistribution).reduce((sum, val) => sum + val, 0).toLocaleString()}
-                      {user.role === "supply_chain" && ` / ${correctionData.newQuantity.toLocaleString()}`}
+                      {Object.values(correctionData.locationDistribution).reduce((sum, val) => sum + val, 0).toFixed(1)} kg
+                      {user.role === "supply_chain" && ` / ${correctionData.newQuantity.toFixed(1)} kg`}
                     </span>
                   </div>
                 </div>

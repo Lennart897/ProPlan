@@ -30,7 +30,7 @@ const projectSchema = z.object({
   artikel_nummer: z.string().min(1, "Artikelnummer ist erforderlich"),
   artikel_bezeichnung: z.string().min(1, "Artikelbezeichnung ist erforderlich"),
   produktgruppe: z.string().min(1, "Produktgruppe ist erforderlich"),
-  gesamtmenge: z.number().min(1, "Gesamtmenge muss größer als 0 sein"),
+  gesamtmenge: z.number().min(0.1, "Gesamtmenge muss größer als 0 sein"),
   
   erste_anlieferung: z.date().optional(),
   letzte_anlieferung: z.date().optional(),
@@ -70,11 +70,11 @@ interface ProjectFormProps {
 export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [locationQuantities, setLocationQuantities] = useState<Record<string, number>>({
-    gudensberg: 0,
-    brenz: 0,
-    storkow: 0,
-    visbek: 0,
-    doebeln: 0,
+    gudensberg: 0.0,
+    brenz: 0.0,
+    storkow: 0.0,
+    visbek: 0.0,
+    doebeln: 0.0,
   });
   
   const { toast } = useToast();
@@ -86,7 +86,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
       artikel_nummer: "",
       artikel_bezeichnung: "",
       produktgruppe: "",
-      gesamtmenge: 0,
+      gesamtmenge: 0.0,
       
       erste_anlieferung: undefined,
       letzte_anlieferung: undefined,
@@ -319,12 +319,13 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
 
             {/* Gesamtmenge und Menge fix nebeneinander - nach Anlieferungsdaten */}
             <div className="space-y-2">
-              <Label htmlFor="gesamtmenge">Gesamtmenge</Label>
+              <Label htmlFor="gesamtmenge">Gesamtmenge (kg)</Label>
               <Input
                 id="gesamtmenge"
                 type="number"
+                step="0.1"
                 {...form.register("gesamtmenge", { valueAsNumber: true })}
-                placeholder="1000"
+                placeholder="1000.0"
               />
               {form.formState.errors.gesamtmenge && (
                 <p className="text-sm text-destructive">
@@ -353,7 +354,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               <h3 className="text-lg font-semibold">Standortverteilung</h3>
               <div className="text-sm">
                 <span className={totalDistributed > gesamtmenge ? "text-destructive" : "text-muted-foreground"}>
-                  Verteilt: {totalDistributed} / {gesamtmenge}
+                  Verteilt: {totalDistributed.toFixed(1)} kg / {gesamtmenge.toFixed(1)} kg
                 </span>
               </div>
             </div>
@@ -361,16 +362,17 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {locations.map((location) => (
                 <div key={location.value} className="space-y-2">
-                  <Label htmlFor={location.value}>{location.label}</Label>
+                  <Label htmlFor={location.value}>{location.label} (kg)</Label>
                   <Input
                     id={location.value}
                     type="number"
+                    step="0.1"
                     min="0"
                     value={locationQuantities[location.value]}
                     onChange={(e) => 
-                      handleLocationQuantityChange(location.value, parseInt(e.target.value) || 0)
+                      handleLocationQuantityChange(location.value, parseFloat(e.target.value) || 0)
                     }
-                    placeholder="0"
+                    placeholder="0.0"
                   />
                 </div>
               ))}
@@ -378,7 +380,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
             
             {totalDistributed > gesamtmenge && (
               <p className="text-sm text-destructive">
-                ⚠️ Die Standortverteilung ({totalDistributed}) übersteigt die Gesamtmenge ({gesamtmenge})
+                ⚠️ Die Standortverteilung ({totalDistributed.toFixed(1)} kg) übersteigt die Gesamtmenge ({gesamtmenge.toFixed(1)} kg)
               </p>
             )}
           </div>

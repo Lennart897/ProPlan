@@ -400,7 +400,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                         </CardDescription>
                       </div>
                         <div className="text-right text-sm text-muted-foreground">
-                         <p>Menge: {project.gesamtmenge}</p>
+                         <p>Menge: {project.gesamtmenge.toFixed(1)} kg</p>
                          <p>Erstellt: {new Date(project.created_at).toLocaleDateString("de-DE")}</p>
                          <p>Von: {project.created_by}</p>
                          {getCurrentResponsibleRole(project.status) && (
