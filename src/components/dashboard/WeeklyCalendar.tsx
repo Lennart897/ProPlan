@@ -14,6 +14,7 @@ interface Project {
   customer: string;
   artikel_nummer: string;
   artikel_bezeichnung: string;
+  produktgruppe?: string;
   gesamtmenge: number;
   status: string;
   created_at: string;
@@ -59,7 +60,7 @@ export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
   const { toast } = useToast();
 
   // Get unique product groups from projects
-  const productGroups = Array.from(new Set(projects.map(p => p.artikel_bezeichnung))).sort();
+  const productGroups = Array.from(new Set(projects.map(p => p.produktgruppe).filter(Boolean))).sort();
 
   // Load approved projects
   useEffect(() => {
@@ -99,7 +100,7 @@ export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
        project.standort_verteilung[selectedLocation] && Number(project.standort_verteilung[selectedLocation]) > 0);
     
     const productMatch = selectedProductGroup === "all" || 
-      project.artikel_bezeichnung === selectedProductGroup;
+      project.produktgruppe === selectedProductGroup;
 
     return locationMatch && productMatch;
   });
@@ -115,11 +116,13 @@ export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
     filteredProjects.forEach(project => {
       totals.totalQuantity += project.gesamtmenge;
       
-      // By product
-      if (!totals.byProduct[project.artikel_bezeichnung]) {
-        totals.byProduct[project.artikel_bezeichnung] = 0;
+      // By product group
+      if (project.produktgruppe && !totals.byProduct[project.produktgruppe]) {
+        totals.byProduct[project.produktgruppe] = 0;
       }
-      totals.byProduct[project.artikel_bezeichnung] += project.gesamtmenge;
+      if (project.produktgruppe) {
+        totals.byProduct[project.produktgruppe] += project.gesamtmenge;
+      }
 
       // By location
       if (project.standort_verteilung && typeof project.standort_verteilung === 'object') {
@@ -283,7 +286,7 @@ export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
                         <div key={project.id} className="p-2 rounded border bg-green-50">
                           <div className="font-medium text-xs">{project.customer}</div>
                           <div className="text-xs text-muted-foreground">
-                            {project.artikel_bezeichnung}
+                            {project.produktgruppe || project.artikel_bezeichnung}
                           </div>
                           <div className="text-xs font-medium">
                             {project.gesamtmenge.toLocaleString()} Stück
