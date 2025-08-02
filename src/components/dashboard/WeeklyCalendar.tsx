@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Calendar, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, getWeek } from "date-fns";
+import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, getWeek, isWithinInterval, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
 
 interface Project {
@@ -22,6 +22,8 @@ interface Project {
   created_by_name: string;
   standort_verteilung: any;
   menge_fix: boolean;
+  erste_anlieferung: string | null;
+  letzte_anlieferung: string | null;
 }
 
 interface User {
@@ -251,8 +253,19 @@ export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
           <div className="grid grid-cols-7 gap-4">
             {weekDays.map((day, index) => {
               const dayProjects = filteredProjects.filter(project => {
-                const projectDate = new Date(project.updated_at);
-                return isSameDay(projectDate, day);
+                // Prüfe ob der Tag innerhalb des Anlieferzeitraums liegt
+                if (!project.erste_anlieferung || !project.letzte_anlieferung) {
+                  return false;
+                }
+                
+                try {
+                  const startDate = parseISO(project.erste_anlieferung);
+                  const endDate = parseISO(project.letzte_anlieferung);
+                  return isWithinInterval(day, { start: startDate, end: endDate });
+                } catch (error) {
+                  console.warn('Invalid date format in project:', project.id);
+                  return false;
+                }
               });
 
               return (
