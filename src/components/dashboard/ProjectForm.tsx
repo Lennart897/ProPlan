@@ -8,6 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { de } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -23,7 +29,11 @@ const projectSchema = z.object({
   customer: z.string().min(1, "Kunde ist erforderlich"),
   artikel_nummer: z.string().min(1, "Artikelnummer ist erforderlich"),
   artikel_bezeichnung: z.string().min(1, "Artikelbezeichnung ist erforderlich"),
+  produktgruppe: z.string().min(1, "Produktgruppe ist erforderlich"),
   gesamtmenge: z.number().min(1, "Gesamtmenge muss größer als 0 sein"),
+  preis: z.number().min(0, "Preis muss 0 oder größer sein").optional(),
+  erste_anlieferung: z.date().optional(),
+  letzte_anlieferung: z.date().optional(),
   menge_fix: z.boolean().default(false),
   standort_verteilung: z.record(z.number().min(0)).refine(
     (data) => {
@@ -32,6 +42,14 @@ const projectSchema = z.object({
     },
     { message: "Mindestens ein Standort muss eine Menge haben" }
   ),
+}).refine((data) => {
+  if (data.erste_anlieferung && data.letzte_anlieferung) {
+    return data.erste_anlieferung <= data.letzte_anlieferung;
+  }
+  return true;
+}, {
+  message: "Erste Anlieferung muss vor oder gleich der letzten Anlieferung sein",
+  path: ["letzte_anlieferung"]
 });
 
 type ProjectFormData = z.infer<typeof projectSchema>;
@@ -67,7 +85,11 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
       customer: "",
       artikel_nummer: "",
       artikel_bezeichnung: "",
+      produktgruppe: "",
       gesamtmenge: 0,
+      preis: undefined,
+      erste_anlieferung: undefined,
+      letzte_anlieferung: undefined,
       menge_fix: false,
       standort_verteilung: locationQuantities,
     },
@@ -127,7 +149,11 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
           customer: data.customer,
           artikel_nummer: data.artikel_nummer,
           artikel_bezeichnung: data.artikel_bezeichnung,
+          produktgruppe: data.produktgruppe,
           gesamtmenge: data.gesamtmenge,
+          preis: data.preis,
+          erste_anlieferung: data.erste_anlieferung?.toISOString().split('T')[0],
+          letzte_anlieferung: data.letzte_anlieferung?.toISOString().split('T')[0],
           menge_fix: data.menge_fix,
           standort_verteilung: data.standort_verteilung,
           status: 'pending', // Start as pending for SupplyChain review
@@ -208,6 +234,20 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="produktgruppe">Produktgruppe</Label>
+              <Input
+                id="produktgruppe"
+                {...form.register("produktgruppe")}
+                placeholder="z.B. Automotive Teile"
+              />
+              {form.formState.errors.produktgruppe && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.produktgruppe.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="gesamtmenge">Gesamtmenge</Label>
               <Input
                 id="gesamtmenge"
@@ -218,6 +258,90 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               {form.formState.errors.gesamtmenge && (
                 <p className="text-sm text-destructive">
                   {form.formState.errors.gesamtmenge.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="preis">Preis (€)</Label>
+              <Input
+                id="preis"
+                type="number"
+                step="0.01"
+                {...form.register("preis", { valueAsNumber: true })}
+                placeholder="0.00"
+              />
+              {form.formState.errors.preis && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.preis.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Erste Anlieferung</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !form.watch("erste_anlieferung") && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {form.watch("erste_anlieferung") 
+                      ? format(form.watch("erste_anlieferung")!, "dd.MM.yyyy", { locale: de })
+                      : "Datum wählen"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={form.watch("erste_anlieferung")}
+                    onSelect={(date) => form.setValue("erste_anlieferung", date)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+              {form.formState.errors.erste_anlieferung && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.erste_anlieferung.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Letzte Anlieferung</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !form.watch("letzte_anlieferung") && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {form.watch("letzte_anlieferung") 
+                      ? format(form.watch("letzte_anlieferung")!, "dd.MM.yyyy", { locale: de })
+                      : "Datum wählen"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={form.watch("letzte_anlieferung")}
+                    onSelect={(date) => form.setValue("letzte_anlieferung", date)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+              {form.formState.errors.letzte_anlieferung && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.letzte_anlieferung.message}
                 </p>
               )}
             </div>

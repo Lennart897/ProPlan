@@ -22,9 +22,13 @@ export type Database = {
           created_by_id: string
           created_by_name: string
           customer: string
+          erste_anlieferung: string | null
           gesamtmenge: number
           id: string
+          letzte_anlieferung: string | null
           menge_fix: boolean | null
+          preis: number | null
+          produktgruppe: string | null
           standort_verteilung: Json | null
           status: string
           updated_at: string
@@ -36,9 +40,13 @@ export type Database = {
           created_by_id: string
           created_by_name: string
           customer: string
+          erste_anlieferung?: string | null
           gesamtmenge: number
           id?: string
+          letzte_anlieferung?: string | null
           menge_fix?: boolean | null
+          preis?: number | null
+          produktgruppe?: string | null
           standort_verteilung?: Json | null
           status?: string
           updated_at?: string
@@ -50,9 +58,13 @@ export type Database = {
           created_by_id?: string
           created_by_name?: string
           customer?: string
+          erste_anlieferung?: string | null
           gesamtmenge?: number
           id?: string
+          letzte_anlieferung?: string | null
           menge_fix?: boolean | null
+          preis?: number | null
+          produktgruppe?: string | null
           standort_verteilung?: Json | null
           status?: string
           updated_at?: string
