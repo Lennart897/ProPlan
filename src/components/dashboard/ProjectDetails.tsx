@@ -179,13 +179,13 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
         if (project.status === "pending") {
           return (
             <div className="flex gap-3">
-              <Button onClick={() => handleAction("approve")} className="flex-1">
+              <Button onClick={() => handleAction("approve")} className="flex-1 bg-green-600 hover:bg-green-700 text-white">
                 Zusage erteilen
               </Button>
-              <Button variant="outline" onClick={() => setShowCorrectionDialog(true)} className="flex-1">
+              <Button variant="outline" onClick={() => setShowCorrectionDialog(true)} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white border-orange-500">
                 Korrektur anfordern
               </Button>
-              <Button variant="destructive" onClick={() => handleAction("reject")} className="flex-1">
+              <Button onClick={() => handleAction("reject")} className="flex-1 bg-red-600 hover:bg-red-700 text-white">
                 Absage erteilen
               </Button>
             </div>
@@ -196,10 +196,10 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
         if (project.status === "in_progress") {
           return (
             <div className="flex gap-3">
-              <Button onClick={() => handleAction("approve")} className="flex-1">
+              <Button onClick={() => handleAction("approve")} className="flex-1 bg-green-600 hover:bg-green-700 text-white">
                 Bestätigen
               </Button>
-              <Button variant="outline" onClick={() => setShowCorrectionDialog(true)} className="flex-1">
+              <Button variant="outline" onClick={() => setShowCorrectionDialog(true)} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white border-orange-500">
                 Korrektur
               </Button>
             </div>
