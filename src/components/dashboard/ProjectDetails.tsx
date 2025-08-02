@@ -200,7 +200,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                 Bestätigen
               </Button>
               <Button variant="outline" onClick={() => setShowCorrectionDialog(true)} className="flex-1">
-                Rückgabe
+                Korrektur
               </Button>
             </div>
           );
