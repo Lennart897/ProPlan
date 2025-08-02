@@ -129,6 +129,25 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
     }));
   };
 
+  const getCurrentResponsibleRole = (status: Project['status']) => {
+    switch (status) {
+      case "draft":
+        return "Vertrieb";
+      case "pending":
+        return "Supply Chain";
+      case "approved":
+        return "Planung";
+      case "rejected":
+        return "Vertrieb";
+      case "in_progress":
+        return "Planung";
+      case "completed":
+        return "Abgeschlossen";
+      default:
+        return "Unbekannt";
+    }
+  };
+
   const getActionsForRole = (project: Project) => {
     return (
       <div className="flex gap-2">
@@ -259,11 +278,12 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                           {project.artikel_nummer} - {project.artikel_bezeichnung}
                         </CardDescription>
                       </div>
-                      <div className="text-right text-sm text-muted-foreground">
-                        <p>Menge: {project.gesamtmenge}</p>
-                        <p>Erstellt: {new Date(project.created_at).toLocaleDateString("de-DE")}</p>
-                        <p>Von: {project.created_by}</p>
-                      </div>
+                       <div className="text-right text-sm text-muted-foreground">
+                         <p>Menge: {project.gesamtmenge}</p>
+                         <p>Erstellt: {new Date(project.created_at).toLocaleDateString("de-DE")}</p>
+                         <p>Von: {project.created_by}</p>
+                         <p><strong>Zuständig:</strong> {getCurrentResponsibleRole(project.status)}</p>
+                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
