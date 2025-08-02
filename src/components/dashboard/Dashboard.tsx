@@ -17,7 +17,10 @@ interface Project {
   customer: string;
   artikel_nummer: string;
   artikel_bezeichnung: string;
+  produktgruppe?: string;
   gesamtmenge: number;
+  erste_anlieferung?: string;
+  letzte_anlieferung?: string;
   status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed";
   created_at: string;
   created_by: string;
@@ -119,7 +122,10 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
         customer: project.customer,
         artikel_nummer: project.artikel_nummer,
         artikel_bezeichnung: project.artikel_bezeichnung,
+        produktgruppe: project.produktgruppe,
         gesamtmenge: project.gesamtmenge,
+        erste_anlieferung: project.erste_anlieferung,
+        letzte_anlieferung: project.letzte_anlieferung,
         status: project.status as Project['status'],
         created_at: project.created_at,
         created_by: project.created_by_name,
