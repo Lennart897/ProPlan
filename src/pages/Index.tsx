@@ -167,7 +167,6 @@ const Index = () => {
             <span className="text-2xl font-bold text-primary-foreground">PP</span>
           </div>
           <h1 className="text-3xl font-bold text-foreground">ProPlan</h1>
-          <p className="text-muted-foreground">Intelligente Produktionsplanung</p>
           <p className="text-sm text-muted-foreground">Anmelden um fortzufahren</p>
         </div>
         

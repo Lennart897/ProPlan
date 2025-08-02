@@ -127,7 +127,7 @@ export const PlanningAssistant = () => {
             KI-Planungsassistent
           </CardTitle>
           <CardDescription>
-            Erhalten Sie datenbasierte Prognosen und Empfehlungen für Ihre Produktionsplanung
+            Erhalten Sie datenbasierte Prognosen und Empfehlungen für Ihre Projekte
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

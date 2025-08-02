@@ -189,7 +189,6 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
           </div>
           <div>
             <h2 className="text-lg font-bold text-primary">ProPlan</h2>
-            <p className="text-xs text-muted-foreground">Produktionsplanung</p>
           </div>
         </div>
         <CardTitle className="text-2xl">Neues Projekt erfassen</CardTitle>
