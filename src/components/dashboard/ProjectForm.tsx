@@ -31,7 +31,7 @@ const projectSchema = z.object({
   artikel_bezeichnung: z.string().min(1, "Artikelbezeichnung ist erforderlich"),
   produktgruppe: z.string().min(1, "Produktgruppe ist erforderlich"),
   gesamtmenge: z.number().min(1, "Gesamtmenge muss größer als 0 sein"),
-  preis: z.number().min(0, "Preis muss 0 oder größer sein").optional(),
+  
   erste_anlieferung: z.date().optional(),
   letzte_anlieferung: z.date().optional(),
   menge_fix: z.boolean().default(false),
@@ -87,7 +87,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
       artikel_bezeichnung: "",
       produktgruppe: "",
       gesamtmenge: 0,
-      preis: undefined,
+      
       erste_anlieferung: undefined,
       letzte_anlieferung: undefined,
       menge_fix: false,
@@ -151,7 +151,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
           artikel_bezeichnung: data.artikel_bezeichnung,
           produktgruppe: data.produktgruppe,
           gesamtmenge: data.gesamtmenge,
-          preis: data.preis,
+          
           erste_anlieferung: data.erste_anlieferung?.toISOString().split('T')[0],
           letzte_anlieferung: data.letzte_anlieferung?.toISOString().split('T')[0],
           menge_fix: data.menge_fix,
@@ -247,21 +247,6 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="preis">Preis (€)</Label>
-              <Input
-                id="preis"
-                type="number"
-                step="0.01"
-                {...form.register("preis", { valueAsNumber: true })}
-                placeholder="0.00"
-              />
-              {form.formState.errors.preis && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.preis.message}
-                </p>
-              )}
-            </div>
 
             {/* Erste und letzte Anlieferung nebeneinander */}
             <div className="space-y-2">
