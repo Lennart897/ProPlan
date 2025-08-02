@@ -160,11 +160,15 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Projekt Management</h1>
-          <p className="text-gray-600 mt-2">Anmelden um fortzufahren</p>
+        <div className="text-center space-y-2">
+          <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-4">
+            <span className="text-2xl font-bold text-primary-foreground">PP</span>
+          </div>
+          <h1 className="text-3xl font-bold text-foreground">ProPlan</h1>
+          <p className="text-muted-foreground">Intelligente Produktionsplanung</p>
+          <p className="text-sm text-muted-foreground">Anmelden um fortzufahren</p>
         </div>
         
         <AuthForm mode="signin" onSuccess={() => {}} />

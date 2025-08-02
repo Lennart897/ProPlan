@@ -159,11 +159,14 @@ export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Zurück
               </Button>
-              <div>
-                <h1 className="text-2xl font-bold">Wochenkalender - Genehmigte Projekte</h1>
-                <p className="text-muted-foreground">
-                  Übersicht aller genehmigten Projekte nach Standorten
-                </p>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                  <span className="text-sm font-bold text-primary-foreground">PP</span>
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-primary">ProPlan</h1>
+                  <p className="text-muted-foreground">Wochenkalender - Genehmigte Projekte</p>
+                </div>
               </div>
             </div>
           </div>

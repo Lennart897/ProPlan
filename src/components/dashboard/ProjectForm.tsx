@@ -182,7 +182,16 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
+      <CardHeader className="text-center border-b">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
+            <span className="text-xl font-bold text-primary-foreground">PP</span>
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-primary">ProPlan</h2>
+            <p className="text-xs text-muted-foreground">Produktionsplanung</p>
+          </div>
+        </div>
         <CardTitle className="text-2xl">Neues Projekt erfassen</CardTitle>
         <CardDescription>
           Erfassen Sie ein neues Projekt mit Standortverteilung

@@ -303,11 +303,16 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       <header className="border-b bg-card">
         <div className="container mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-primary">Projekt Management</h1>
-              <p className="text-muted-foreground">
-                Willkommen, {user.full_name || user.email} ({roleLabel[user.role]})
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+                <span className="text-lg font-bold text-primary-foreground">PP</span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-primary">ProPlan</h1>
+                <p className="text-muted-foreground">
+                  Willkommen, {user.full_name || user.email} ({roleLabel[user.role]})
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm">

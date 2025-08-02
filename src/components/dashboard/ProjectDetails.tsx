@@ -220,14 +220,21 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
       {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={onBack}>
-              <ArrowLeft className="h-4 w-4" />
-              Zurück
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-primary">Projektdetails</h1>
-              <p className="text-muted-foreground">Prüfung und Bearbeitung</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" onClick={onBack}>
+                <ArrowLeft className="h-4 w-4" />
+                Zurück
+              </Button>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                  <span className="text-sm font-bold text-primary-foreground">PP</span>
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-primary">ProPlan</h1>
+                  <p className="text-muted-foreground">Projektdetails - Prüfung und Bearbeitung</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
