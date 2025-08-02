@@ -89,7 +89,18 @@ const Index = () => {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      // Versuche normal auszuloggen
+      await supabase.auth.signOut();
+    } catch (error) {
+      // Falls Logout fehlschlägt (z.B. Session bereits ungültig),
+      // lösche trotzdem den lokalen Auth-Status
+      console.warn('Logout failed, clearing local session:', error);
+    }
+    
+    // Stelle sicher, dass der lokale State immer zurückgesetzt wird
+    setSession(null);
+    setUser(null);
   };
 
   const demoLogin = async (email: string) => {
