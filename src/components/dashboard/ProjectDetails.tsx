@@ -1,6 +1,11 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, User, Calendar, Package, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -59,6 +64,11 @@ const locationLabels = {
 
 export const ProjectDetails = ({ project, user, onBack, onProjectAction }: ProjectDetailsProps) => {
   const { toast } = useToast();
+  const [showCorrectionDialog, setShowCorrectionDialog] = useState(false);
+  const [correctionData, setCorrectionData] = useState({
+    newQuantity: project.gesamtmenge,
+    description: ""
+  });
 
   const handleAction = (action: string) => {
     onProjectAction(project.id, action);
@@ -75,6 +85,19 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
     });
   };
 
+  const handleCorrection = () => {
+    // Hier würde normalerweise die API-Anfrage für die Korrektur mit neuer Menge und Beschreibung erfolgen
+    onProjectAction(project.id, "correct");
+    
+    toast({
+      title: "Korrektur gesendet",
+      description: `Das Projekt wurde zur Korrektur zurückgewiesen. Neue Menge: ${correctionData.newQuantity}`,
+    });
+    
+    setShowCorrectionDialog(false);
+    setCorrectionData({ newQuantity: project.gesamtmenge, description: "" });
+  };
+
   const getActionButtons = () => {
     switch (user.role) {
       case "supply_chain":
@@ -84,7 +107,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
               <Button onClick={() => handleAction("approve")} className="flex-1">
                 Zusage erteilen
               </Button>
-              <Button variant="outline" onClick={() => handleAction("correct")} className="flex-1">
+              <Button variant="outline" onClick={() => setShowCorrectionDialog(true)} className="flex-1">
                 Korrektur anfordern
               </Button>
               <Button variant="destructive" onClick={() => handleAction("reject")} className="flex-1">
@@ -101,7 +124,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
               <Button onClick={() => handleAction("approve")} className="flex-1">
                 Bestätigen
               </Button>
-              <Button variant="outline" onClick={() => handleAction("correct")} className="flex-1">
+              <Button variant="outline" onClick={() => setShowCorrectionDialog(true)} className="flex-1">
                 Rückgabe
               </Button>
             </div>
@@ -247,6 +270,55 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
           )}
         </div>
       </div>
+
+      {/* Korrektur Dialog */}
+      <Dialog open={showCorrectionDialog} onOpenChange={setShowCorrectionDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Korrektur anfordern</DialogTitle>
+            <DialogDescription>
+              Passen Sie die Menge an und fügen Sie eine Beschreibung für die gewünschten Änderungen hinzu.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newQuantity">Neue Gesamtmenge</Label>
+              <Input
+                id="newQuantity"
+                type="number"
+                value={correctionData.newQuantity}
+                onChange={(e) => setCorrectionData(prev => ({ 
+                  ...prev, 
+                  newQuantity: parseInt(e.target.value) || 0 
+                }))}
+                placeholder="Neue Menge eingeben"
+                min={1}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Beschreibung der Änderungen</Label>
+              <Textarea
+                id="description"
+                value={correctionData.description}
+                onChange={(e) => setCorrectionData(prev => ({ 
+                  ...prev, 
+                  description: e.target.value 
+                }))}
+                placeholder="Beschreiben Sie die gewünschten Änderungen..."
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCorrectionDialog(false)}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleCorrection}>
+              Korrektur senden
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
