@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-// import { supabase } from "@/integrations/supabase/client"; // Will be enabled when Supabase is fully configured
+import { supabase } from "@/integrations/supabase/client";
 
 const authSchema = z.object({
   email: z.string().email("Ungültige E-Mail-Adresse"),
@@ -38,17 +38,36 @@ export const AuthForm = ({ mode, onSuccess }: AuthFormProps) => {
     setIsLoading(true);
     
     try {
-      // Mock authentication for now - will be replaced with Supabase
-      console.log("Auth attempt:", { mode, email: data.email });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock success
-      toast({
-        title: "Anmeldung erfolgreich",
-        description: "Willkommen zurück!",
-      });
+      if (mode === "signin") {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Anmeldung erfolgreich",
+          description: "Willkommen zurück!",
+        });
+      } else {
+        const redirectUrl = `${window.location.origin}/`;
+        
+        const { error } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: {
+            emailRedirectTo: redirectUrl
+          }
+        });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Registrierung erfolgreich",
+          description: "Überprüfen Sie Ihre E-Mail zur Bestätigung.",
+        });
+      }
 
       onSuccess();
     } catch (error: any) {
@@ -66,10 +85,13 @@ export const AuthForm = ({ mode, onSuccess }: AuthFormProps) => {
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl text-center">
-          Anmelden
+          {mode === "signin" ? "Anmelden" : "Registrieren"}
         </CardTitle>
         <CardDescription className="text-center">
-          Melden Sie sich mit Ihrem Account an
+          {mode === "signin" 
+            ? "Melden Sie sich mit Ihrem Account an"
+            : "Erstellen Sie einen neuen Account"
+          }
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -109,7 +131,10 @@ export const AuthForm = ({ mode, onSuccess }: AuthFormProps) => {
             className="w-full"
             disabled={isLoading}
           >
-            {isLoading ? "Wird verarbeitet..." : "Anmelden"}
+            {isLoading 
+              ? "Wird verarbeitet..." 
+              : mode === "signin" ? "Anmelden" : "Registrieren"
+            }
           </Button>
         </form>
       </CardContent>
