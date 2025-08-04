@@ -438,8 +438,8 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
                           onClick={() => !isPreview && setSelectedProject(selectedProject === project.id ? null : project.id)}
                           title={`${project.customer} - ${project.artikel_bezeichnung || project.produktgruppe} (${project.gesamtmenge.toLocaleString('de-DE')} kg)`}
                         >
-                          <div className="p-3 h-full flex flex-col justify-between">
-                            <div className="flex items-start justify-between gap-2">
+                          <div className="p-3 h-full flex flex-col justify-between min-w-0 overflow-hidden">
+                            <div className="flex items-start justify-between gap-2 min-w-0">
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium text-sm text-foreground truncate">
                                   {project.customer}
@@ -458,12 +458,12 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
                               )}
                             </div>
                             
-                            <div className="flex flex-col gap-1 min-w-0">
+                            <div className="flex flex-col gap-1 min-w-0 overflow-hidden">
                               <div className="text-sm font-bold text-foreground truncate">
                                 {project.gesamtmenge.toLocaleString('de-DE')} kg
                               </div>
                               {project.standort_verteilung && Object.keys(project.standort_verteilung).length > 0 && (
-                                <div className="text-xs text-muted-foreground truncate w-full">
+                                <div className="text-xs text-muted-foreground truncate">
                                   Standort: {Object.entries(project.standort_verteilung)
                                     .filter(([_, qty]) => Number(qty) > 0)
                                     .map(([location]) => locationLabels[location as keyof typeof locationLabels] || location)
