@@ -9,6 +9,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ProjectForm } from "./ProjectForm";
 import { ProjectDetails } from "./ProjectDetails";
 import { WeeklyCalendar } from "./WeeklyCalendar";
+
+// Import the Project type from WeeklyCalendar to avoid type conflicts
+type CalendarProject = {
+  id: string;
+  customer: string;
+  artikel_nummer: string;
+  artikel_bezeichnung: string;
+  produktgruppe?: string;
+  gesamtmenge: number;
+  erste_anlieferung?: string;
+  letzte_anlieferung?: string;
+  status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed";
+  created_at: string;
+  updated_at: string;
+  created_by_id: string;
+  created_by_name: string;
+  standort_verteilung?: Record<string, number>;
+  menge_fix: boolean;
+};
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -103,6 +122,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [previewProject, setPreviewProject] = useState<CalendarProject | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
@@ -198,6 +218,24 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
             newStatus = "pending"; // Back to SupplyChain
           }
           break;
+        case "preview_calendar":
+          // Set preview project and show calendar
+          const projectToPreview = projects.find(p => p.id === projectId);
+          if (projectToPreview) {
+            // Convert project format to match WeeklyCalendar expectations
+            const previewProjectForCalendar: CalendarProject = {
+              ...projectToPreview,
+              updated_at: projectToPreview.created_at,
+              created_by_id: 'preview',
+              created_by_name: projectToPreview.created_by,
+              erste_anlieferung: projectToPreview.erste_anlieferung || null,
+              letzte_anlieferung: projectToPreview.letzte_anlieferung || null,
+              menge_fix: projectToPreview.menge_fix || false
+            };
+            setPreviewProject(previewProjectForCalendar);
+            setShowCalendar(true);
+          }
+          return; // Exit early, don't update status
         default:
           break;
       }
@@ -293,7 +331,11 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
     return (
       <WeeklyCalendar
         user={user}
-        onBack={() => setShowCalendar(false)}
+        onBack={() => {
+          setShowCalendar(false);
+          setPreviewProject(null);
+        }}
+        previewProject={previewProject}
       />
     );
   }

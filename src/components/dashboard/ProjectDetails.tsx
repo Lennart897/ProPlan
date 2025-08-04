@@ -386,7 +386,30 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {getActionButtons()}
+                <div className="space-y-4">
+                  {/* Wochenkalender Vorschau Button - nur für Planung und Supply Chain */}
+                  {(user.role === 'planung' || user.role === 'supply_chain') && (
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">Mengenplanung Vorschau</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Sehen Sie, wie sich dieses Projekt auf die Wochenplanung auswirken würde
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          onClick={() => onProjectAction(project.id, 'preview_calendar')}
+                        >
+                          <Calendar className="w-4 h-4 mr-2" />
+                          Wochenkalender Vorschau
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {getActionButtons()}
+                </div>
               </CardContent>
             </Card>
           )}

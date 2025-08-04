@@ -21,7 +21,7 @@ interface Project {
   updated_at: string;
   created_by_id: string;
   created_by_name: string;
-  standort_verteilung: any;
+  standort_verteilung?: Record<string, number>;
   menge_fix: boolean;
   erste_anlieferung: string | null;
   letzte_anlieferung: string | null;
@@ -37,6 +37,7 @@ interface User {
 interface WeeklyCalendarProps {
   user: User;
   onBack: () => void;
+  previewProject?: any;
 }
 
 const locationLabels = {
@@ -51,7 +52,7 @@ const statusColors = {
   approved: "bg-green-100 text-green-800"
 };
 
-export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
+export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarProps) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentWeek, setCurrentWeek] = useState(new Date());
@@ -73,7 +74,15 @@ export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        setProjects(data || []);
+        
+        // Transform the data to match our interface
+        const transformedProjects: Project[] = (data || []).map(project => ({
+          ...project,
+          standort_verteilung: project.standort_verteilung as Record<string, number> || {},
+          menge_fix: project.menge_fix || false
+        }));
+        
+        setProjects(transformedProjects);
       } catch (error) {
         console.error('Error loading projects:', error);
         toast({
@@ -104,6 +113,9 @@ export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
 
     return locationMatch && productMatch;
   });
+
+  // Combine filtered projects with preview project if it exists
+  const allProjectsForDisplay = previewProject ? [...filteredProjects, previewProject] : filteredProjects;
 
   // Calculate totals for current week
   const calculateTotals = () => {
@@ -258,21 +270,31 @@ export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
           {/* Calendar Grid */}
           <div className="grid grid-cols-7 gap-4">
             {weekDays.map((day, index) => {
+              // Check approved projects
               const dayProjects = filteredProjects.filter(project => {
-                // Prüfe ob der Tag innerhalb des Anlieferzeitraums liegt
                 if (!project.erste_anlieferung || !project.letzte_anlieferung) {
                   return false;
                 }
-                
                 try {
                   const startDate = parseISO(project.erste_anlieferung);
                   const endDate = parseISO(project.letzte_anlieferung);
                   return isWithinInterval(day, { start: startDate, end: endDate });
                 } catch (error) {
-                  console.warn('Invalid date format in project:', project.id);
                   return false;
                 }
               });
+
+              // Check preview project
+              const previewForDay = previewProject && previewProject.erste_anlieferung && previewProject.letzte_anlieferung ? 
+                (() => {
+                  try {
+                    const startDate = parseISO(previewProject.erste_anlieferung);
+                    const endDate = parseISO(previewProject.letzte_anlieferung);
+                    return isWithinInterval(day, { start: startDate, end: endDate });
+                  } catch (error) {
+                    return false;
+                  }
+                })() : false;
 
               return (
                 <Card key={index} className="min-h-[200px]">
@@ -282,31 +304,37 @@ export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {dayProjects.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">Keine Projekte</p>
-                    ) : (
-                      dayProjects.map(project => (
-                        <div key={project.id} className="p-2 rounded border bg-success/10 border-success/20">
-                          <div className="font-medium text-xs text-foreground">{project.customer}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {project.produktgruppe || project.artikel_bezeichnung}
-                          </div>
-                          <div className="text-xs font-medium text-foreground">
-                            {project.gesamtmenge.toFixed(1)} kg
-                          </div>
-                          {project.standort_verteilung && typeof project.standort_verteilung === 'object' && (
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {Object.entries(project.standort_verteilung)
-                                .filter(([_, quantity]) => Number(quantity) > 0)
-                                .map(([location, quantity]) => (
-                                <Badge key={location} variant="secondary" className="text-xs">
-                                  {locationLabels[location as keyof typeof locationLabels]}: {Number(quantity).toFixed(1)} kg
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
+                    {/* Approved projects */}
+                    {dayProjects.map(project => (
+                      <div key={project.id} className="p-2 rounded border bg-success/10 border-success/20">
+                        <div className="font-medium text-xs text-foreground">{project.customer}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {project.produktgruppe || project.artikel_bezeichnung}
                         </div>
-                      ))
+                        <div className="text-xs font-medium text-foreground">
+                          {project.gesamtmenge.toFixed(1)} kg
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Preview project */}
+                    {previewForDay && (
+                      <div className="p-2 rounded border bg-orange-100 border-orange-300 border-dashed">
+                        <div className="flex items-center gap-1 mb-1">
+                          <Badge variant="outline" className="text-xs bg-orange-200">VORSCHAU</Badge>
+                        </div>
+                        <div className="font-medium text-xs text-foreground">{previewProject.customer}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {previewProject.produktgruppe || previewProject.artikel_bezeichnung}
+                        </div>
+                        <div className="text-xs font-medium text-foreground">
+                          {previewProject.gesamtmenge.toFixed(1)} kg
+                        </div>
+                      </div>
+                    )}
+                    
+                    {dayProjects.length === 0 && !previewForDay && (
+                      <p className="text-xs text-muted-foreground">Keine Projekte</p>
                     )}
                   </CardContent>
                 </Card>
