@@ -20,15 +20,15 @@ import { supabase } from "@/integrations/supabase/client";
 // Hilfsfunktionen für Zahlenformatierung
 const formatNumberWithThousandSeparator = (value: number): string => {
   return new Intl.NumberFormat('de-DE', {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1
-  }).format(value);
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(Math.round(value));
 };
 
 const parseFormattedNumber = (value: string): number => {
   // Entferne Tausendertrennzeichen und ersetze Komma durch Punkt
   const cleanedValue = value.replace(/\./g, '').replace(',', '.');
-  return parseFloat(cleanedValue) || 0;
+  return Math.round(parseFloat(cleanedValue) || 0);
 };
 
 const locations = [
@@ -346,7 +346,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
                   const value = parseFormattedNumber(e.target.value);
                   form.setValue("gesamtmenge", value);
                 }}
-                placeholder="0,0"
+                placeholder="0"
               />
               {form.formState.errors.gesamtmenge && (
                 <p className="text-sm text-destructive">
@@ -392,7 +392,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
                       const value = parseFormattedNumber(e.target.value);
                       handleLocationQuantityChange(location.value, value);
                     }}
-                    placeholder="0,0"
+                    placeholder="0"
                   />
                 </div>
               ))}
