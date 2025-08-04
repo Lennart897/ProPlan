@@ -55,7 +55,17 @@ const statusColors = {
 export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarProps) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [currentWeek, setCurrentWeek] = useState(() => {
+    // If we have a preview project, start with the week of its first delivery
+    if (previewProject?.erste_anlieferung) {
+      try {
+        return parseISO(previewProject.erste_anlieferung);
+      } catch {
+        return new Date();
+      }
+    }
+    return new Date();
+  });
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
   const [selectedProductGroup, setSelectedProductGroup] = useState<string>("all");
   const { toast } = useToast();
