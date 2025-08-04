@@ -17,6 +17,20 @@ import { de } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+// Hilfsfunktionen für Zahlenformatierung
+const formatNumberWithThousandSeparator = (value: number): string => {
+  return new Intl.NumberFormat('de-DE', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  }).format(value);
+};
+
+const parseFormattedNumber = (value: string): number => {
+  // Entferne Tausendertrennzeichen und ersetze Komma durch Punkt
+  const cleanedValue = value.replace(/\./g, '').replace(',', '.');
+  return parseFloat(cleanedValue) || 0;
+};
+
 const locations = [
   { value: "gudensberg", label: "Gudensberg" },
   { value: "brenz", label: "Brenz" },
@@ -326,9 +340,13 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               <Label htmlFor="gesamtmenge">Gesamtmenge (kg)</Label>
               <Input
                 id="gesamtmenge"
-                type="number"
-                step="0.1"
-                {...form.register("gesamtmenge", { valueAsNumber: true })}
+                type="text"
+                value={gesamtmenge > 0 ? formatNumberWithThousandSeparator(gesamtmenge) : ''}
+                onChange={(e) => {
+                  const value = parseFormattedNumber(e.target.value);
+                  form.setValue("gesamtmenge", value);
+                }}
+                placeholder="0,0"
               />
               {form.formState.errors.gesamtmenge && (
                 <p className="text-sm text-destructive">
@@ -357,7 +375,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               <h3 className="text-lg font-semibold">Standortverteilung</h3>
               <div className="text-sm">
                 <span className={totalDistributed > gesamtmenge ? "text-destructive" : "text-muted-foreground"}>
-                  Verteilt: {totalDistributed.toFixed(1)} kg / {gesamtmenge.toFixed(1)} kg
+                  Verteilt: {formatNumberWithThousandSeparator(totalDistributed)} kg / {formatNumberWithThousandSeparator(gesamtmenge)} kg
                 </span>
               </div>
             </div>
@@ -368,13 +386,13 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
                   <Label htmlFor={location.value}>{location.label} (kg)</Label>
                   <Input
                     id={location.value}
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    value={locationQuantities[location.value]}
-                    onChange={(e) => 
-                      handleLocationQuantityChange(location.value, parseFloat(e.target.value) || 0)
-                    }
+                    type="text"
+                    value={locationQuantities[location.value] > 0 ? formatNumberWithThousandSeparator(locationQuantities[location.value]) : ''}
+                    onChange={(e) => {
+                      const value = parseFormattedNumber(e.target.value);
+                      handleLocationQuantityChange(location.value, value);
+                    }}
+                    placeholder="0,0"
                   />
                 </div>
               ))}
@@ -382,7 +400,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
             
             {totalDistributed > gesamtmenge && (
               <p className="text-sm text-destructive">
-                ⚠️ Die Standortverteilung ({totalDistributed.toFixed(1)} kg) übersteigt die Gesamtmenge ({gesamtmenge.toFixed(1)} kg)
+                ⚠️ Die Standortverteilung ({formatNumberWithThousandSeparator(totalDistributed)} kg) übersteigt die Gesamtmenge ({formatNumberWithThousandSeparator(gesamtmenge)} kg)
               </p>
             )}
           </div>
