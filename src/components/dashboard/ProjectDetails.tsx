@@ -233,9 +233,12 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
               <Button variant="outline" onClick={() => setShowCorrectionDialog(true)} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white border-orange-500">
                 Korrektur anfordern
               </Button>
-              <Button variant="outline" onClick={() => handleAction("reject")} className="flex-1 border-red-500 text-red-600 hover:bg-red-50">
-                Ablehnen
-              </Button>
+              {/* Only legacy "planung" role can reject, location-specific roles cannot */}
+              {user.role === "planung" && (
+                <Button variant="outline" onClick={() => handleAction("reject")} className="flex-1 border-red-500 text-red-600 hover:bg-red-50">
+                  Ablehnen
+                </Button>
+              )}
             </div>
           );
         }
@@ -497,11 +500,24 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                 <div>
                   <Label>Standortverteilung anpassen</Label>
                   <p className="text-sm text-muted-foreground">
-                    Passen Sie die Mengen pro Standort an
+                    {user.role === "supply_chain" ? 
+                      "Passen Sie die Mengen pro Standort an" : 
+                      `Passen Sie die Menge für ${user.role.replace("planung_", "").charAt(0).toUpperCase() + user.role.replace("planung_", "").slice(1)} an`
+                    }
                   </p>
                 </div>
                 <div className="grid grid-cols-1 gap-3">
-                  {Object.entries(project.standort_verteilung).map(([location, originalQuantity]) => (
+                  {Object.entries(project.standort_verteilung)
+                    .filter(([location, originalQuantity]) => {
+                      // Supply Chain can edit all locations, location-specific roles can only edit their location
+                      if (user.role === "supply_chain" || user.role === "planung") {
+                        return true;
+                      }
+                      // Location-specific planning roles can only edit their specific location
+                      const userLocation = user.role.replace("planung_", "");
+                      return location === userLocation;
+                    })
+                    .map(([location, originalQuantity]) => (
                     <div key={location} className="flex items-center gap-3">
                       <div className="flex-1">
                         <Label className="text-sm">
