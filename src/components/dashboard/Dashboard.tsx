@@ -219,8 +219,10 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
           }
           break;
         case "preview_calendar":
+          console.log('Preview calendar action triggered for project:', projectId);
           // Set preview project and show calendar
           const projectToPreview = projects.find(p => p.id === projectId);
+          console.log('Found project to preview:', projectToPreview);
           if (projectToPreview) {
             // Convert project format to match WeeklyCalendar expectations
             const previewProjectForCalendar: CalendarProject = {
@@ -232,6 +234,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
               letzte_anlieferung: projectToPreview.letzte_anlieferung || null,
               menge_fix: projectToPreview.menge_fix || false
             };
+            console.log('Setting preview project and showing calendar');
             setPreviewProject(previewProjectForCalendar);
             setShowCalendar(true);
             // Keep selectedProject so we can return to project details

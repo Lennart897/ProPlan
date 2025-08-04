@@ -399,7 +399,10 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                         </div>
                         <Button
                           variant="outline"
-                          onClick={() => onProjectAction(project.id, 'preview_calendar')}
+                          onClick={() => {
+                            console.log('Wochenkalender Vorschau clicked for project:', project.id);
+                            onProjectAction(project.id, 'preview_calendar');
+                          }}
                         >
                           <Calendar className="w-4 h-4 mr-2" />
                           Wochenkalender Vorschau
