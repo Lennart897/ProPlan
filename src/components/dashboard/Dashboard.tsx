@@ -451,7 +451,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
             </div>
             
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowCalendar(true)}>
+              <Button variant="default" onClick={() => setShowCalendar(true)}>
                 <Calendar className="h-4 w-4 mr-2" />
                 Wochenkalender
               </Button>
