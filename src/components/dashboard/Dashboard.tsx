@@ -53,7 +53,7 @@ interface Project {
 interface User {
   id: string;
   email: string;
-  role: "vertrieb" | "supply_chain" | "planung";
+  role: "vertrieb" | "supply_chain" | "planung" | "planung_storkow" | "planung_brenz" | "planung_gudensberg" | "planung_doebeln" | "planung_visbek";
   full_name?: string;
 }
 
@@ -188,6 +188,11 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
         case "supply_chain":
           return project.status === "pending"; // SupplyChain sieht nur Projekte zur ersten Prüfung
         case "planung":
+        case "planung_storkow":
+        case "planung_brenz":
+        case "planung_gudensberg":
+        case "planung_doebeln":
+        case "planung_visbek":
           return project.status === "in_progress"; // Planung sieht nur von SupplyChain weitergeleitete Projekte
         case "vertrieb":
           return true; // Vertrieb sieht alle Projekte (Überwachung)
@@ -209,7 +214,10 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
           const project = projects.find(p => p.id === projectId);
           if (project?.status === "pending" && user.role === "supply_chain") {
             newStatus = "in_progress";
-          } else if (project?.status === "in_progress" && user.role === "planung") {
+          } else if (project?.status === "in_progress" && (
+            user.role === "planung" || 
+            user.role.startsWith("planung_")
+          )) {
             newStatus = "approved";
           }
           break;
@@ -282,11 +290,11 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       case "pending":
         return "Supply Chain";
       case "approved":
-        return "Planung";
+        return "Planung (standortspezifisch)";
       case "rejected":
         return "Vertrieb";
       case "in_progress":
-        return "Planung";
+        return "Planung (standortspezifisch)";
       case "completed":
         return null;
       default:
@@ -307,7 +315,12 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const roleLabel = {
     vertrieb: "Vertrieb",
     supply_chain: "Supply Chain",
-    planung: "Planung"
+    planung: "Planung",
+    planung_storkow: "Planung Storkow",
+    planung_brenz: "Planung Brenz", 
+    planung_gudensberg: "Planung Gudensberg",
+    planung_doebeln: "Planung Döbeln",
+    planung_visbek: "Planung Visbek"
   };
 
   if (showProjectForm) {

@@ -31,7 +31,7 @@ interface Project {
 interface User {
   id: string;
   email: string;
-  role: "vertrieb" | "supply_chain" | "planung";
+  role: "vertrieb" | "supply_chain" | "planung" | "planung_storkow" | "planung_brenz" | "planung_gudensberg" | "planung_doebeln" | "planung_visbek";
   full_name?: string;
 }
 

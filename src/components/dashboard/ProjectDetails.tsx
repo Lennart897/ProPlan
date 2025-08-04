@@ -30,7 +30,7 @@ interface Project {
 interface User {
   id: string;
   email: string;
-  role: "vertrieb" | "supply_chain" | "planung";
+  role: "vertrieb" | "supply_chain" | "planung" | "planung_storkow" | "planung_brenz" | "planung_gudensberg" | "planung_doebeln" | "planung_visbek";
   full_name?: string;
 }
 
@@ -93,7 +93,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
           newStatus = "draft"; // Zurück an Vertrieb
           actionLabel = "zur Korrektur an Vertrieb zurückgewiesen";
         }
-      } else if (user.role === "planung") {
+      } else if (user.role === "planung" || user.role.startsWith("planung_")) {
         if (action === "approve") {
           newStatus = "approved"; // Final freigegeben
           actionLabel = "final freigegeben";
@@ -197,19 +197,49 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
         }
         break;
       case "planung":
+      case "planung_storkow":
+      case "planung_brenz":
+      case "planung_gudensberg":
+      case "planung_doebeln":
+      case "planung_visbek":
         if (project.status === "in_progress") {
+          // For location-specific planning roles, check if they can approve this project
+          const userLocation = user.role.startsWith("planung_") ? user.role.replace("planung_", "") : null;
+          const affectedLocations = project.standort_verteilung ? 
+            Object.keys(project.standort_verteilung).filter(location => 
+              project.standort_verteilung![location] > 0
+            ) : [];
+          
+          // Legacy "planung" role can approve any project, location-specific roles only their relevant ones
+          const canApprove = user.role === "planung" || 
+            (userLocation && affectedLocations.includes(userLocation));
+          
+          if (!canApprove && userLocation) {
+            return (
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Dieses Projekt betrifft nicht Ihren Standort ({userLocation}). 
+                  Es muss von {affectedLocations.map(loc => `Planung ${loc.charAt(0).toUpperCase() + loc.slice(1)}`).join(", ")} geprüft werden.
+                </p>
+              </div>
+            );
+          }
+          
           return (
             <div className="flex gap-3">
               <Button onClick={() => handleAction("approve")} className="flex-1 bg-green-600 hover:bg-green-700 text-white">
-                Bestätigen
+                Final freigeben
               </Button>
               <Button variant="outline" onClick={() => setShowCorrectionDialog(true)} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white border-orange-500">
-                Korrektur
+                Korrektur anfordern
+              </Button>
+              <Button variant="outline" onClick={() => handleAction("reject")} className="flex-1 border-red-500 text-red-600 hover:bg-red-50">
+                Ablehnen
               </Button>
             </div>
           );
         }
-        break;
+        return null;
       default:
         return null;
     }
@@ -401,7 +431,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
               <CardContent>
                 <div className="space-y-4">
                   {/* Wochenkalender Vorschau Button - nur für Planung und Supply Chain */}
-                  {(user.role === 'planung' || user.role === 'supply_chain') && (
+                  {(user.role === 'planung' || user.role.startsWith('planung_') || user.role === 'supply_chain') && (
                     <div className="p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center justify-between">
                         <div>
