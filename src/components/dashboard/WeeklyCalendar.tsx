@@ -68,6 +68,8 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
   });
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
   const [selectedProductGroup, setSelectedProductGroup] = useState<string>("all");
+  const [hoveredProject, setHoveredProject] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Get unique product groups from projects
@@ -251,7 +253,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
                 <CardTitle className="text-sm font-medium">Gesamtmenge</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{totals.totalQuantity.toFixed(1)} kg</div>
+                <div className="text-2xl font-bold">{totals.totalQuantity.toLocaleString('de-DE')} kg</div>
                 <p className="text-xs text-muted-foreground">Kilogramm</p>
               </CardContent>
             </Card>
@@ -316,20 +318,40 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
                   <CardContent className="space-y-2">
                     {/* Approved projects */}
                     {dayProjects.map(project => (
-                      <div key={project.id} className="p-2 rounded border bg-success/10 border-success/20">
+                      <div 
+                        key={project.id} 
+                        className={`p-2 rounded border bg-success/10 border-success/20 cursor-pointer transition-all duration-200 hover:bg-success/20 hover:shadow-md ${
+                          hoveredProject === project.id || selectedProject === project.id ? 'ring-2 ring-primary/50 bg-success/20' : ''
+                        }`}
+                        onMouseEnter={() => setHoveredProject(project.id)}
+                        onMouseLeave={() => setHoveredProject(null)}
+                        onClick={() => setSelectedProject(selectedProject === project.id ? null : project.id)}
+                        title={`${project.customer} - ${project.artikel_bezeichnung} (${project.gesamtmenge.toLocaleString('de-DE')} kg)`}
+                      >
                         <div className="font-medium text-xs text-foreground">{project.customer}</div>
                         <div className="text-xs text-muted-foreground">
                           {project.produktgruppe || project.artikel_bezeichnung}
                         </div>
                         <div className="text-xs font-medium text-foreground">
-                          {project.gesamtmenge.toFixed(1)} kg
+                          {project.gesamtmenge.toLocaleString('de-DE')} kg
                         </div>
+                        {project.standort_verteilung && Object.keys(project.standort_verteilung).length > 0 && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {Object.entries(project.standort_verteilung)
+                              .filter(([_, qty]) => Number(qty) > 0)
+                              .map(([location, qty]) => 
+                                `${locationLabels[location as keyof typeof locationLabels] || location}: ${Number(qty).toLocaleString('de-DE')} kg`
+                              )
+                              .join(' | ')
+                            }
+                          </div>
+                        )}
                       </div>
                     ))}
                     
                     {/* Preview project */}
                     {previewForDay && (
-                      <div className="p-2 rounded border bg-orange-100 border-orange-300 border-dashed">
+                      <div className="p-2 rounded border bg-orange-100 border-orange-300 border-dashed hover:bg-orange-200 transition-all duration-200">
                         <div className="flex items-center gap-1 mb-1">
                           <Badge variant="outline" className="text-xs bg-orange-200">VORSCHAU</Badge>
                         </div>
@@ -338,8 +360,19 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
                           {previewProject.produktgruppe || previewProject.artikel_bezeichnung}
                         </div>
                         <div className="text-xs font-medium text-foreground">
-                          {previewProject.gesamtmenge.toFixed(1)} kg
+                          {previewProject.gesamtmenge.toLocaleString('de-DE')} kg
                         </div>
+                        {previewProject.standort_verteilung && Object.keys(previewProject.standort_verteilung).length > 0 && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {Object.entries(previewProject.standort_verteilung)
+                              .filter(([_, qty]) => Number(qty) > 0)
+                              .map(([location, qty]) => 
+                                `${locationLabels[location as keyof typeof locationLabels] || location}: ${Number(qty).toLocaleString('de-DE')} kg`
+                              )
+                              .join(' | ')
+                            }
+                          </div>
+                        )}
                       </div>
                     )}
                     
@@ -365,7 +398,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
                   {Object.entries(totals.byLocation).map(([location, quantity]) => (
                     <div key={location} className="flex justify-between items-center">
                       <span>{locationLabels[location as keyof typeof locationLabels] || location}</span>
-                      <Badge variant="outline">{quantity.toFixed(1)} kg</Badge>
+                      <Badge variant="outline">{quantity.toLocaleString('de-DE')} kg</Badge>
                     </div>
                   ))}
                   {Object.keys(totals.byLocation).length === 0 && (
@@ -386,7 +419,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
                   {Object.entries(totals.byProduct).map(([product, quantity]) => (
                     <div key={product} className="flex justify-between items-center">
                       <span className="text-sm">{product}</span>
-                      <Badge variant="outline">{quantity.toFixed(1)} kg</Badge>
+                      <Badge variant="outline">{quantity.toLocaleString('de-DE')} kg</Badge>
                     </div>
                   ))}
                   {Object.keys(totals.byProduct).length === 0 && (
