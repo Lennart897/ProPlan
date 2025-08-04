@@ -458,22 +458,20 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
                               )}
                             </div>
                             
-                            <div className="flex items-end justify-between gap-2">
-                              <div className="flex flex-col items-start">
-                                <div className="text-sm font-bold text-foreground">
-                                  {project.gesamtmenge.toLocaleString('de-DE')} kg
-                                </div>
-                                {project.standort_verteilung && Object.keys(project.standort_verteilung).length > 0 && (
-                                  <div className="text-xs text-muted-foreground truncate">
-                                    Standort: {Object.entries(project.standort_verteilung)
-                                      .filter(([_, qty]) => Number(qty) > 0)
-                                      .map(([location]) => locationLabels[location as keyof typeof locationLabels] || location)
-                                      .slice(0, 2)
-                                      .join(', ')
-                                    }
-                                  </div>
-                                )}
+                            <div className="flex flex-col gap-1 min-w-0">
+                              <div className="text-sm font-bold text-foreground truncate">
+                                {project.gesamtmenge.toLocaleString('de-DE')} kg
                               </div>
+                              {project.standort_verteilung && Object.keys(project.standort_verteilung).length > 0 && (
+                                <div className="text-xs text-muted-foreground truncate w-full">
+                                  Standort: {Object.entries(project.standort_verteilung)
+                                    .filter(([_, qty]) => Number(qty) > 0)
+                                    .map(([location]) => locationLabels[location as keyof typeof locationLabels] || location)
+                                    .slice(0, 2)
+                                    .join(', ')
+                                  }
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
