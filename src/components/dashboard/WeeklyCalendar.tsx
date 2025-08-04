@@ -375,11 +375,11 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
           </div>
 
           {/* Calendar Grid with Connected Projects */}
-          <div className="relative">
+          <div className="space-y-6">
             {/* Day Headers */}
-            <div className="grid grid-cols-7 gap-2 mb-4">
+            <div className="grid grid-cols-7 gap-2">
               {weekDays.map((day, index) => (
-                <Card key={index} className="h-20 border-2">
+                <Card key={index} className="h-20">
                   <CardContent className="p-3 text-center h-full flex flex-col justify-center">
                     <div className="text-sm font-medium text-muted-foreground">
                       {format(day, "EEE", { locale: de })}
@@ -392,105 +392,95 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
               ))}
             </div>
 
-            {/* Project Timeline with Connected Spans */}
-            <div className="relative" style={{ minHeight: `${Math.max(projectSpans.length * 70 + 40, 200)}px` }}>
-              {/* Vertical Day Lines for Connection */}
-              <div className="absolute inset-0 grid grid-cols-7 gap-2 pointer-events-none">
+            {/* Project Timeline */}
+            <div className="relative min-h-[200px]">
+              {/* Vertical Day Dividers */}
+              <div className="absolute inset-0 grid grid-cols-7 gap-2">
                 {weekDays.map((_, index) => (
-                  <div key={index} className="relative">
-                    <div className="absolute left-1/2 top-0 bottom-0 w-px bg-border/30 transform -translate-x-1/2" />
+                  <div key={index} className="flex justify-center">
+                    <div className="w-px bg-border/30 h-full" />
                   </div>
                 ))}
               </div>
 
-              {/* Horizontal Project Spans */}
-              <div className="relative z-10 space-y-2 pt-4">
-                {projectSpans.map((span, spanIndex) => {
-                  const { project, startDay, endDay, isPreview } = span;
-                  const spanWidth = ((endDay - startDay + 1) * 100) / 7;
-                  const leftPosition = (startDay * 100) / 7;
-                  const gapAdjustment = (startDay * 8) / 7; // Account for gaps between columns
-                  
-                  return (
-                    <div
-                      key={`${project.id}-${spanIndex}`}
-                      className="relative"
-                      style={{ 
-                        height: '60px',
-                        marginBottom: '10px'
-                      }}
-                    >
+              {/* Horizontal Project Bars */}
+              {projectSpans.length > 0 ? (
+                <div className="relative z-10 pt-4">
+                  {projectSpans.map((span, spanIndex) => {
+                    const { project, startDay, endDay, isPreview } = span;
+                    const spanWidthPercent = ((endDay - startDay + 1) / 7) * 100;
+                    const leftPositionPercent = (startDay / 7) * 100;
+                    
+                    return (
                       <div
-                        className={`absolute h-14 rounded-lg border-2 transition-all duration-200 cursor-pointer shadow-sm ${
-                          isPreview
-                            ? 'bg-orange-100 border-orange-300 border-dashed hover:bg-orange-200 hover:shadow-md'
-                            : `bg-success/10 border-success/30 hover:bg-success/20 hover:shadow-md hover:border-success/50 ${
-                                hoveredProject === project.id || selectedProject === project.id
-                                  ? 'ring-2 ring-primary/50 bg-success/20 border-primary/50 shadow-md'
-                                  : ''
-                              }`
-                        }`}
-                        style={{
-                          left: `calc(${leftPosition}% + ${gapAdjustment}px)`,
-                          width: `calc(${spanWidth}% - ${((endDay - startDay + 1) * 8) / 7}px)`,
-                          top: '0px'
-                        }}
-                        onMouseEnter={() => !isPreview && setHoveredProject(project.id)}
-                        onMouseLeave={() => !isPreview && setHoveredProject(null)}
-                        onClick={() => !isPreview && setSelectedProject(selectedProject === project.id ? null : project.id)}
-                        title={`${project.customer} - ${project.artikel_bezeichnung || project.produktgruppe} (${project.gesamtmenge.toLocaleString('de-DE')} kg)`}
+                        key={`${project.id}-${spanIndex}`}
+                        className="relative mb-3"
+                        style={{ height: '64px' }}
                       >
-                        <div className="p-3 h-full flex flex-col justify-between">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm text-foreground truncate">
-                                {project.customer}
+                        <div
+                          className={`absolute rounded-lg border-2 transition-all duration-200 cursor-pointer shadow-sm ${
+                            isPreview
+                              ? 'bg-orange-100 border-orange-300 border-dashed hover:bg-orange-200'
+                              : `bg-success/10 border-success/30 hover:bg-success/20 hover:shadow-md ${
+                                  hoveredProject === project.id || selectedProject === project.id
+                                    ? 'ring-2 ring-primary/50 bg-success/20 border-primary/50'
+                                    : ''
+                                }`
+                          }`}
+                          style={{
+                            left: `${leftPositionPercent}%`,
+                            width: `${spanWidthPercent}%`,
+                            height: '56px',
+                            top: '4px'
+                          }}
+                          onMouseEnter={() => !isPreview && setHoveredProject(project.id)}
+                          onMouseLeave={() => !isPreview && setHoveredProject(null)}
+                          onClick={() => !isPreview && setSelectedProject(selectedProject === project.id ? null : project.id)}
+                          title={`${project.customer} - ${project.artikel_bezeichnung || project.produktgruppe} (${project.gesamtmenge.toLocaleString('de-DE')} kg)`}
+                        >
+                          <div className="p-3 h-full flex flex-col justify-between">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm text-foreground truncate">
+                                  {project.customer}
+                                </div>
+                                <div className="text-xs text-muted-foreground truncate">
+                                  {project.produktgruppe || project.artikel_bezeichnung}
+                                </div>
                               </div>
-                              <div className="text-xs text-muted-foreground truncate">
-                                {project.produktgruppe || project.artikel_bezeichnung}
-                              </div>
+                              {isPreview && (
+                                <Badge variant="outline" className="text-xs bg-orange-200 text-orange-800 border-orange-400 flex-shrink-0">
+                                  VORSCHAU
+                                </Badge>
+                              )}
                             </div>
-                            {isPreview && (
-                              <Badge variant="outline" className="text-xs bg-orange-200 text-orange-800 border-orange-400 flex-shrink-0">
-                                VORSCHAU
-                              </Badge>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-end justify-between gap-2">
-                            <div className="text-sm font-bold text-foreground">
-                              {project.gesamtmenge.toLocaleString('de-DE')} kg
-                            </div>
-                            {project.standort_verteilung && Object.keys(project.standort_verteilung).length > 0 && (
-                              <div className="text-xs text-muted-foreground truncate flex-shrink-0 max-w-[40%]">
-                                {Object.entries(project.standort_verteilung)
-                                  .filter(([_, qty]) => Number(qty) > 0)
-                                  .map(([location]) => locationLabels[location as keyof typeof locationLabels] || location)
-                                  .slice(0, 2)
-                                  .join(', ')
-                                }
-                                {Object.entries(project.standort_verteilung).filter(([_, qty]) => Number(qty) > 0).length > 2 && '...'}
+                            
+                            <div className="flex items-end justify-between gap-2">
+                              <div className="text-sm font-bold text-foreground">
+                                {project.gesamtmenge.toLocaleString('de-DE')} kg
                               </div>
-                            )}
+                              {project.standort_verteilung && Object.keys(project.standort_verteilung).length > 0 && (
+                                <div className="text-xs text-muted-foreground truncate max-w-[40%]">
+                                  {Object.entries(project.standort_verteilung)
+                                    .filter(([_, qty]) => Number(qty) > 0)
+                                    .map(([location]) => locationLabels[location as keyof typeof locationLabels] || location)
+                                    .slice(0, 2)
+                                    .join(', ')
+                                  }
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-
-                        {/* Connection Lines to Days */}
-                        <div className="absolute -top-1 -bottom-1 left-0 w-1 bg-current opacity-20 rounded-full" />
-                        <div className="absolute -top-1 -bottom-1 right-0 w-1 bg-current opacity-20 rounded-full" />
                       </div>
-                    </div>
-                  );
-                })}
-                
-                {projectSpans.length === 0 && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">Keine Projekte in dieser Woche</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-32">
+                  <p className="text-muted-foreground">Keine Projekte in dieser Woche</p>
+                </div>
+              )}
             </div>
 
             {/* Day Detail Cards */}
