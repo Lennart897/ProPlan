@@ -152,7 +152,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
       
       toast({
         title: "Korrektur gesendet",
-        description: `Das Projekt wurde zur Korrektur zurückgewiesen. Neue Menge: ${correctionData.newQuantity.toFixed(1)} kg`,
+        description: `Das Projekt wurde zur Korrektur zurückgewiesen. Neue Menge: ${correctionData.newQuantity.toLocaleString('de-DE')} kg`,
       });
       
       setShowCorrectionDialog(false);
@@ -266,7 +266,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                   <Package className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <p className="text-sm text-muted-foreground">Gesamtmenge (kg)</p>
-                    <p className="font-semibold">{project.gesamtmenge.toFixed(1)} kg</p>
+                    <p className="font-semibold">{project.gesamtmenge.toLocaleString('de-DE')} kg</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -360,7 +360,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                       <p className="text-sm font-medium text-muted-foreground">
                         {locationLabels[location as keyof typeof locationLabels] || location}
                       </p>
-                      <p className="text-2xl font-bold text-primary">{quantity.toFixed(1)} kg</p>
+                      <p className="text-2xl font-bold text-primary">{quantity.toLocaleString('de-DE')} kg</p>
                     </div>
                   ))}
                 </div>
@@ -368,7 +368,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Gesamt verteilt:</span>
                     <span className="font-semibold">
-                      {Object.values(project.standort_verteilung).reduce((sum, val) => sum + val, 0).toFixed(1)} kg / {project.gesamtmenge.toFixed(1)} kg
+                      {Object.values(project.standort_verteilung).reduce((sum, val) => sum + val, 0).toLocaleString('de-DE')} kg / {project.gesamtmenge.toLocaleString('de-DE')} kg
                     </span>
                   </div>
                 </div>
