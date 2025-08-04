@@ -21,7 +21,7 @@ type CalendarProject = {
   beschreibung?: string;
   erste_anlieferung?: string;
   letzte_anlieferung?: string;
-  status: "draft" | "pending" | "approved" | "rejected" | "in_progress";
+  status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed";
   created_at: string;
   updated_at: string;
   created_by_id: string;
