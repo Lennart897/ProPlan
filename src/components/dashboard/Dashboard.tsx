@@ -320,17 +320,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
     );
   }
 
-  if (selectedProject) {
-    return (
-      <ProjectDetails
-        project={selectedProject}
-        user={user}
-        onBack={() => setSelectedProject(null)}
-        onProjectAction={handleProjectAction}
-      />
-    );
-  }
-
+  // Show calendar first (higher priority when both states are set)
   if (showCalendar) {
     return (
       <WeeklyCalendar
@@ -338,13 +328,21 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
         onBack={() => {
           setShowCalendar(false);
           setPreviewProject(null);
-          // If we came from project details, return there instead of dashboard
-          if (selectedProject) {
-            // Stay in project details
-            return;
-          }
+          // If we came from project details, return there
+          // Otherwise stay in dashboard (selectedProject stays null)
         }}
         previewProject={previewProject}
+      />
+    );
+  }
+
+  if (selectedProject) {
+    return (
+      <ProjectDetails
+        project={selectedProject}
+        user={user}
+        onBack={() => setSelectedProject(null)}
+        onProjectAction={handleProjectAction}
       />
     );
   }
