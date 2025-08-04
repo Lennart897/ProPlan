@@ -46,7 +46,7 @@ const statusColors = {
   pending: "bg-warning",
   approved: "bg-success",
   rejected: "bg-destructive",
-  in_progress: "bg-info",
+  in_progress: "bg-warning",
   completed: "bg-primary"
 };
 
