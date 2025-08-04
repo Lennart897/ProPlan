@@ -17,71 +17,89 @@ const Index = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Mock users for demo - in production this would come from profiles table
-  const mockUsers = {
-    "vertrieb@demo.com": {
-      id: "vertrieb-demo",
-      email: "vertrieb@demo.com",
-      role: "vertrieb" as const,
-      full_name: "Max Müller"
-    },
-    "supply@demo.com": {
-      id: "supply-demo", 
-      email: "supply@demo.com",
-      role: "supply_chain" as const,
-      full_name: "Anna Schmidt"
-    },
-    "planung@demo.com": {
-      id: "planung-demo",
-      email: "planung@demo.com", 
-      role: "planung" as const,
-      full_name: "Lennart Debbele"
+  // Fetch user profile from profiles table
+  const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('display_name, role, user_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+
+      if (!profile) {
+        console.warn('No profile found for user:', userId);
+        return null;
+      }
+
+      // Get user data from auth
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      
+      return {
+        id: profile.user_id,
+        email: authUser?.email || '',
+        role: (profile.role as "vertrieb" | "supply_chain" | "planung") || 'planung',
+        full_name: profile.display_name || authUser?.email || 'Unbekannter Benutzer'
+      };
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+      return null;
     }
   };
 
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         
         if (session?.user) {
-          // For demo purposes, use mock user data based on email
-          const mockUser = mockUsers[session.user.email as keyof typeof mockUsers];
-          if (mockUser) {
-            setUser(mockUser);
-          } else {
-            // Default to planung role for other emails
-            setUser({
-              id: session.user.id,
-              email: session.user.email || "",
-              role: "planung",
-              full_name: session.user.user_metadata?.full_name || session.user.email
-            });
-          }
+          // Fetch user profile data from database
+          setTimeout(async () => {
+            const userProfile = await fetchUserProfile(session.user.id);
+            if (userProfile) {
+              setUser(userProfile);
+            } else {
+              // Fallback if no profile exists
+              setUser({
+                id: session.user.id,
+                email: session.user.email || "",
+                role: "planung",
+                full_name: session.user.user_metadata?.full_name || session.user.email || "Unbekannter Benutzer"
+              });
+            }
+            setLoading(false);
+          }, 0);
         } else {
           setUser(null);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        const mockUser = mockUsers[session.user.email as keyof typeof mockUsers];
-        if (mockUser) {
-          setUser(mockUser);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setSession(session);
+      
+      if (session?.user) {
+        const userProfile = await fetchUserProfile(session.user.id);
+        if (userProfile) {
+          setUser(userProfile);
         } else {
+          // Fallback if no profile exists
           setUser({
             id: session.user.id,
             email: session.user.email || "",
             role: "planung",
-            full_name: session.user.user_metadata?.full_name || session.user.email
+            full_name: session.user.user_metadata?.full_name || session.user.email || "Unbekannter Benutzer"
           });
         }
       }
-      setSession(session);
+      
       setLoading(false);
     });
 
@@ -177,13 +195,13 @@ const Index = () => {
           <p className="text-sm text-muted-foreground">Demo Accounts:</p>
           <div className="space-y-2">
             <Button variant="outline" onClick={() => demoLogin("vertrieb@demo.com")} className="w-full">
-              Vertrieb (Max Müller)
+              Vertrieb Demo
             </Button>
             <Button variant="outline" onClick={() => demoLogin("supply@demo.com")} className="w-full">
-              Supply Chain (Anna Schmidt)
+              Supply Chain Demo
             </Button>
             <Button variant="outline" onClick={() => demoLogin("planung@demo.com")} className="w-full">
-              Planung (Lennart Debbele)
+              Planung Demo
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
