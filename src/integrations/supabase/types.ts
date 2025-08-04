@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           artikel_bezeichnung: string
           artikel_nummer: string
+          beschreibung: string | null
           created_at: string
           created_by_id: string
           created_by_name: string
@@ -36,6 +37,7 @@ export type Database = {
         Insert: {
           artikel_bezeichnung: string
           artikel_nummer: string
+          beschreibung?: string | null
           created_at?: string
           created_by_id: string
           created_by_name: string
@@ -54,6 +56,7 @@ export type Database = {
         Update: {
           artikel_bezeichnung?: string
           artikel_nummer?: string
+          beschreibung?: string | null
           created_at?: string
           created_by_id?: string
           created_by_name?: string

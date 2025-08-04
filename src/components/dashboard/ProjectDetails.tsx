@@ -17,6 +17,7 @@ interface Project {
   artikel_bezeichnung: string;
   produktgruppe?: string;
   gesamtmenge: number;
+  beschreibung?: string;
   erste_anlieferung?: string;
   letzte_anlieferung?: string;
   status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed";
@@ -318,6 +319,18 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
               </div>
             </CardContent>
           </Card>
+
+          {/* Beschreibung */}
+          {project.beschreibung && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Projektbeschreibung</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm leading-relaxed">{project.beschreibung}</p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Anlieferungsdetails */}
           {(project.erste_anlieferung || project.letzte_anlieferung) && (

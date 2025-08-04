@@ -5,6 +5,7 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -45,6 +46,7 @@ const projectSchema = z.object({
   artikel_bezeichnung: z.string().min(1, "Artikelbezeichnung ist erforderlich"),
   produktgruppe: z.string().min(1, "Produktgruppe ist erforderlich"),
   gesamtmenge: z.number().min(0.1, "Gesamtmenge muss größer als 0 sein"),
+  beschreibung: z.string().optional(),
   
   erste_anlieferung: z.date().optional(),
   letzte_anlieferung: z.date().optional(),
@@ -101,6 +103,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
       artikel_bezeichnung: "",
       produktgruppe: "",
       gesamtmenge: 0.0,
+      beschreibung: "",
       
       erste_anlieferung: undefined,
       letzte_anlieferung: undefined,
@@ -165,6 +168,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
           artikel_bezeichnung: data.artikel_bezeichnung,
           produktgruppe: data.produktgruppe,
           gesamtmenge: data.gesamtmenge,
+          beschreibung: data.beschreibung,
           
           erste_anlieferung: data.erste_anlieferung?.toISOString().split('T')[0],
           letzte_anlieferung: data.letzte_anlieferung?.toISOString().split('T')[0],
@@ -401,6 +405,21 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
             {totalDistributed > gesamtmenge && (
               <p className="text-sm text-destructive">
                 ⚠️ Die Standortverteilung ({formatNumberWithThousandSeparator(totalDistributed)} kg) übersteigt die Gesamtmenge ({formatNumberWithThousandSeparator(gesamtmenge)} kg)
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="beschreibung">Projektbeschreibung (optional)</Label>
+            <Textarea
+              id="beschreibung"
+              {...form.register("beschreibung")}
+              placeholder="Beschreibung des Projekts..."
+              rows={4}
+            />
+            {form.formState.errors.beschreibung && (
+              <p className="text-sm text-destructive">
+                {form.formState.errors.beschreibung.message}
               </p>
             )}
           </div>
