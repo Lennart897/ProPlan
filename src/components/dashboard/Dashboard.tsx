@@ -126,6 +126,8 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [cameFromCalendar, setCameFromCalendar] = useState(false);
+  const [calendarWeek, setCalendarWeek] = useState<Date>(new Date());
   const { toast } = useToast();
 
   // Load projects from database
@@ -349,9 +351,13 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
             standort_verteilung: project.standort_verteilung,
             menge_fix: project.menge_fix
           };
+          // Mark that we came from calendar and save current week
+          setCameFromCalendar(true);
           setSelectedProject(projectForDetails);
           setShowCalendar(false);
         }}
+        onWeekChange={(newWeek) => setCalendarWeek(newWeek)}
+        initialWeek={cameFromCalendar ? calendarWeek : undefined}
       />
     );
   }
@@ -361,7 +367,17 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       <ProjectDetails
         project={selectedProject}
         user={user}
-        onBack={() => setSelectedProject(null)}
+        onBack={() => {
+          if (cameFromCalendar) {
+            // Return to calendar with the saved week
+            setCameFromCalendar(false);
+            setSelectedProject(null);
+            setShowCalendar(true);
+          } else {
+            // Return to dashboard
+            setSelectedProject(null);
+          }
+        }}
         onProjectAction={handleProjectAction}
       />
     );

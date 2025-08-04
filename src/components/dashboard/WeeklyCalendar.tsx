@@ -39,6 +39,8 @@ interface WeeklyCalendarProps {
   onBack: () => void;
   previewProject?: any;
   onShowProjectDetails?: (project: Project) => void;
+  onWeekChange?: (week: Date) => void;
+  initialWeek?: Date;
 }
 
 const locationLabels = {
@@ -53,10 +55,14 @@ const statusColors = {
   approved: "bg-green-100 text-green-800"
 };
 
-export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDetails }: WeeklyCalendarProps) => {
+export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDetails, onWeekChange, initialWeek }: WeeklyCalendarProps) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentWeek, setCurrentWeek] = useState(() => {
+    // If we have an initial week (coming back from project details), use that
+    if (initialWeek) {
+      return initialWeek;
+    }
     // If we have a preview project, start with the week of its first delivery
     if (previewProject?.erste_anlieferung) {
       try {
@@ -264,9 +270,21 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
   const totals = calculateTotals();
 
   // Navigate weeks
-  const goToPreviousWeek = () => setCurrentWeek(subWeeks(currentWeek, 1));
-  const goToNextWeek = () => setCurrentWeek(addWeeks(currentWeek, 1));
-  const goToCurrentWeek = () => setCurrentWeek(new Date());
+  const goToPreviousWeek = () => {
+    const newWeek = subWeeks(currentWeek, 1);
+    setCurrentWeek(newWeek);
+    onWeekChange?.(newWeek);
+  };
+  const goToNextWeek = () => {
+    const newWeek = addWeeks(currentWeek, 1);
+    setCurrentWeek(newWeek);
+    onWeekChange?.(newWeek);
+  };
+  const goToCurrentWeek = () => {
+    const newWeek = new Date();
+    setCurrentWeek(newWeek);
+    onWeekChange?.(newWeek);
+  };
 
   return (
     <div className="min-h-screen bg-background">
