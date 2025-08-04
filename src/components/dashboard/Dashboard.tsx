@@ -234,6 +234,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
             };
             setPreviewProject(previewProjectForCalendar);
             setShowCalendar(true);
+            setSelectedProject(null); // Close project details immediately
           }
           return; // Exit early, don't update status
         default:
