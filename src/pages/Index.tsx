@@ -160,7 +160,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
           <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-4">
@@ -174,7 +174,7 @@ const Index = () => {
 
         {/* Demo Login for Testing */}
         <div className="text-center pt-4 border-t space-y-3">
-          <p className="text-sm text-gray-600">Demo Accounts:</p>
+          <p className="text-sm text-muted-foreground">Demo Accounts:</p>
           <div className="space-y-2">
             <Button variant="outline" onClick={() => demoLogin("vertrieb@demo.com")} className="w-full">
               Vertrieb (Max Müller)
@@ -186,7 +186,7 @@ const Index = () => {
               Planung (Lennart Debbele)
             </Button>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-muted-foreground mt-2">
             Password für alle Demo Accounts: demo123
           </p>
         </div>
