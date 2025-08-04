@@ -150,8 +150,79 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
     return locationMatch && productMatch;
   });
 
-  // Combine filtered projects with preview project if it exists
-  const allProjectsForDisplay = previewProject ? [...filteredProjects, previewProject] : filteredProjects;
+  // Calculate project spans across days
+  const calculateProjectSpans = () => {
+    const projectSpans: Array<{
+      project: Project | any;
+      startDay: number;
+      endDay: number;
+      isPreview?: boolean;
+    }> = [];
+
+    // Process approved projects
+    filteredProjects.forEach(project => {
+      if (project.erste_anlieferung && project.letzte_anlieferung) {
+        try {
+          const startDate = parseISO(project.erste_anlieferung);
+          const endDate = parseISO(project.letzte_anlieferung);
+          
+          let startDay = -1;
+          let endDay = -1;
+          
+          weekDays.forEach((day, index) => {
+            if (isSameDay(day, startDate) || (startDate < day && endDate >= day)) {
+              if (startDay === -1) startDay = index;
+              endDay = index;
+            }
+          });
+          
+          if (startDay !== -1 && endDay !== -1) {
+            projectSpans.push({
+              project,
+              startDay,
+              endDay,
+              isPreview: false
+            });
+          }
+        } catch (error) {
+          console.error('Error parsing project dates:', error);
+        }
+      }
+    });
+
+    // Process preview project
+    if (previewProject && previewProject.erste_anlieferung && previewProject.letzte_anlieferung) {
+      try {
+        const startDate = parseISO(previewProject.erste_anlieferung);
+        const endDate = parseISO(previewProject.letzte_anlieferung);
+        
+        let startDay = -1;
+        let endDay = -1;
+        
+        weekDays.forEach((day, index) => {
+          if (isSameDay(day, startDate) || (startDate < day && endDate >= day)) {
+            if (startDay === -1) startDay = index;
+            endDay = index;
+          }
+        });
+        
+        if (startDay !== -1 && endDay !== -1) {
+          projectSpans.push({
+            project: previewProject,
+            startDay,
+            endDay,
+            isPreview: true
+          });
+        }
+      } catch (error) {
+        console.error('Error parsing preview project dates:', error);
+      }
+    }
+
+    return projectSpans;
+  };
+
+  const projectSpans = calculateProjectSpans();
 
   // Calculate totals for current week
   const calculateTotals = () => {
@@ -303,110 +374,148 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
             </Card>
           </div>
 
-          {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-4">
-            {weekDays.map((day, index) => {
-              // Check approved projects
-              const dayProjects = filteredProjects.filter(project => {
-                if (!project.erste_anlieferung || !project.letzte_anlieferung) {
-                  return false;
-                }
-                try {
-                  const startDate = parseISO(project.erste_anlieferung);
-                  const endDate = parseISO(project.letzte_anlieferung);
-                  return isWithinInterval(day, { start: startDate, end: endDate });
-                } catch (error) {
-                  return false;
-                }
-              });
+          {/* Calendar Grid with Connected Projects */}
+          <div className="relative">
+            {/* Day Headers */}
+            <div className="grid grid-cols-7 gap-4 mb-4">
+              {weekDays.map((day, index) => (
+                <Card key={index} className="h-16">
+                  <CardContent className="p-3 text-center">
+                    <div className="text-sm font-medium">
+                      {format(day, "EEE", { locale: de })}
+                    </div>
+                    <div className="text-lg font-bold">
+                      {format(day, "dd.MM", { locale: de })}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
-              // Check preview project
-              const previewForDay = previewProject && previewProject.erste_anlieferung && previewProject.letzte_anlieferung ? 
-                (() => {
+            {/* Project Spans */}
+            <div className="space-y-3">
+              {projectSpans.map((span, spanIndex) => {
+                const { project, startDay, endDay, isPreview } = span;
+                const spanWidth = ((endDay - startDay + 1) * 100) / 7;
+                const leftPosition = (startDay * 100) / 7;
+                
+                return (
+                  <div
+                    key={`${project.id}-${spanIndex}`}
+                    className="relative"
+                    style={{ height: '60px' }}
+                  >
+                    <div
+                      className={`absolute h-14 rounded-lg border-2 transition-all duration-200 cursor-pointer ${
+                        isPreview
+                          ? 'bg-orange-100 border-orange-300 border-dashed hover:bg-orange-200'
+                          : `bg-success/10 border-success/20 hover:bg-success/20 hover:shadow-md ${
+                              hoveredProject === project.id || selectedProject === project.id
+                                ? 'ring-2 ring-primary/50 bg-success/20 border-primary/50'
+                                : ''
+                            }`
+                      }`}
+                      style={{
+                        left: `${leftPosition}%`,
+                        width: `calc(${spanWidth}% - 8px)`,
+                        marginLeft: '4px'
+                      }}
+                      onMouseEnter={() => !isPreview && setHoveredProject(project.id)}
+                      onMouseLeave={() => !isPreview && setHoveredProject(null)}
+                      onClick={() => !isPreview && setSelectedProject(selectedProject === project.id ? null : project.id)}
+                      title={`${project.customer} - ${project.artikel_bezeichnung || project.produktgruppe} (${project.gesamtmenge.toLocaleString('de-DE')} kg)`}
+                    >
+                      <div className="p-2 h-full flex flex-col justify-between">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-xs text-foreground truncate">
+                              {project.customer}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              {project.produktgruppe || project.artikel_bezeichnung}
+                            </div>
+                          </div>
+                          {isPreview && (
+                            <Badge variant="outline" className="text-xs bg-orange-200 ml-1 flex-shrink-0">
+                              VORSCHAU
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-end justify-between">
+                          <div className="text-xs font-medium text-foreground">
+                            {project.gesamtmenge.toLocaleString('de-DE')} kg
+                          </div>
+                          {project.standort_verteilung && Object.keys(project.standort_verteilung).length > 0 && (
+                            <div className="text-xs text-muted-foreground truncate max-w-[50%]">
+                              {Object.entries(project.standort_verteilung)
+                                .filter(([_, qty]) => Number(qty) > 0)
+                                .map(([location]) => locationLabels[location as keyof typeof locationLabels] || location)
+                                .join(', ')
+                              }
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {projectSpans.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Keine Projekte in dieser Woche</p>
+                </div>
+              )}
+            </div>
+
+            {/* Day Detail Cards */}
+            <div className="grid grid-cols-7 gap-4 mt-6">
+              {weekDays.map((day, index) => {
+                const dayProjects = filteredProjects.filter(project => {
+                  if (!project.erste_anlieferung || !project.letzte_anlieferung) return false;
                   try {
-                    const startDate = parseISO(previewProject.erste_anlieferung);
-                    const endDate = parseISO(previewProject.letzte_anlieferung);
+                    const startDate = parseISO(project.erste_anlieferung);
+                    const endDate = parseISO(project.letzte_anlieferung);
                     return isWithinInterval(day, { start: startDate, end: endDate });
                   } catch (error) {
                     return false;
                   }
-                })() : false;
+                });
 
-              return (
-                <Card key={index} className="min-h-[200px]">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium">
-                      {format(day, "EEE dd.MM", { locale: de })}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {/* Approved projects */}
-                    {dayProjects.map(project => (
-                      <div 
-                        key={project.id} 
-                        className={`p-2 rounded border bg-success/10 border-success/20 cursor-pointer transition-all duration-200 hover:bg-success/20 hover:shadow-md ${
-                          hoveredProject === project.id || selectedProject === project.id ? 'ring-2 ring-primary/50 bg-success/20' : ''
-                        }`}
-                        onMouseEnter={() => setHoveredProject(project.id)}
-                        onMouseLeave={() => setHoveredProject(null)}
-                        onClick={() => setSelectedProject(selectedProject === project.id ? null : project.id)}
-                        title={`${project.customer} - ${project.artikel_bezeichnung} (${project.gesamtmenge.toLocaleString('de-DE')} kg)`}
-                      >
-                        <div className="font-medium text-xs text-foreground">{project.customer}</div>
+                const previewForDay = previewProject && previewProject.erste_anlieferung && previewProject.letzte_anlieferung ? 
+                  (() => {
+                    try {
+                      const startDate = parseISO(previewProject.erste_anlieferung);
+                      const endDate = parseISO(previewProject.letzte_anlieferung);
+                      return isWithinInterval(day, { start: startDate, end: endDate });
+                    } catch (error) {
+                      return false;
+                    }
+                  })() : false;
+
+                const totalQuantity = dayProjects.reduce((sum, project) => sum + project.gesamtmenge, 0) + 
+                  (previewForDay ? previewProject.gesamtmenge : 0);
+
+                return (
+                  <Card key={index} className="min-h-[100px]">
+                    <CardContent className="p-3">
+                      <div className="text-center">
+                        <div className="text-sm font-medium text-muted-foreground mb-1">
+                          Tagesproduktion
+                        </div>
+                        <div className="text-lg font-bold">
+                          {totalQuantity.toLocaleString('de-DE')} kg
+                        </div>
                         <div className="text-xs text-muted-foreground">
-                          {project.produktgruppe || project.artikel_bezeichnung}
+                          {dayProjects.length + (previewForDay ? 1 : 0)} Projekt{dayProjects.length + (previewForDay ? 1 : 0) !== 1 ? 'e' : ''}
                         </div>
-                        <div className="text-xs font-medium text-foreground">
-                          {project.gesamtmenge.toLocaleString('de-DE')} kg
-                        </div>
-                        {project.standort_verteilung && Object.keys(project.standort_verteilung).length > 0 && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {Object.entries(project.standort_verteilung)
-                              .filter(([_, qty]) => Number(qty) > 0)
-                              .map(([location, qty]) => 
-                                `${locationLabels[location as keyof typeof locationLabels] || location}: ${Number(qty).toLocaleString('de-DE')} kg`
-                              )
-                              .join(' | ')
-                            }
-                          </div>
-                        )}
                       </div>
-                    ))}
-                    
-                    {/* Preview project */}
-                    {previewForDay && (
-                      <div className="p-2 rounded border bg-orange-100 border-orange-300 border-dashed hover:bg-orange-200 transition-all duration-200">
-                        <div className="flex items-center gap-1 mb-1">
-                          <Badge variant="outline" className="text-xs bg-orange-200">VORSCHAU</Badge>
-                        </div>
-                        <div className="font-medium text-xs text-foreground">{previewProject.customer}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {previewProject.produktgruppe || previewProject.artikel_bezeichnung}
-                        </div>
-                        <div className="text-xs font-medium text-foreground">
-                          {previewProject.gesamtmenge.toLocaleString('de-DE')} kg
-                        </div>
-                        {previewProject.standort_verteilung && Object.keys(previewProject.standort_verteilung).length > 0 && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {Object.entries(previewProject.standort_verteilung)
-                              .filter(([_, qty]) => Number(qty) > 0)
-                              .map(([location, qty]) => 
-                                `${locationLabels[location as keyof typeof locationLabels] || location}: ${Number(qty).toLocaleString('de-DE')} kg`
-                              )
-                              .join(' | ')
-                            }
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
-                    {dayProjects.length === 0 && !previewForDay && (
-                      <p className="text-xs text-muted-foreground">Keine Projekte</p>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
 
           {/* Detailed Breakdown */}
