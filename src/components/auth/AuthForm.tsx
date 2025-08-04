@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -26,49 +25,38 @@ export const AuthForm = ({ mode, onSuccess }: AuthFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<AuthFormData>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
+  } = useForm<AuthFormData>({
     resolver: zodResolver(authSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "", password: "" },
   });
 
-  const onSubmit = async (data: AuthFormData) => {
+  const handleAuth = async (data: AuthFormData) => {
     setIsLoading(true);
-    
     try {
+      let error;
       if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: data.email,
-          password: data.password,
-        });
-        
-        if (error) throw error;
-        
-        toast({
-          title: "Anmeldung erfolgreich",
-          description: "Willkommen zurück!",
-        });
+        ({ error } = await supabase.auth.signInWithPassword(data));
+        if (!error) {
+          toast({ title: "Anmeldung erfolgreich", description: "Willkommen zurück!" });
+        }
       } else {
         const redirectUrl = `${window.location.origin}/`;
-        
-        const { error } = await supabase.auth.signUp({
-          email: data.email,
-          password: data.password,
-          options: {
-            emailRedirectTo: redirectUrl
-          }
-        });
-        
-        if (error) throw error;
-        
-        toast({
-          title: "Registrierung erfolgreich",
-          description: "Überprüfen Sie Ihre E-Mail zur Bestätigung.",
-        });
+        ({ error } = await supabase.auth.signUp({
+          ...data,
+          options: { emailRedirectTo: redirectUrl }
+        }));
+        if (!error) {
+          toast({
+            title: "Registrierung erfolgreich",
+            description: "Überprüfen Sie Ihre E-Mail zur Bestätigung.",
+          });
+        }
       }
-
+      if (error) throw error;
       onSuccess();
     } catch (error: any) {
       toast({
@@ -88,56 +76,56 @@ export const AuthForm = ({ mode, onSuccess }: AuthFormProps) => {
           {mode === "signin" ? "Anmelden" : "Registrieren"}
         </CardTitle>
         <CardDescription className="text-center">
-          {mode === "signin" 
+          {mode === "signin"
             ? "Melden Sie sich mit Ihrem Account an"
-            : "Erstellen Sie einen neuen Account"
-          }
+            : "Erstellen Sie einen neuen Account"}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">E-Mail</Label>
-            <Input
-              id="email"
-              type="email"
-              {...form.register("email")}
-              placeholder="max@beispiel.de"
-            />
-            {form.formState.errors.email && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.email.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">Passwort</Label>
-            <Input
-              id="password"
-              type="password"
-              {...form.register("password")}
-              placeholder="••••••••"
-            />
-            {form.formState.errors.password && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.password.message}
-              </p>
-            )}
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading}
-          >
-            {isLoading 
-              ? "Wird verarbeitet..." 
-              : mode === "signin" ? "Anmelden" : "Registrieren"
-            }
+        <form onSubmit={handleSubmit(handleAuth)} className="space-y-4">
+          <FormField
+            label="E-Mail"
+            id="email"
+            type="email"
+            register={register("email")}
+            error={errors.email?.message}
+            placeholder="max@beispiel.de"
+          />
+          <FormField
+            label="Passwort"
+            id="password"
+            type="password"
+            register={register("password")}
+            error={errors.password?.message}
+            placeholder="••••••••"
+          />
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading
+              ? "Wird verarbeitet..."
+              : mode === "signin" ? "Anmelden" : "Registrieren"}
           </Button>
         </form>
       </CardContent>
     </Card>
   );
 };
+
+// Extrahiere ein wiederverwendbares Feld
+type FieldProps = {
+  label: string;
+  id: string;
+  type?: string;
+  register: ReturnType<typeof useForm>["register"];
+  error?: string;
+  placeholder?: string;
+};
+
+function FormField({ label, id, type = "text", register, error, placeholder }: FieldProps) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Input id={id} type={type} {...register} autoComplete={id} placeholder={placeholder} />
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
+  );
+}
