@@ -438,27 +438,27 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
                           onClick={() => !isPreview && setSelectedProject(selectedProject === project.id ? null : project.id)}
                           title={`${project.customer} - ${project.artikel_bezeichnung || project.produktgruppe} (${project.gesamtmenge.toLocaleString('de-DE')} kg)`}
                         >
-                          <div className="p-2 h-full flex items-center justify-between gap-2 min-w-0 overflow-hidden">
-                            <div className="flex-1 min-w-0 grid grid-cols-2 gap-2 items-center">
+                          <div className="p-1.5 h-full flex items-center justify-between gap-1 min-w-0 overflow-hidden">
+                            <div className="flex-1 min-w-0 grid grid-cols-2 gap-1 items-center">
                               <div className="min-w-0">
-                                <div className="font-medium text-xs text-foreground truncate">
+                                <div className="font-medium text-xs text-foreground truncate leading-tight">
                                   {project.customer}
                                 </div>
-                                <div className="text-xs text-muted-foreground truncate">
+                                <div className="text-xs text-muted-foreground truncate leading-tight">
                                   Art.Nr: {project.artikel_nummer}
                                 </div>
                               </div>
                               <div className="min-w-0">
-                                <div className="text-xs text-muted-foreground truncate">
+                                <div className="text-xs text-muted-foreground truncate leading-tight">
                                   {project.artikel_bezeichnung}
                                 </div>
-                                <div className="text-sm font-bold text-foreground truncate">
+                                <div className="text-sm font-bold text-foreground truncate leading-tight">
                                   {project.gesamtmenge.toLocaleString('de-DE')} kg
                                 </div>
                               </div>
                             </div>
                             
-                            <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                            <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
                               {isPreview && (
                                 <Badge variant="outline" className="text-xs bg-orange-200 text-orange-800 border-orange-400">
                                   VORSCHAU
