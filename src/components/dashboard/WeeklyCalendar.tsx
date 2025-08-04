@@ -439,7 +439,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
                           title={`${project.customer} - ${project.artikel_bezeichnung || project.produktgruppe} (${project.gesamtmenge.toLocaleString('de-DE')} kg)`}
                         >
                           <div className="p-1 h-full flex items-center justify-between gap-0.5 min-w-0 overflow-hidden">
-                            <div className="flex-1 min-w-0 grid grid-cols-2 gap-0.5 items-center">
+                            <div className="flex-1 min-w-0 grid grid-cols-2 gap-0 items-start">
                               <div className="min-w-0">
                                 <div className="font-medium text-xs text-foreground truncate leading-none">
                                   {project.customer}
@@ -458,7 +458,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
                               </div>
                             </div>
                             
-                            <div className="flex flex-col items-end gap-0 flex-shrink-0">
+                            <div className="flex flex-col items-end gap-1 flex-shrink-0">
                               {isPreview && (
                                 <Badge variant="outline" className="text-xs bg-orange-200 text-orange-800 border-orange-400">
                                   VORSCHAU
