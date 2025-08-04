@@ -80,7 +80,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
-          role: string | null
+          role: Database["public"]["Enums"]["app_role"] | null
           updated_at: string
           user_id: string
         }
@@ -89,7 +89,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
-          role?: string | null
+          role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string
           user_id: string
         }
@@ -98,7 +98,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
-          role?: string | null
+          role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string
           user_id?: string
         }
@@ -198,13 +198,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_user_approve_project: {
+        Args: { user_uuid: string; project_id: string }
+        Returns: boolean
+      }
+      get_affected_locations: {
+        Args: { standort_verteilung: Json }
+        Returns: string[]
+      }
       get_user_role: {
         Args: { user_uuid: string }
         Returns: string
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "admin"
+        | "moderator"
+        | "user"
+        | "vertrieb"
+        | "supply_chain"
+        | "planung"
+        | "planung_storkow"
+        | "planung_brenz"
+        | "planung_gudensberg"
+        | "planung_doebeln"
+        | "planung_visbek"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -331,6 +350,20 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "admin",
+        "moderator",
+        "user",
+        "vertrieb",
+        "supply_chain",
+        "planung",
+        "planung_storkow",
+        "planung_brenz",
+        "planung_gudensberg",
+        "planung_doebeln",
+        "planung_visbek",
+      ],
+    },
   },
 } as const
