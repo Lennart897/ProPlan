@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, UseFormRegisterReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -39,14 +39,18 @@ export const AuthForm = ({ mode, onSuccess }: AuthFormProps) => {
     try {
       let error;
       if (mode === "signin") {
-        ({ error } = await supabase.auth.signInWithPassword(data));
+        ({ error } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password
+        }));
         if (!error) {
           toast({ title: "Anmeldung erfolgreich", description: "Willkommen zurück!" });
         }
       } else {
         const redirectUrl = `${window.location.origin}/`;
         ({ error } = await supabase.auth.signUp({
-          ...data,
+          email: data.email,
+          password: data.password,
           options: { emailRedirectTo: redirectUrl }
         }));
         if (!error) {
@@ -115,7 +119,7 @@ type FieldProps = {
   label: string;
   id: string;
   type?: string;
-  register: ReturnType<typeof useForm>["register"];
+  register: UseFormRegisterReturn;
   error?: string;
   placeholder?: string;
 };

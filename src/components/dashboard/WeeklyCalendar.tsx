@@ -286,12 +286,12 @@ export const WeeklyCalendar = ({ user, onBack }: WeeklyCalendarProps) => {
                       <p className="text-xs text-muted-foreground">Keine Projekte</p>
                     ) : (
                       dayProjects.map(project => (
-                        <div key={project.id} className="p-2 rounded border bg-green-50">
-                          <div className="font-medium text-xs">{project.customer}</div>
+                        <div key={project.id} className="p-2 rounded border bg-success/10 border-success/20">
+                          <div className="font-medium text-xs text-foreground">{project.customer}</div>
                           <div className="text-xs text-muted-foreground">
                             {project.produktgruppe || project.artikel_bezeichnung}
                           </div>
-                          <div className="text-xs font-medium">
+                          <div className="text-xs font-medium text-foreground">
                             {project.gesamtmenge.toFixed(1)} kg
                           </div>
                           {project.standort_verteilung && typeof project.standort_verteilung === 'object' && (
