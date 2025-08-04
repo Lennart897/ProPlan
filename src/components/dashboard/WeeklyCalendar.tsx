@@ -16,6 +16,7 @@ interface Project {
   artikel_bezeichnung: string;
   produktgruppe?: string;
   gesamtmenge: number;
+  beschreibung?: string;
   status: string;
   created_at: string;
   updated_at: string;
