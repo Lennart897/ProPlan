@@ -18,6 +18,7 @@ type CalendarProject = {
   artikel_bezeichnung: string;
   produktgruppe?: string;
   gesamtmenge: number;
+  beschreibung?: string;
   erste_anlieferung?: string;
   letzte_anlieferung?: string;
   status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed";
@@ -39,6 +40,7 @@ interface Project {
   artikel_bezeichnung: string;
   produktgruppe?: string;
   gesamtmenge: number;
+  beschreibung?: string;
   erste_anlieferung?: string;
   letzte_anlieferung?: string;
   status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed";
@@ -147,6 +149,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
         artikel_bezeichnung: project.artikel_bezeichnung,
         produktgruppe: project.produktgruppe,
         gesamtmenge: project.gesamtmenge,
+        beschreibung: project.beschreibung,
         erste_anlieferung: project.erste_anlieferung,
         letzte_anlieferung: project.letzte_anlieferung,
         status: project.status as Project['status'],
@@ -343,6 +346,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
             artikel_bezeichnung: project.artikel_bezeichnung,
             produktgruppe: project.produktgruppe,
             gesamtmenge: project.gesamtmenge,
+            beschreibung: project.beschreibung,
             erste_anlieferung: project.erste_anlieferung || undefined,
             letzte_anlieferung: project.letzte_anlieferung || undefined,
             status: project.status as Project['status'],
