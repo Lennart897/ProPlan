@@ -376,36 +376,19 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
 
           {/* Calendar Grid with Connected Projects */}
           <div className="space-y-6">
-            {/* Day Headers with Visual Connection */}
-            <div className="relative">
-              {/* Horizontal Connection Line */}
-              <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-border transform -translate-y-1/2 z-0" />
-              
-              {/* Day Cards */}
-              <div className="grid grid-cols-7 gap-2 relative z-10">
+            {/* Day Headers with Single Border Around Week */}
+            <div className="border-2 border-border rounded-lg bg-card p-4">
+              <div className="grid grid-cols-7 gap-4">
                 {weekDays.map((day, index) => (
-                  <Card key={index} className="h-20 bg-background border-2">
-                    <CardContent className="p-3 text-center h-full flex flex-col justify-center">
-                      <div className="text-sm font-medium text-muted-foreground">
-                        {format(day, "EEE", { locale: de })}
-                      </div>
-                      <div className="text-lg font-bold">
-                        {format(day, "dd.MM", { locale: de })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              
-              {/* Connection Dots at day boundaries */}
-              <div className="absolute top-1/2 left-0 right-0 transform -translate-y-1/2 z-20">
-                <div className="grid grid-cols-7 gap-2">
-                  {weekDays.map((_, index) => (
-                    <div key={index} className="flex justify-center">
-                      <div className="w-2 h-2 bg-primary rounded-full" />
+                  <div key={index} className="h-16 flex flex-col justify-center items-center">
+                    <div className="text-sm font-medium text-muted-foreground">
+                      {format(day, "EEE", { locale: de })}
                     </div>
-                  ))}
-                </div>
+                    <div className="text-lg font-bold">
+                      {format(day, "dd.MM", { locale: de })}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
