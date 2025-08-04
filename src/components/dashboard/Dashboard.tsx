@@ -234,7 +234,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
             };
             setPreviewProject(previewProjectForCalendar);
             setShowCalendar(true);
-            setSelectedProject(null); // Close project details immediately
+            // Keep selectedProject so we can return to project details
           }
           return; // Exit early, don't update status
         default:
@@ -335,6 +335,11 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
         onBack={() => {
           setShowCalendar(false);
           setPreviewProject(null);
+          // If we came from project details, return there instead of dashboard
+          if (selectedProject) {
+            // Stay in project details
+            return;
+          }
         }}
         previewProject={previewProject}
       />
