@@ -75,17 +75,36 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
   // Get unique product groups from projects
   const productGroups = Array.from(new Set(projects.map(p => p.produktgruppe).filter(Boolean))).sort();
 
-  // Load approved projects
+  // Load approved projects with retry logic
   useEffect(() => {
-    const loadApprovedProjects = async () => {
+    const loadApprovedProjects = async (retryCount = 0) => {
       try {
+        // Check if user is authenticated
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          console.warn('No active session found');
+          setLoading(false);
+          return;
+        }
+
         const { data, error } = await supabase
           .from('manufacturing_projects')
           .select('*')
           .eq('status', 'approved')
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          // If it's an auth error and we haven't retried, try to refresh the session
+          if (error.message.includes('JWT') && retryCount === 0) {
+            console.log('Auth error detected, refreshing session...');
+            const { error: refreshError } = await supabase.auth.refreshSession();
+            if (!refreshError) {
+              // Retry the request after session refresh
+              return loadApprovedProjects(1);
+            }
+          }
+          throw error;
+        }
         
         // Transform the data to match our interface
         const transformedProjects: Project[] = (data || []).map(project => ({
@@ -97,16 +116,21 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
         setProjects(transformedProjects);
       } catch (error) {
         console.error('Error loading projects:', error);
-        toast({
-          title: "Fehler",
-          description: "Projekte konnten nicht geladen werden",
-          variant: "destructive"
-        });
+        
+        // Only show toast for non-auth errors or after retry failed
+        if (retryCount > 0 || !error?.message?.includes('JWT')) {
+          toast({
+            title: "Fehler",
+            description: "Projekte konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+            variant: "destructive"
+          });
+        }
       } finally {
         setLoading(false);
       }
     };
 
+    setLoading(true);
     loadApprovedProjects();
   }, [toast]);
 
