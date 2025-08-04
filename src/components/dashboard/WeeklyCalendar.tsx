@@ -38,6 +38,7 @@ interface WeeklyCalendarProps {
   user: User;
   onBack: () => void;
   previewProject?: any;
+  onShowProjectDetails?: (project: Project) => void;
 }
 
 const locationLabels = {
@@ -52,7 +53,7 @@ const statusColors = {
   approved: "bg-green-100 text-green-800"
 };
 
-export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarProps) => {
+export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDetails }: WeeklyCalendarProps) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentWeek, setCurrentWeek] = useState(() => {
@@ -435,7 +436,11 @@ export const WeeklyCalendar = ({ user, onBack, previewProject }: WeeklyCalendarP
                           }}
                           onMouseEnter={() => !isPreview && setHoveredProject(project.id)}
                           onMouseLeave={() => !isPreview && setHoveredProject(null)}
-                          onClick={() => !isPreview && setSelectedProject(selectedProject === project.id ? null : project.id)}
+                          onClick={() => {
+                            if (!isPreview && onShowProjectDetails) {
+                              onShowProjectDetails(project);
+                            }
+                          }}
                           title={`${project.customer} - ${project.artikel_bezeichnung || project.produktgruppe} (${project.gesamtmenge.toLocaleString('de-DE')} kg)`}
                         >
                           <div className="p-1 h-full flex items-center justify-between gap-0.5 min-w-0 overflow-hidden">

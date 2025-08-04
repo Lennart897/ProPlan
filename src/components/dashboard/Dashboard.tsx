@@ -332,6 +332,26 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
           // Otherwise stay in dashboard (selectedProject stays null)
         }}
         previewProject={previewProject}
+        onShowProjectDetails={(project) => {
+          // Convert CalendarProject to Project format
+          const projectForDetails: Project = {
+            id: project.id,
+            customer: project.customer,
+            artikel_nummer: project.artikel_nummer,
+            artikel_bezeichnung: project.artikel_bezeichnung,
+            produktgruppe: project.produktgruppe,
+            gesamtmenge: project.gesamtmenge,
+            erste_anlieferung: project.erste_anlieferung || undefined,
+            letzte_anlieferung: project.letzte_anlieferung || undefined,
+            status: project.status as Project['status'],
+            created_at: project.created_at,
+            created_by: project.created_by_name,
+            standort_verteilung: project.standort_verteilung,
+            menge_fix: project.menge_fix
+          };
+          setSelectedProject(projectForDetails);
+          setShowCalendar(false);
+        }}
       />
     );
   }
