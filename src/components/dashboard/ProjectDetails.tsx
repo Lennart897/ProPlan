@@ -70,6 +70,8 @@ const locationLabels = {
 export const ProjectDetails = ({ project, user, onBack, onProjectAction }: ProjectDetailsProps) => {
   const { toast } = useToast();
   const [showCorrectionDialog, setShowCorrectionDialog] = useState(false);
+  const [showRejectionDialog, setShowRejectionDialog] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
   const [correctionData, setCorrectionData] = useState({
     newQuantity: project.gesamtmenge,
     description: "",
@@ -189,7 +191,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
               <Button variant="outline" onClick={() => setShowCorrectionDialog(true)} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white border-orange-500">
                 Korrektur anfordern
               </Button>
-              <Button onClick={() => handleAction("reject")} className="flex-1 bg-red-600 hover:bg-red-700 text-white">
+              <Button onClick={() => setShowRejectionDialog(true)} className="flex-1 bg-red-600 hover:bg-red-700 text-white">
                 Absage erteilen
               </Button>
             </div>
@@ -247,6 +249,51 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
         return null;
     }
     return null;
+  };
+
+  const handleRejection = async () => {
+    if (!rejectionReason.trim()) {
+      toast({
+        title: "Begründung erforderlich",
+        description: "Bitte geben Sie eine Begründung für die Ablehnung ein.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('manufacturing_projects')
+        .update({ 
+          status: "rejected",
+          // Note: You might want to add a rejection_reason field to the database
+        })
+        .eq('id', project.id);
+
+      if (error) throw error;
+
+      onProjectAction(project.id, "reject");
+      
+      toast({
+        title: "Projekt abgelehnt",
+        description: `Das Projekt wurde abgelehnt. Begründung: ${rejectionReason}`,
+      });
+      
+      setShowRejectionDialog(false);
+      setRejectionReason("");
+
+      // Nach Aktion zurück zum Dashboard
+      setTimeout(() => {
+        onBack();
+      }, 1500);
+    } catch (error) {
+      console.error('Error rejecting project:', error);
+      toast({
+        title: "Fehler",
+        description: "Projekt konnte nicht abgelehnt werden",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -575,6 +622,41 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
             </Button>
             <Button onClick={handleCorrection}>
               Korrektur senden
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ablehnungs-Dialog */}
+      <Dialog open={showRejectionDialog} onOpenChange={setShowRejectionDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Projekt ablehnen</DialogTitle>
+            <DialogDescription>
+              Bitte geben Sie eine Begründung für die Ablehnung des Projekts ein.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="rejection-reason">Begründung für die Ablehnung</Label>
+              <Textarea
+                id="rejection-reason"
+                placeholder="Begründung eingeben..."
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRejectionDialog(false)}>
+              Abbrechen
+            </Button>
+            <Button 
+              onClick={handleRejection}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Projekt ablehnen
             </Button>
           </DialogFooter>
         </DialogContent>
