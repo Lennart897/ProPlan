@@ -167,7 +167,24 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
   const handleCorrection = async () => {
     try {
       const previousStatus = project.status;
-      const newStatus = user.role === "supply_chain" ? "draft" : "pending";
+      
+      // Determine next status based on Supply Chain correction logic
+      let newStatus = "pending";
+      if (user.role === "supply_chain") {
+        // Check if Gesamtmenge was changed
+        const quantityChanged = correctionData.newQuantity !== project.gesamtmenge;
+        
+        if (quantityChanged) {
+          // Gesamtmenge changed -> back to Vertrieb
+          newStatus = "draft";
+        } else {
+          // Only location distribution changed -> to location-specific planning
+          newStatus = "pending";
+        }
+      } else {
+        // Other roles (planning) -> back to pending
+        newStatus = "pending";
+      }
       
       const { error } = await supabase
         .from('manufacturing_projects')
@@ -180,14 +197,22 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
 
       if (error) throw error;
 
-      // Log the correction action
-      await logProjectAction('corrected', previousStatus, newStatus, correctionData.description);
+      // Log the correction action with specific description
+      const actionDescription = user.role === "supply_chain" && correctionData.newQuantity !== project.gesamtmenge
+        ? `${correctionData.description} (Gesamtmenge geändert: ${project.gesamtmenge} → ${correctionData.newQuantity} kg)`
+        : correctionData.description;
+      
+      await logProjectAction('corrected', previousStatus, newStatus, actionDescription);
 
       onProjectAction(project.id, "correct");
       
+      const nextStep = user.role === "supply_chain" && correctionData.newQuantity !== project.gesamtmenge
+        ? "Vertrieb" 
+        : "standortspezifische Planung";
+      
       toast({
         title: "Korrektur gesendet",
-        description: `Das Projekt wurde zur Korrektur zurückgewiesen. Neue Menge: ${correctionData.newQuantity.toLocaleString('de-DE')} kg`,
+        description: `Das Projekt wurde zur Korrektur an ${nextStep} weitergeleitet.`,
       });
       
       setShowCorrectionDialog(false);
