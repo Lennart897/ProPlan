@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { ArrowLeft, User, Calendar, Package, Building2, Truck, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { ProjectHistory } from "./ProjectHistory";
 
 interface Project {
   id: string;
@@ -78,10 +79,32 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
     locationDistribution: project.standort_verteilung || {}
   });
 
+  const logProjectAction = async (action: string, previousStatus: string, newStatus: string, reason?: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await supabase
+        .from('project_history')
+        .insert({
+          project_id: project.id,
+          user_id: user.id,
+          user_name: user.user_metadata?.display_name || user.email || 'Unbekannt',
+          action,
+          reason,
+          previous_status: previousStatus,
+          new_status: newStatus
+        });
+    } catch (error) {
+      console.error('Error logging project action:', error);
+    }
+  };
+
   const handleAction = async (action: string) => {
     try {
       let newStatus = project.status;
       let actionLabel = "";
+      const previousStatus = project.status;
       
       // Workflow-Logik basierend auf Rolle und Aktion
       if (user.role === "supply_chain") {
@@ -116,6 +139,9 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
 
         if (error) throw error;
 
+        // Log the action
+        await logProjectAction(action, previousStatus, newStatus);
+
         onProjectAction(project.id, action);
 
         toast({
@@ -140,16 +166,22 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
 
   const handleCorrection = async () => {
     try {
+      const previousStatus = project.status;
+      const newStatus = user.role === "supply_chain" ? "draft" : "pending";
+      
       const { error } = await supabase
         .from('manufacturing_projects')
         .update({
           gesamtmenge: correctionData.newQuantity,
           standort_verteilung: correctionData.locationDistribution,
-          status: user.role === "supply_chain" ? "draft" : "pending" // Back to previous stage
+          status: newStatus
         })
         .eq('id', project.id);
 
       if (error) throw error;
+
+      // Log the correction action
+      await logProjectAction('corrected', previousStatus, newStatus, correctionData.description);
 
       onProjectAction(project.id, "correct");
       
@@ -266,11 +298,14 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
         .from('manufacturing_projects')
         .update({ 
           status: "rejected",
-          // Note: You might want to add a rejection_reason field to the database
+          rejection_reason: rejectionReason
         })
         .eq('id', project.id);
 
       if (error) throw error;
+
+      // Log the rejection action
+      await logProjectAction('rejected', project.status, 'rejected', rejectionReason);
 
       onProjectAction(project.id, "reject");
       
@@ -509,6 +544,9 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
               </CardContent>
             </Card>
           )}
+
+          {/* Projektprotokoll */}
+          <ProjectHistory projectId={project.id} />
         </div>
       </div>
 

@@ -30,6 +30,7 @@ export type Database = {
           menge_fix: boolean | null
           preis: number | null
           produktgruppe: string | null
+          rejection_reason: string | null
           standort_verteilung: Json | null
           status: string
           updated_at: string
@@ -49,6 +50,7 @@ export type Database = {
           menge_fix?: boolean | null
           preis?: number | null
           produktgruppe?: string | null
+          rejection_reason?: string | null
           standort_verteilung?: Json | null
           status?: string
           updated_at?: string
@@ -68,6 +70,7 @@ export type Database = {
           menge_fix?: boolean | null
           preis?: number | null
           produktgruppe?: string | null
+          rejection_reason?: string | null
           standort_verteilung?: Json | null
           status?: string
           updated_at?: string
@@ -103,6 +106,50 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      project_history: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          new_status: string | null
+          previous_status: string | null
+          project_id: string
+          reason: string | null
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          new_status?: string | null
+          previous_status?: string | null
+          project_id: string
+          reason?: string | null
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          new_status?: string | null
+          previous_status?: string | null
+          project_id?: string
+          reason?: string | null
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_history_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       projects: {
         Row: {
