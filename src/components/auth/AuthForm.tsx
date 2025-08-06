@@ -76,16 +76,16 @@ export const AuthForm = ({ mode, onSuccess }: AuthFormProps) => {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-center">
+        <CardTitle className="text-xl sm:text-2xl text-center">
           {mode === "signin" ? "Anmelden" : "Registrieren"}
         </CardTitle>
-        <CardDescription className="text-center">
+        <CardDescription className="text-center text-sm sm:text-base">
           {mode === "signin"
             ? "Melden Sie sich mit Ihrem Account an"
             : "Erstellen Sie einen neuen Account"}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 sm:p-6">
         <form onSubmit={handleSubmit(handleAuth)} className="space-y-4">
           <FormField
             label="E-Mail"

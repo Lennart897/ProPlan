@@ -202,21 +202,21 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader className="text-center border-b">
         <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
-            <span className="text-xl font-bold text-primary-foreground">PP</span>
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary rounded-xl flex items-center justify-center">
+            <span className="text-lg sm:text-xl font-bold text-primary-foreground">PP</span>
           </div>
           <div>
             <h2 className="text-lg font-bold text-primary">ProPlan</h2>
           </div>
         </div>
-        <CardTitle className="text-2xl">Neues Projekt erfassen</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-xl sm:text-2xl">Neues Projekt erfassen</CardTitle>
+        <CardDescription className="text-sm sm:text-base">
           Erfassen Sie ein neues Projekt mit Standortverteilung
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <CardContent className="p-4 sm:p-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="space-y-2">
               <Label htmlFor="customer">Kunde</Label>
               <Input
@@ -243,7 +243,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               )}
             </div>
 
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="artikel_bezeichnung">Artikelbezeichnung</Label>
               <Input
                 id="artikel_bezeichnung"
@@ -256,7 +256,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               )}
             </div>
 
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="produktgruppe">Produktgruppe</Label>
               <Input
                 id="produktgruppe"
@@ -384,7 +384,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {locations.map((location) => (
                 <div key={location.value} className="space-y-2">
                   <Label htmlFor={location.value}>{location.label} (kg)</Label>
@@ -424,13 +424,14 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
             )}
           </div>
 
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={onCancel}>
+          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-4">
+            <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
               Abbrechen
             </Button>
             <Button
               type="submit"
               disabled={isLoading || totalDistributed > gesamtmenge}
+              className="w-full sm:w-auto"
             >
               {isLoading ? "Wird erstellt..." : "Projekt erstellen"}
             </Button>

@@ -291,20 +291,21 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={onBack}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Zurück
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Button variant="ghost" size="sm" onClick={onBack} className="text-xs sm:text-sm">
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Zurück</span>
               </Button>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                  <span className="text-sm font-bold text-primary-foreground">PP</span>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary rounded-lg flex items-center justify-center">
+                  <span className="text-xs sm:text-sm font-bold text-primary-foreground">PP</span>
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-primary">ProPlan</h1>
-                  <p className="text-muted-foreground">Wochenkalender - Genehmigte Projekte</p>
+                  <h1 className="text-lg sm:text-2xl font-bold text-primary">ProPlan</h1>
+                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Wochenkalender - Genehmigte Projekte</p>
+                  <p className="text-xs text-muted-foreground sm:hidden">Kalender</p>
                 </div>
               </div>
             </div>
@@ -312,31 +313,33 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
         </div>
       </header>
 
-      <div className="container mx-auto p-6">
-        <div className="space-y-6">
-          {/* Controls */}
-          <div className="flex flex-wrap gap-4 items-center justify-between">
+      <div className="container mx-auto p-4 sm:p-6">
+        <div className="space-y-4 sm:space-y-6">
+          {/* Controls - Mobile Optimized */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:gap-4 sm:items-center sm:justify-between">
             {/* Week Navigation */}
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={goToPreviousWeek}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" onClick={goToCurrentWeek}>
-                <Calendar className="h-4 w-4 mr-2" />
-                Heute
-              </Button>
-              <Button variant="outline" size="sm" onClick={goToNextWeek}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-              <span className="font-medium ml-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={goToPreviousWeek}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" onClick={goToCurrentWeek} className="text-xs sm:text-sm">
+                  <Calendar className="h-4 w-4 mr-1 sm:mr-2" />
+                  Heute
+                </Button>
+                <Button variant="outline" size="sm" onClick={goToNextWeek}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              <span className="font-medium text-sm sm:text-base text-center sm:ml-4">
                 KW {getWeek(weekStart, { locale: de })} | {format(weekStart, "dd.MM.yyyy", { locale: de })} - {format(addDays(weekStart, 6), "dd.MM.yyyy", { locale: de })}
               </span>
             </div>
 
             {/* Filters */}
-            <div className="flex gap-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
               <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="Standort wählen" />
                 </SelectTrigger>
                 <SelectContent>
@@ -348,7 +351,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
               </Select>
 
               <Select value={selectedProductGroup} onValueChange={setSelectedProductGroup}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="Produktgruppe wählen" />
                 </SelectTrigger>
                 <SelectContent>
@@ -361,8 +364,8 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
             </div>
           </div>
 
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Summary Cards - Mobile Optimized */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium">Gesamtmenge</CardTitle>

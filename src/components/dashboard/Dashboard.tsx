@@ -402,54 +402,57 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Header - Mobile Optimized */}
       <header className="border-b bg-card">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 sm:px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                <span className="text-lg font-bold text-primary-foreground">PP</span>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-xl flex items-center justify-center">
+                <span className="text-sm sm:text-lg font-bold text-primary-foreground">PP</span>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-primary">ProPlan</h1>
-                <p className="text-muted-foreground">
+                <h1 className="text-xl sm:text-2xl font-bold text-primary">ProPlan</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
                   Willkommen, {user.full_name || user.email} ({roleLabel[user.role]})
+                </p>
+                <p className="text-xs text-muted-foreground sm:hidden">
+                  {roleLabel[user.role]}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 sm:gap-3">
               <ThemeToggle />
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" className="hidden sm:flex">
                 <Bell className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" className="hidden sm:flex">
                 <User className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={onSignOut}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Abmelden
+              <Button variant="ghost" size="sm" onClick={onSignOut} className="text-xs sm:text-sm">
+                <LogOut className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Abmelden</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto p-6">
-        <div className="space-y-6">
-          {/* Action Bar */}
-          <div className="flex justify-between items-center">
-            <div className="flex gap-4 items-center">
+      <div className="container mx-auto p-4 sm:p-6">
+        <div className="space-y-4 sm:space-y-6">
+          {/* Action Bar - Mobile Optimized */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
+            <div className="flex flex-col gap-4 sm:flex-row sm:gap-4 sm:items-center">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Projekte suchen..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-80"
+                  className="pl-10 w-full sm:w-80"
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="Status filtern" />
                 </SelectTrigger>
                 <SelectContent>
@@ -463,14 +466,21 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
               </Select>
             </div>
             
-            <div className="flex gap-2">
-              <Button variant="default" onClick={() => setShowCalendar(true)}>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button 
+                variant="default" 
+                onClick={() => setShowCalendar(true)}
+                className="w-full sm:w-auto"
+              >
                 <Calendar className="h-4 w-4 mr-2" />
                 Wochenkalender
               </Button>
               
               {user.role === "vertrieb" && (
-                <Button onClick={() => setShowProjectForm(true)}>
+                <Button 
+                  onClick={() => setShowProjectForm(true)}
+                  className="w-full sm:w-auto"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Neues Projekt
                 </Button>
@@ -478,8 +488,8 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
             </div>
           </div>
 
-          {/* Projects Grid */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {/* Projects Grid - Mobile Optimized */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {loading ? (
               <Card className="col-span-full">
                 <CardContent className="text-center py-12">
