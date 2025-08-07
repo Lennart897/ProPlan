@@ -397,28 +397,28 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
             </Card>
           </div>
 
-          {/* Calendar Grid with Connected Projects */}
-          <div className="space-y-6">
-            {/* Day Headers with Single Border Around Week */}
-            <div className="border-2 border-border rounded-lg bg-card p-4">
-              <div className="grid grid-cols-7 gap-4">
-                {weekDays.map((day, index) => (
-                  <div key={index} className="h-16 flex flex-col justify-center items-center">
-                    <div className="text-sm font-medium text-muted-foreground">
-                      {format(day, "EEE", { locale: de })}
+            {/* Calendar Grid with Connected Projects */}
+            <div className="space-y-6">
+              {/* Day Headers with Single Border Around Week */}
+              <div className="border-2 border-border rounded-lg bg-card p-2 sm:p-4">
+                <div className="grid grid-cols-7 gap-1 sm:gap-4">
+                  {weekDays.map((day, index) => (
+                    <div key={index} className="h-12 sm:h-16 flex flex-col justify-center items-center">
+                      <div className="text-xs sm:text-sm font-medium text-muted-foreground">
+                        {format(day, "EE", { locale: de })}
+                      </div>
+                      <div className="text-sm sm:text-lg font-bold">
+                        {format(day, "dd.MM", { locale: de })}
+                      </div>
                     </div>
-                    <div className="text-lg font-bold">
-                      {format(day, "dd.MM", { locale: de })}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
 
             {/* Project Timeline */}
             <div className="relative min-h-[200px]">
               {/* Vertical Day Dividers */}
-              <div className="absolute inset-0 grid grid-cols-7 gap-2">
+              <div className="absolute inset-0 grid grid-cols-7 gap-1 sm:gap-2">
                 {weekDays.map((_, index) => (
                   <div key={index} className="flex justify-center">
                     <div className="w-px bg-border/30 h-full" />
@@ -437,8 +437,8 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                     return (
                       <div
                         key={`${project.id}-${spanIndex}`}
-                        className="relative mb-3"
-                        style={{ height: '64px' }}
+                        className="relative mb-2 sm:mb-3"
+                        style={{ height: '48px' }}
                       >
                         <div
                           className={`absolute rounded-lg border-2 transition-all duration-200 cursor-pointer shadow-sm ${
@@ -453,7 +453,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                           style={{
                             left: `${leftPositionPercent}%`,
                             width: `${spanWidthPercent}%`,
-                            height: '56px',
+                            height: '40px',
                             top: '4px'
                           }}
                           onMouseEnter={() => !isPreview && setHoveredProject(project.id)}
@@ -465,25 +465,28 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                           }}
                           title={`${project.customer} - ${project.artikel_bezeichnung || project.produktgruppe} (${project.gesamtmenge.toLocaleString('de-DE')} kg)`}
                         >
-                          <div className="p-1 h-full flex items-center justify-between gap-0.5 min-w-0 overflow-hidden">
-                            <div className="flex-1 min-w-0 grid grid-cols-2 gap-0.5 items-center">
-                              <div className="min-w-0">
-                                <div className="font-medium text-xs text-foreground truncate leading-none">
-                                  {project.customer}
-                                </div>
-                                <div className="text-xs text-muted-foreground truncate leading-none">
-                                  Art.Nr: {project.artikel_nummer}
-                                </div>
-                              </div>
-                              <div className="min-w-0">
-                                <div className="text-xs text-muted-foreground truncate leading-none">
-                                  {project.artikel_bezeichnung}
-                                </div>
-                                <div className="text-sm font-bold text-foreground truncate leading-none">
-                                  {project.gesamtmenge.toLocaleString('de-DE')} kg
-                                </div>
-                              </div>
-                            </div>
+                           <div className="p-1 sm:p-2 h-full flex items-center justify-between gap-0.5 min-w-0 overflow-hidden">
+                             <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-0.5 items-center">
+                               <div className="min-w-0">
+                                 <div className="font-medium text-xs text-foreground truncate leading-none">
+                                   {project.customer}
+                                 </div>
+                                 <div className="text-xs text-muted-foreground truncate leading-none sm:hidden">
+                                   {project.gesamtmenge.toLocaleString('de-DE')} kg
+                                 </div>
+                                 <div className="text-xs text-muted-foreground truncate leading-none hidden sm:block">
+                                   Art.Nr: {project.artikel_nummer}
+                                 </div>
+                               </div>
+                               <div className="min-w-0 hidden sm:block">
+                                 <div className="text-xs text-muted-foreground truncate leading-none">
+                                   {project.artikel_bezeichnung}
+                                 </div>
+                                 <div className="text-sm font-bold text-foreground truncate leading-none">
+                                   {project.gesamtmenge.toLocaleString('de-DE')} kg
+                                 </div>
+                               </div>
+                             </div>
                             
                             <div className="flex flex-col items-end gap-0 flex-shrink-0">
                               {isPreview && (
@@ -516,7 +519,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
             </div>
 
             {/* Day Detail Cards */}
-            <div className="grid grid-cols-7 gap-4 mt-6">
+            <div className="grid grid-cols-1 sm:grid-cols-7 gap-2 sm:gap-4 mt-6">
               {weekDays.map((day, index) => {
                 const dayProjects = filteredProjects.filter(project => {
                   if (!project.erste_anlieferung || !project.letzte_anlieferung) return false;
