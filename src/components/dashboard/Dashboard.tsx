@@ -21,7 +21,7 @@ type CalendarProject = {
   beschreibung?: string;
   erste_anlieferung?: string;
   letzte_anlieferung?: string;
-  status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed";
+  status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed" | "archived";
   created_at: string;
   updated_at: string;
   created_by_id: string;
@@ -43,7 +43,7 @@ interface Project {
   beschreibung?: string;
   erste_anlieferung?: string;
   letzte_anlieferung?: string;
-  status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed";
+  status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed" | "archived";
   created_at: string;
   created_by: string;
   standort_verteilung?: Record<string, number>;
@@ -102,7 +102,8 @@ const statusColors = {
   approved: "bg-success",
   rejected: "bg-destructive",
   in_progress: "bg-warning",
-  completed: "bg-primary"
+  completed: "bg-primary",
+  archived: "bg-muted"
 };
 
 const statusLabels = {
@@ -111,7 +112,8 @@ const statusLabels = {
   approved: "Genehmigt", 
   rejected: "Abgelehnt",
   in_progress: "In Bearbeitung",
-  completed: "Abgeschlossen"
+  completed: "Abgeschlossen",
+  archived: "Archiviert"
 };
 
 interface DashboardProps {
@@ -253,6 +255,15 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
             // Keep selectedProject so we can return to project details
           }
           return; // Exit early, don't update status
+        case "archive":
+          // Only vertrieb can archive approved projects
+          if (user.role === "vertrieb") {
+            const currentProject = projects.find(p => p.id === projectId);
+            if (currentProject?.status === "approved") {
+              newStatus = "archived";
+            }
+          }
+          break;
         default:
           break;
       }
@@ -462,6 +473,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                   <SelectItem value="rejected">Abgelehnt</SelectItem>
                   <SelectItem value="in_progress">In Bearbeitung</SelectItem>
                   <SelectItem value="completed">Abgeschlossen</SelectItem>
+                  <SelectItem value="archived">Archiviert</SelectItem>
                 </SelectContent>
               </Select>
             </div>

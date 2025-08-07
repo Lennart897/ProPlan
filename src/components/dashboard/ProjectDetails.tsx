@@ -21,7 +21,7 @@ interface Project {
   beschreibung?: string;
   erste_anlieferung?: string;
   letzte_anlieferung?: string;
-  status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed";
+  status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed" | "archived";
   created_at: string;
   created_by: string;
   standort_verteilung?: Record<string, number>;
@@ -48,7 +48,8 @@ const statusColors = {
   approved: "bg-success",
   rejected: "bg-destructive",
   in_progress: "bg-warning",
-  completed: "bg-primary"
+  completed: "bg-primary",
+  archived: "bg-muted"
 };
 
 const statusLabels = {
@@ -57,7 +58,8 @@ const statusLabels = {
   approved: "Genehmigt", 
   rejected: "Abgelehnt",
   in_progress: "In Bearbeitung",
-  completed: "Abgeschlossen"
+  completed: "Abgeschlossen",
+  archived: "Archiviert"
 };
 
 const locationLabels = {
@@ -128,6 +130,11 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
         } else if (action === "correct") {
           newStatus = "pending"; // Zurück an SupplyChain
           actionLabel = "zur Korrektur an SupplyChain zurückgewiesen";
+        }
+      } else if (user.role === "vertrieb") {
+        if (action === "archive" && project.status === "approved") {
+          newStatus = "archived";
+          actionLabel = "archiviert";
         }
       }
       
@@ -298,6 +305,21 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                   Ablehnen
                 </Button>
               )}
+            </div>
+          );
+        }
+        return null;
+      case "vertrieb":
+        // Vertrieb can archive approved projects
+        if (project.status === "approved") {
+          return (
+            <div className="flex gap-3">
+              <Button 
+                onClick={() => handleAction("archive")} 
+                className="flex-1 bg-muted hover:bg-muted-foreground/20 text-muted-foreground border border-muted-foreground/30"
+              >
+                Projekt archivieren
+              </Button>
             </div>
           );
         }

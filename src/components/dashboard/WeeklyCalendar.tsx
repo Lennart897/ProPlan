@@ -17,7 +17,7 @@ interface Project {
   produktgruppe?: string;
   gesamtmenge: number;
   beschreibung?: string;
-  status: string;
+  status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed" | "archived";
   created_at: string;
   updated_at: string;
   created_by_id: string;
@@ -117,6 +117,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
         // Transform the data to match our interface
         const transformedProjects: Project[] = (data || []).map(project => ({
           ...project,
+          status: project.status as Project['status'],
           standort_verteilung: project.standort_verteilung as Record<string, number> || {},
           menge_fix: project.menge_fix || false
         }));
