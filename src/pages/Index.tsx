@@ -52,19 +52,37 @@ const Index = () => {
   };
 
   useEffect(() => {
-    // Set up auth state listener
+    let mounted = true;
+
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        if (!mounted) return;
+        
+        console.log('Auth state changed:', event, session?.user?.id);
+        
+        // Always update session state
         setSession(session);
         
-        if (session?.user) {
-          // Fetch user profile data from database
-          setTimeout(async () => {
+        if (session?.user && event !== 'SIGNED_OUT') {
+          try {
             const userProfile = await fetchUserProfile(session.user.id);
-            if (userProfile) {
-              setUser(userProfile);
-            } else {
-              // Fallback if no profile exists
+            if (mounted) {
+              if (userProfile) {
+                setUser(userProfile);
+              } else {
+                // Fallback if no profile exists
+                setUser({
+                  id: session.user.id,
+                  email: session.user.email || "",
+                  role: "planung",
+                  full_name: session.user.user_metadata?.full_name || session.user.email || "Unbekannter Benutzer"
+                });
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching user profile:', error);
+            if (mounted) {
               setUser({
                 id: session.user.id,
                 email: session.user.email || "",
@@ -72,38 +90,78 @@ const Index = () => {
                 full_name: session.user.user_metadata?.full_name || session.user.email || "Unbekannter Benutzer"
               });
             }
-            setLoading(false);
-          }, 0);
+          }
         } else {
-          setUser(null);
+          if (mounted) {
+            setUser(null);
+          }
+        }
+        
+        if (mounted) {
           setLoading(false);
         }
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      
-      if (session?.user) {
-        const userProfile = await fetchUserProfile(session.user.id);
-        if (userProfile) {
-          setUser(userProfile);
-        } else {
-          // Fallback if no profile exists
-          setUser({
-            id: session.user.id,
-            email: session.user.email || "",
-            role: "planung",
-            full_name: session.user.user_metadata?.full_name || session.user.email || "Unbekannter Benutzer"
-          });
+    // THEN check for existing session
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session error:', error);
+          if (mounted) {
+            setLoading(false);
+          }
+          return;
+        }
+
+        if (!mounted) return;
+        
+        setSession(session);
+        
+        if (session?.user) {
+          try {
+            const userProfile = await fetchUserProfile(session.user.id);
+            if (mounted) {
+              if (userProfile) {
+                setUser(userProfile);
+              } else {
+                setUser({
+                  id: session.user.id,
+                  email: session.user.email || "",
+                  role: "planung",
+                  full_name: session.user.user_metadata?.full_name || session.user.email || "Unbekannter Benutzer"
+                });
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching initial user profile:', error);
+            if (mounted) {
+              setUser({
+                id: session.user.id,
+                email: session.user.email || "",
+                role: "planung",
+                full_name: session.user.user_metadata?.full_name || session.user.email || "Unbekannter Benutzer"
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
         }
       }
-      
-      setLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
