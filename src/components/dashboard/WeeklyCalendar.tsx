@@ -552,110 +552,111 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
             )}
           </div>
 
-        {/* Day Detail Cards - Mobile Optimized */}
-        <div className="grid grid-cols-1 sm:grid-cols-7 gap-3">
-          {weekDays.map((day, index) => {
-            const dayProjects = filteredProjects.filter(project => {
-              if (!project.erste_anlieferung || !project.letzte_anlieferung) return false;
-              try {
-                const startDate = parseISO(project.erste_anlieferung);
-                const endDate = parseISO(project.letzte_anlieferung);
-                return isWithinInterval(day, { start: startDate, end: endDate });
-              } catch (error) {
-                return false;
-              }
-            });
-
-            const previewForDay = previewProject && previewProject.erste_anlieferung && previewProject.letzte_anlieferung ? 
-              (() => {
+          {/* Day Detail Cards - Mobile Optimized */}
+          <div className="grid grid-cols-1 sm:grid-cols-7 gap-3">
+            {weekDays.map((day, index) => {
+              const dayProjects = filteredProjects.filter(project => {
+                if (!project.erste_anlieferung || !project.letzte_anlieferung) return false;
                 try {
-                  const startDate = parseISO(previewProject.erste_anlieferung);
-                  const endDate = parseISO(previewProject.letzte_anlieferung);
+                  const startDate = parseISO(project.erste_anlieferung);
+                  const endDate = parseISO(project.letzte_anlieferung);
                   return isWithinInterval(day, { start: startDate, end: endDate });
                 } catch (error) {
                   return false;
                 }
-              })() : false;
+              });
 
-            const totalQuantity = dayProjects.reduce((sum, project) => sum + project.gesamtmenge, 0) + 
-              (previewForDay ? previewProject.gesamtmenge : 0);
+              const previewForDay = previewProject && previewProject.erste_anlieferung && previewProject.letzte_anlieferung ? 
+                (() => {
+                  try {
+                    const startDate = parseISO(previewProject.erste_anlieferung);
+                    const endDate = parseISO(previewProject.letzte_anlieferung);
+                    return isWithinInterval(day, { start: startDate, end: endDate });
+                  } catch (error) {
+                    return false;
+                  }
+                })() : false;
 
-            return (
-              <Card key={index} className="rounded-xl border-2">
-                <CardContent className="p-3">
-                  <div className="text-center">
-                    <div className="text-xs font-medium text-muted-foreground mb-1">
-                      Tagesproduktion
+              const totalQuantity = dayProjects.reduce((sum, project) => sum + project.gesamtmenge, 0) + 
+                (previewForDay ? previewProject.gesamtmenge : 0);
+
+              return (
+                <Card key={index} className="rounded-xl border-2">
+                  <CardContent className="p-3">
+                    <div className="text-center">
+                      <div className="text-xs font-medium text-muted-foreground mb-1">
+                        Tagesproduktion
+                      </div>
+                      <div className="text-sm font-bold">
+                        {totalQuantity.toLocaleString('de-DE')} kg
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {dayProjects.length + (previewForDay ? 1 : 0)} Projekt{dayProjects.length + (previewForDay ? 1 : 0) !== 1 ? 'e' : ''}
+                      </div>
                     </div>
-                    <div className="text-sm font-bold">
-                      {totalQuantity.toLocaleString('de-DE')} kg
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Detailed Breakdown - Mobile Optimized */}
+          <div className="grid grid-cols-1 gap-4">
+            {/* By Location */}
+            <Card className="rounded-xl border-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Mengen nach Standort</CardTitle>
+                <CardDescription className="text-sm">Aufschlüsselung der Gesamtmengen</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {Object.entries(totals.byLocation).map(([location, quantity]) => (
+                    <div key={location} className="flex justify-between items-center p-2 rounded-lg bg-secondary/20">
+                      <span className="font-medium">{locationLabels[location as keyof typeof locationLabels] || location}</span>
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                        {quantity.toLocaleString('de-DE')} kg
+                      </Badge>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {dayProjects.length + (previewForDay ? 1 : 0)} Projekt{dayProjects.length + (previewForDay ? 1 : 0) !== 1 ? 'e' : ''}
+                  ))}
+                  {Object.keys(totals.byLocation).length === 0 && (
+                    <p className="text-muted-foreground text-center py-4">Keine Daten verfügbar</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* By Product */}
+            <Card className="rounded-xl border-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Mengen nach Produktgruppe</CardTitle>
+                <CardDescription className="text-sm">Aufschlüsselung der Produktgruppen</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {Object.entries(totals.byProduct).map(([product, quantity]) => (
+                    <div key={product} className="flex justify-between items-center p-2 rounded-lg bg-secondary/20">
+                      <span className="text-sm font-medium">{product}</span>
+                      <Badge variant="outline" className="bg-success/10 text-success border-success/20">
+                        {quantity.toLocaleString('de-DE')} kg
+                      </Badge>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                  ))}
+                  {Object.keys(totals.byProduct).length === 0 && (
+                    <p className="text-muted-foreground text-center py-4">Keine Daten verfügbar</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {loading && (
+            <Card className="rounded-xl border-2">
+              <CardContent className="text-center py-12">
+                <p className="text-muted-foreground">Lade Projekte...</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
-
-        {/* Detailed Breakdown - Mobile Optimized */}
-        <div className="grid grid-cols-1 gap-4">
-          {/* By Location */}
-          <Card className="rounded-xl border-2">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Mengen nach Standort</CardTitle>
-              <CardDescription className="text-sm">Aufschlüsselung der Gesamtmengen</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {Object.entries(totals.byLocation).map(([location, quantity]) => (
-                  <div key={location} className="flex justify-between items-center p-2 rounded-lg bg-secondary/20">
-                    <span className="font-medium">{locationLabels[location as keyof typeof locationLabels] || location}</span>
-                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                      {quantity.toLocaleString('de-DE')} kg
-                    </Badge>
-                  </div>
-                ))}
-                {Object.keys(totals.byLocation).length === 0 && (
-                  <p className="text-muted-foreground text-center py-4">Keine Daten verfügbar</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* By Product */}
-          <Card className="rounded-xl border-2">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Mengen nach Produktgruppe</CardTitle>
-              <CardDescription className="text-sm">Aufschlüsselung der Produktgruppen</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {Object.entries(totals.byProduct).map(([product, quantity]) => (
-                  <div key={product} className="flex justify-between items-center p-2 rounded-lg bg-secondary/20">
-                    <span className="text-sm font-medium">{product}</span>
-                    <Badge variant="outline" className="bg-success/10 text-success border-success/20">
-                      {quantity.toLocaleString('de-DE')} kg
-                    </Badge>
-                  </div>
-                ))}
-                {Object.keys(totals.byProduct).length === 0 && (
-                  <p className="text-muted-foreground text-center py-4">Keine Daten verfügbar</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {loading && (
-          <Card className="rounded-xl border-2">
-            <CardContent className="text-center py-12">
-              <p className="text-muted-foreground">Lade Projekte...</p>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );
