@@ -291,7 +291,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile-Optimized Header */}
-      <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85">
+      <header className="sticky top-0 z-50 border-b bg-card md:bg-card/95 md:backdrop-blur supports-[backdrop-filter]:md:bg-card/85">
         <div className="px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -463,7 +463,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
           {/* Project Timeline - Enhanced Mobile Experience */}
           <div className="relative min-h-[300px] bg-card rounded-xl border-2 p-3 sm:p-4">
             {/* Grid Lines */}
-            <div className="absolute inset-3 sm:inset-4 grid grid-cols-7 gap-0">
+            <div className="absolute inset-3 sm:inset-4 grid grid-cols-7 gap-0 pointer-events-none">
               {weekDays.map((_, index) => (
                 <div key={index} className="flex justify-center">
                   <div className="w-px bg-border/20 h-full" />
