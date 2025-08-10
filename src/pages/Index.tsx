@@ -8,7 +8,7 @@ import { User, Session } from "@supabase/supabase-js";
 interface AppUser {
   id: string;
   email: string;
-  role: "vertrieb" | "supply_chain" | "planung" | "planung_storkow" | "planung_brenz" | "planung_gudensberg" | "planung_doebeln" | "planung_visbek";
+  role: "vertrieb" | "supply_chain" | "planung" | "planung_storkow" | "planung_brenz" | "planung_gudensberg" | "planung_doebeln" | "planung_visbek" | "admin";
   full_name?: string;
 }
 
@@ -39,12 +39,12 @@ const Index = () => {
       // Get user data from auth
       const { data: { user: authUser } } = await supabase.auth.getUser();
       
-      return {
-        id: profile.user_id,
-        email: authUser?.email || '',
-        role: (profile.role as "vertrieb" | "supply_chain" | "planung") || 'planung',
-        full_name: profile.display_name || authUser?.email || 'Unbekannter Benutzer'
-      };
+        return {
+          id: profile.user_id,
+          email: authUser?.email || '',
+          role: (profile.role as "vertrieb" | "supply_chain" | "planung" | "planung_storkow" | "planung_brenz" | "planung_gudensberg" | "planung_doebeln" | "planung_visbek" | "admin") || 'planung',
+          full_name: profile.display_name || authUser?.email || 'Unbekannter Benutzer'
+        };
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
       return null;
@@ -260,6 +260,9 @@ const Index = () => {
             </Button>
             <Button variant="outline" onClick={() => demoLogin("planung@demo.com")} className="w-full">
               Planung Demo
+            </Button>
+            <Button variant="outline" onClick={() => demoLogin("admin@demo.com")} className="w-full">
+              Admin Demo
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">

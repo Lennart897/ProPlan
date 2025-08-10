@@ -53,7 +53,7 @@ interface Project {
 interface User {
   id: string;
   email: string;
-  role: "vertrieb" | "supply_chain" | "planung" | "planung_storkow" | "planung_brenz" | "planung_gudensberg" | "planung_doebeln" | "planung_visbek";
+  role: "vertrieb" | "supply_chain" | "planung" | "planung_storkow" | "planung_brenz" | "planung_gudensberg" | "planung_doebeln" | "planung_visbek" | "admin";
   full_name?: string;
 }
 
@@ -323,16 +323,17 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
     );
   };
 
-  const roleLabel = {
-    vertrieb: "Vertrieb",
-    supply_chain: "Supply Chain",
-    planung: "Planung",
-    planung_storkow: "Planung Storkow",
-    planung_brenz: "Planung Brenz", 
-    planung_gudensberg: "Planung Gudensberg",
-    planung_doebeln: "Planung Döbeln",
-    planung_visbek: "Planung Visbek"
-  };
+const roleLabel = {
+  vertrieb: "Vertrieb",
+  supply_chain: "Supply Chain",
+  planung: "Planung",
+  planung_storkow: "Planung Storkow",
+  planung_brenz: "Planung Brenz", 
+  planung_gudensberg: "Planung Gudensberg",
+  planung_doebeln: "Planung Döbeln",
+  planung_visbek: "Planung Visbek",
+  admin: "Admin"
+};
 
   if (showProjectForm) {
     return (
@@ -433,6 +434,11 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
             </div>
             <div className="flex items-center gap-1 sm:gap-3">
               <ThemeToggle />
+              {user.role === "admin" && (
+                <a href="/admin" className="hidden sm:inline-block">
+                  <Button variant="outline" size="sm">Admin</Button>
+                </a>
+              )}
               <Button variant="ghost" size="sm" className="hidden sm:flex">
                 <Bell className="h-4 w-4" />
               </Button>
