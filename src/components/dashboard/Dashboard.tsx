@@ -288,10 +288,10 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
           }
           return; // Exit early, don't update status
         case "archive":
-          // Only vertrieb can archive approved projects
+          // Vertrieb kann genehmigte oder abgelehnte Projekte archivieren
           if (user.role === "vertrieb") {
             const currentProject = projects.find(p => p.id === projectId);
-            if (currentProject?.status === "approved") {
+            if (currentProject && (currentProject.status === "approved" || currentProject.status === "rejected")) {
               newStatus = "archived";
             }
           }
@@ -683,7 +683,7 @@ const roleLabel = {
                           >
                             Prüfen
                           </Button>
-                          {user.role === "vertrieb" && project.status === "approved" && (
+                          {user.role === "vertrieb" && (project.status === "approved" || project.status === "rejected") && (
                             <Button
                               size="sm"
                               variant="secondary"
