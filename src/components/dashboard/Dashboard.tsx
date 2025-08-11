@@ -789,10 +789,10 @@ const roleLabel = {
                   <Table className="min-w-[720px]">
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Projekt-Nr.</TableHead>
                         <TableHead>Kunde</TableHead>
                         <TableHead>Artikel</TableHead>
                         <TableHead>Artikel-Nr.</TableHead>
-                        <TableHead>Projekt-Nr.</TableHead>
                         <TableHead>Menge</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Verantwortlich</TableHead>
@@ -806,10 +806,10 @@ const roleLabel = {
                           : project.status;
                         return (
                           <TableRow key={project.id}>
+                            <TableCell className="font-mono text-xs text-muted-foreground">{project.project_number}</TableCell>
                             <TableCell className="font-medium">{project.customer}</TableCell>
                             <TableCell className="truncate max-w-[280px]">{project.artikel_bezeichnung}</TableCell>
                             <TableCell className="whitespace-nowrap">{project.artikel_nummer}</TableCell>
-                            <TableCell className="font-mono text-xs text-muted-foreground">{project.project_number}</TableCell>
                             <TableCell className="whitespace-nowrap">
                               {project.gesamtmenge.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} kg
                             </TableCell>
