@@ -36,6 +36,18 @@ type ListedUser = {
     updated_at: string | null;
   } | null;
 };
+const roleIndex = new Map<AppRole, number>(roles.map((r, i) => [r, i]));
+const sortUsersByRole = (list: ListedUser[]) =>
+  list.slice().sort((a, b) => {
+    const ar = (a.profile?.role || "vertrieb") as AppRole;
+    const br = (b.profile?.role || "vertrieb") as AppRole;
+    const ai = roleIndex.get(ar) ?? 999;
+    const bi = roleIndex.get(br) ?? 999;
+    if (ai !== bi) return ai - bi;
+    const an = (a.profile?.display_name || a.email || "").toLowerCase();
+    const bn = (b.profile?.display_name || b.email || "").toLowerCase();
+    return an.localeCompare(bn);
+  });
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -74,7 +86,7 @@ const Admin = () => {
         body: { action: "list_users" },
       });
       if (error) throw error;
-      setUsers(data?.users || []);
+      setUsers(sortUsersByRole(data?.users || []));
     } catch (e: any) {
       toast({ title: "Fehler", description: e?.message || "Konnte Benutzer nicht laden", variant: "destructive" });
     }
