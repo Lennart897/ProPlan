@@ -125,27 +125,21 @@ export function ActivityLog({ userId }: ActivityLogProps) {
             <TableHead>Kunde</TableHead>
             <TableHead>Artikel-Nr.</TableHead>
             <TableHead>Artikel</TableHead>
-            <TableHead>Status alt → neu</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {formatted.map((row) => {
-            const prev = row.previous_status ? (statusLabels[row.previous_status] || row.previous_status) : '—';
-            const next = row.new_status ? (statusLabels[row.new_status] || row.new_status) : '—';
-            return (
-              <TableRow key={row.id}>
-                <TableCell className="whitespace-nowrap">{new Date(row.created_at).toLocaleString('de-DE')}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{actionLabels[row.action] || row.action}</Badge>
-                </TableCell>
-                <TableCell className="whitespace-nowrap">{row.project?.project_number ?? '—'}</TableCell>
-                <TableCell className="truncate max-w-[200px]">{row.project?.customer ?? '—'}</TableCell>
-                <TableCell className="whitespace-nowrap">{row.project?.artikel_nummer ?? '—'}</TableCell>
-                <TableCell className="truncate max-w-[280px]">{row.project?.artikel_bezeichnung ?? '—'}</TableCell>
-                <TableCell className="whitespace-nowrap">{prev} → {next}</TableCell>
-              </TableRow>
-            );
-          })}
+          {formatted.map((row) => (
+            <TableRow key={row.id}>
+              <TableCell className="whitespace-nowrap">{new Date(row.created_at).toLocaleString('de-DE')}</TableCell>
+              <TableCell>
+                <Badge variant="outline">{actionLabels[row.action] || row.action}</Badge>
+              </TableCell>
+              <TableCell className="whitespace-nowrap">{row.project?.project_number ?? '—'}</TableCell>
+              <TableCell className="truncate max-w-[200px]">{row.project?.customer ?? '—'}</TableCell>
+              <TableCell className="whitespace-nowrap">{row.project?.artikel_nummer ?? '—'}</TableCell>
+              <TableCell className="truncate max-w-[280px]">{row.project?.artikel_bezeichnung ?? '—'}</TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </div>
