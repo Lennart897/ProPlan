@@ -3,13 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Filter, Search, Bell, User, LogOut, Calendar, Archive, ArrowLeft, Building2, Package, Scale, LayoutGrid, List } from "lucide-react";
+import { Plus, Filter, Search, Bell, User, LogOut, Calendar, Archive, ArrowLeft, Building2, Package, Scale, LayoutGrid, List, History } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProjectForm } from "./ProjectForm";
 import { ProjectDetails } from "./ProjectDetails";
 import { WeeklyCalendar } from "./WeeklyCalendar";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ActivityLog } from "./ActivityLog";
 
 // Import the Project type from WeeklyCalendar to avoid type conflicts
 type CalendarProject = {
@@ -139,6 +141,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const { toast } = useToast();
 
   const [viewMode, setViewMode] = useState<'matrix' | 'list'>('matrix');
+  const [showActivity, setShowActivity] = useState(false);
   
   // Load projects from database
   const loadProjects = async () => {
@@ -361,6 +364,31 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
           .eq('id', projectId);
 
         if (error) throw error;
+
+        // Historie für approve/reject/correct speichern
+        if (action === 'approve' || action === 'reject' || action === 'correct') {
+          const prevStatus = projects.find(p => p.id === projectId)?.status;
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('display_name')
+              .eq('user_id', user.id)
+              .maybeSingle();
+            const displayName = profile?.display_name || user.full_name || user.email;
+            await supabase
+              .from('project_history')
+              .insert({
+                project_id: projectId,
+                user_id: user.id,
+                user_name: displayName,
+                action,
+                previous_status: prevStatus,
+                new_status: newStatus,
+              });
+          } catch (e) {
+            console.error('Projekt-Historie Ausnahme:', e);
+          }
+        }
 
         // Reload projects to get fresh data
         await loadProjects();
@@ -650,6 +678,14 @@ const roleLabel = {
                   Neues Projekt
                 </Button>
               )}
+              <Button
+                variant="outline"
+                onClick={() => setShowActivity(true)}
+                className="w-full sm:w-auto"
+              >
+                <History className="h-4 w-4 mr-2" />
+                Aktivitäten
+              </Button>
             </div>
           </div>
 
@@ -852,6 +888,17 @@ const roleLabel = {
             </Card>
           )
           }
+
+          {/* Aktivitäten-Dialog */}
+          <Dialog open={showActivity} onOpenChange={setShowActivity}>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Aktivitäten</DialogTitle>
+                <DialogDescription>Ihr persönliches Aktivitätenprotokoll</DialogDescription>
+              </DialogHeader>
+              <ActivityLog userId={user.id} />
+            </DialogContent>
+          </Dialog>
          
         </div>
       </div>

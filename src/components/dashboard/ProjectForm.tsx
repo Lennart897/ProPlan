@@ -160,7 +160,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
         throw new Error("Nicht angemeldet");
       }
 
-      const { error } = await supabase
+      const { data: inserted, error } = await supabase
         .from('manufacturing_projects')
         .insert({
           customer: data.customer,
@@ -177,9 +177,21 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
           status: 'pending', // Start as pending for SupplyChain review
           created_by_id: currentUser.id,
           created_by_name: user.full_name || user.email
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
+
+      // Aktivität 'create' protokollieren
+      await supabase.from('project_history').insert({
+        project_id: inserted.id,
+        user_id: currentUser.id,
+        user_name: user.full_name || user.email,
+        action: 'create',
+        previous_status: null,
+        new_status: 'pending'
+      });
       
       toast({
         title: "Projekt erstellt",
