@@ -806,7 +806,7 @@ const roleLabel = {
                           : project.status;
                         return (
                           <TableRow key={project.id}>
-                            <TableCell className="font-mono text-xs text-muted-foreground">{project.project_number}</TableCell>
+                            <TableCell className="whitespace-nowrap">{project.project_number}</TableCell>
                             <TableCell className="font-medium">{project.customer}</TableCell>
                             <TableCell className="truncate max-w-[280px]">{project.artikel_bezeichnung}</TableCell>
                             <TableCell className="whitespace-nowrap">{project.artikel_nummer}</TableCell>
