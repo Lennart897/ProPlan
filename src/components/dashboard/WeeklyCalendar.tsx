@@ -270,6 +270,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
   };
 
   const projectSpans = calculateProjectSpans();
+  const weeklyProjectCount = Array.from(new Set(projectSpans.filter(s => !s.isPreview).map(s => s.project.id))).length;
 
   // Calculate totals for current week
   const calculateTotals = () => {
@@ -444,7 +445,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
             <CardContent className="p-4">
               <div className="text-center">
                 <div className="text-xl sm:text-2xl font-bold text-foreground">
-                  {filteredProjects.length}
+                  {weeklyProjectCount}
                 </div>
                 <div className="text-xs font-medium text-muted-foreground mt-1">
                   Projekte
