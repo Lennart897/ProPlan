@@ -141,9 +141,10 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
         if (archivedIds.length > 0) {
           const { data: historyRows, error: histError } = await supabase
             .from('project_history')
-            .select('project_id, previous_status')
+            .select('project_id, previous_status, new_status, created_at')
             .in('project_id', archivedIds)
-            .order('changed_at', { ascending: false });
+            .eq('new_status', 'archived')
+            .order('created_at', { ascending: false });
           if (histError) throw histError;
           const prevMap: Record<string, ProjectStatus> = {};
           const seen = new Set<string>();
