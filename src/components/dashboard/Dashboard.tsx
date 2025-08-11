@@ -142,6 +142,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
 
   const [viewMode, setViewMode] = useState<'matrix' | 'list'>('matrix');
   const [showActivity, setShowActivity] = useState(false);
+  const [previewInitialWeek, setPreviewInitialWeek] = useState<Date | null>(null);
   
   // Load projects from database
   const loadProjects = async () => {
@@ -310,6 +311,27 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
               letzte_anlieferung: projectToPreview.letzte_anlieferung || null,
               menge_fix: projectToPreview.menge_fix || false
             };
+
+            // Compute initial week for calendar (prefer first delivery, then last)
+            const parseLocalDateStr = (dateStr: string) => {
+              try {
+                const [y, m, d] = dateStr.split('-').map(Number);
+                if (!y || !m || !d) return new Date(dateStr);
+                return new Date(y, m - 1, d);
+              } catch {
+                return new Date(dateStr);
+              }
+            };
+            let initialDate: Date | null = null;
+            if (projectToPreview.erste_anlieferung) {
+              initialDate = parseLocalDateStr(projectToPreview.erste_anlieferung);
+            } else if (projectToPreview.letzte_anlieferung) {
+              initialDate = parseLocalDateStr(projectToPreview.letzte_anlieferung);
+            } else {
+              initialDate = new Date();
+            }
+            setPreviewInitialWeek(initialDate);
+
             console.log('Setting preview project and showing calendar');
             setPreviewProject(previewProjectForCalendar);
             setShowCalendar(true);
@@ -472,6 +494,7 @@ const roleLabel = {
         onBack={() => {
           setShowCalendar(false);
           setPreviewProject(null);
+          setPreviewInitialWeek(null);
           // If we came from project details, return there
           // Otherwise stay in dashboard (selectedProject stays null)
         }}
@@ -502,7 +525,7 @@ const roleLabel = {
           setShowCalendar(false);
         }}
         onWeekChange={(newWeek) => setCalendarWeek(newWeek)}
-        initialWeek={cameFromCalendar ? calendarWeek : undefined}
+        initialWeek={cameFromCalendar ? calendarWeek : (previewInitialWeek ?? undefined)}
       />
     );
   }
