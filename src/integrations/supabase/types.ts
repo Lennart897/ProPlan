@@ -308,6 +308,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string
       }
+      is_project_pending_for_user_location: {
+        Args: { user_uuid: string; p_project_id: string }
+        Returns: boolean
+      }
       refresh_project_status_from_approvals: {
         Args: { p_project_id: string }
         Returns: undefined
