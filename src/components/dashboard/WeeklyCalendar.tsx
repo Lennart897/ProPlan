@@ -554,6 +554,9 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                               {project.customer}
                             </div>
                             <div className="text-xs text-muted-foreground truncate leading-tight">
+                              {project.artikel_bezeichnung} ({project.artikel_nummer})
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate leading-tight">
                               {project.gesamtmenge.toLocaleString('de-DE')} kg
                             </div>
                           </div>
