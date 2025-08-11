@@ -54,10 +54,30 @@ export function ActivityLog({ userId }: ActivityLogProps) {
     let isMounted = true;
     async function load() {
       setLoading(true);
+      // 1) Sichtbare Projekte laden (RLS bestimmt Sichtbarkeit)
+      const { data: visibleProjects, error: projError } = await supabase
+        .from('manufacturing_projects')
+        .select('id');
+      if (projError) {
+        console.error('Fehler beim Laden der Projekte für Aktivitäten', projError);
+        setLoading(false);
+        return;
+      }
+
+      const projectIds = (visibleProjects || []).map((p: any) => p.id);
+      if (projectIds.length === 0) {
+        if (!isMounted) return;
+        setRows([]);
+        setProjects({});
+        setLoading(false);
+        return;
+      }
+
+      // 2) Historie für sichtbare Projekte laden
       const { data: history, error } = await supabase
         .from('project_history')
         .select('*')
-        .eq('user_id', userId)
+        .in('project_id', projectIds)
         .order('created_at', { ascending: false })
         .limit(200);
       if (error) {
@@ -68,25 +88,23 @@ export function ActivityLog({ userId }: ActivityLogProps) {
       if (!isMounted) return;
       setRows(history as HistoryRow[]);
 
-      const ids = Array.from(new Set((history || []).map((h: any) => h.project_id)));
-      if (ids.length) {
-        const { data: projs } = await supabase
-          .from('manufacturing_projects')
-          .select('id, project_number, customer, artikel_nummer, artikel_bezeichnung')
-          .in('id', ids);
-        const map: Record<string, ProjectMinimal> = {};
-        (projs || []).forEach((p: any) => {
-          map[p.id] = {
-            id: p.id,
-            project_number: p.project_number ?? null,
-            customer: p.customer,
-            artikel_nummer: p.artikel_nummer,
-            artikel_bezeichnung: p.artikel_bezeichnung,
-          };
-        });
-        if (!isMounted) return;
-        setProjects(map);
-      }
+      // 3) Projekt-Metadaten für Anzeige laden
+      const { data: projs } = await supabase
+        .from('manufacturing_projects')
+        .select('id, project_number, customer, artikel_nummer, artikel_bezeichnung')
+        .in('id', projectIds);
+      const map: Record<string, ProjectMinimal> = {};
+      (projs || []).forEach((p: any) => {
+        map[p.id] = {
+          id: p.id,
+          project_number: p.project_number ?? null,
+          customer: p.customer,
+          artikel_nummer: p.artikel_nummer,
+          artikel_bezeichnung: p.artikel_bezeichnung,
+        };
+      });
+      if (!isMounted) return;
+      setProjects(map);
       setLoading(false);
     }
     load();
