@@ -529,13 +529,13 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                   {project.erste_anlieferung && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Erste Anlieferung</label>
-                      <p className="text-lg">{new Date(project.erste_anlieferung).toLocaleDateString("de-DE")}</p>
+                      <p className="text-lg">{project.erste_anlieferung.split('-').reverse().join('.')}</p>
                     </div>
                   )}
                   {project.letzte_anlieferung && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Letzte Anlieferung</label>
-                      <p className="text-lg">{new Date(project.letzte_anlieferung).toLocaleDateString("de-DE")}</p>
+                      <p className="text-lg">{project.letzte_anlieferung.split('-').reverse().join('.')}</p>
                     </div>
                   )}
                 </div>
