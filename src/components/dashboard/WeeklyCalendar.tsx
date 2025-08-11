@@ -565,12 +565,17 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                               </Badge>
                             )}
                             {project.standort_verteilung && Object.keys(project.standort_verteilung).length > 0 && (
-                              <div className="text-xs text-muted-foreground">
+                              <div className="mt-1 grid grid-cols-2 sm:grid-cols-3 gap-1 max-w-[280px]">
                                 {Object.entries(project.standort_verteilung)
                                   .filter(([_, qty]) => Number(qty) > 0)
-                                  .map(([location]) => locationLabels[location as keyof typeof locationLabels] || location)
-                                  .join(', ')
-                                }
+                                  .map(([location, qty]) => (
+                                    <span
+                                      key={location}
+                                      className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded bg-secondary/20 text-muted-foreground"
+                                    >
+                                      {(locationLabels[location as keyof typeof locationLabels] || location)}: {Number(qty).toLocaleString('de-DE', { maximumFractionDigits: 0 })} kg
+                                    </span>
+                                  ))}
                               </div>
                             )}
                           </div>
