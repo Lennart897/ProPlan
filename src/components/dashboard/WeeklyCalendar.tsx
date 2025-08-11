@@ -643,7 +643,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                         Tagesproduktion
                       </div>
                       <div className="text-sm font-bold">
-                        {totalQuantity.toLocaleString('de-DE')} kg
+                        {totalQuantity.toLocaleString('de-DE', { maximumFractionDigits: 0 })} kg
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {dayProjects.length + (previewForDay ? 1 : 0)} Projekt{dayProjects.length + (previewForDay ? 1 : 0) !== 1 ? 'e' : ''}
