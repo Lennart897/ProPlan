@@ -270,147 +270,48 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
 
   const handleProjectAction = async (projectId: string, action: string) => {
     try {
-      let newStatus = projects.find(p => p.id === projectId)?.status;
-      
-      switch (action) {
-        case "approve":
-          // SupplyChain: -> in_progress (Standort-Zusagen werden per Trigger erstellt)
-          const project = projects.find(p => p.id === projectId);
-          if (project?.status === "pending" && user.role === "supply_chain") {
-            newStatus = "in_progress";
-          }
-          // Planung-Zusage ändert den Status nicht direkt; DB-Trigger setzt auf approved, sobald alle Standorte zugestimmt haben
-          break;
-        case "reject":
-          newStatus = "rejected";
-          break;
-        case "correct":
-          // Go back one step
-          const currentProject = projects.find(p => p.id === projectId);
-          if (currentProject?.status === "in_progress") {
-            newStatus = "pending"; // Back to SupplyChain
-          }
-          break;
-        case "preview_calendar":
-          console.log('Preview calendar action triggered for project:', projectId);
-          // Set preview project and show calendar
-          const projectToPreview = projects.find(p => p.id === projectId);
-          console.log('Found project to preview:', projectToPreview);
-          if (projectToPreview) {
-            // Convert project format to match WeeklyCalendar expectations
-            const previewProjectForCalendar: CalendarProject = {
-              ...projectToPreview,
-              updated_at: projectToPreview.created_at,
-              created_by_id: 'preview',
-              created_by_name: projectToPreview.created_by,
-              erste_anlieferung: projectToPreview.erste_anlieferung || null,
-              letzte_anlieferung: projectToPreview.letzte_anlieferung || null,
-              menge_fix: projectToPreview.menge_fix || false
-            };
-
-            // Compute initial week for calendar (prefer first delivery, then last)
-            const parseLocalDateStr = (dateStr: string) => {
-              try {
-                const [y, m, d] = dateStr.split('-').map(Number);
-                if (!y || !m || !d) return new Date(dateStr);
-                return new Date(y, m - 1, d);
-              } catch {
-                return new Date(dateStr);
-              }
-            };
-            let initialDate: Date | null = null;
-            if (projectToPreview.erste_anlieferung) {
-              initialDate = parseLocalDateStr(projectToPreview.erste_anlieferung);
-            } else if (projectToPreview.letzte_anlieferung) {
-              initialDate = parseLocalDateStr(projectToPreview.letzte_anlieferung);
-            } else {
-              initialDate = new Date();
-            }
-            setPreviewInitialWeek(initialDate);
-
-            console.log('Setting preview project and showing calendar');
-            setPreviewProject(previewProjectForCalendar);
-            setShowCalendar(true);
-            // Keep selectedProject so we can return to project details
-          }
-          return; // Exit early, don't update status
-        case "archive":
-          // Vertrieb kann genehmigte oder abgelehnte Projekte archivieren
-          if (user.role === "vertrieb") {
-            const currentProject = projects.find(p => p.id === projectId);
-            if (currentProject && (currentProject.status === "approved" || currentProject.status === "rejected")) {
-              newStatus = "archived";
-            }
-          }
-          break;
-        default:
-          break;
+      // Aktionen (approve/reject/correct) werden in ProjectDetails bereits ausgeführt und protokolliert.
+      // Damit es keine doppelten Protokolle gibt, machen wir hier nur ein Refresh —
+      // außer bei Archivierung aus der Listenansicht.
+      if (action !== "archive") {
+        await loadProjects();
+        return;
       }
 
-      if (newStatus) {
-        // Wenn Archivierung, Historie speichern (vorheriger Status)
-        if (action === "archive" && newStatus === "archived") {
-          const prevStatus = projects.find(p => p.id === projectId)?.status;
-          try {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('display_name')
-              .eq('user_id', user.id)
-              .single();
+      // Archivierung (Vertrieb) aus der Listenansicht
+      const currentProject = projects.find(p => p.id === projectId);
+      if (user.role === "vertrieb" && currentProject && (currentProject.status === "approved" || currentProject.status === "rejected")) {
+        // Historie erfassen
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          const displayName = profile?.display_name || user.full_name || user.email;
 
-            const displayName = profile?.display_name || user.full_name || user.email;
-
-            const { error: histError } = await supabase
-              .from('project_history')
-              .insert({
-                project_id: projectId,
-                user_id: user.id,
-                user_name: displayName,
-                action: 'archive',
-                previous_status: prevStatus,
-                new_status: 'archived',
-              });
-            if (histError) console.error('Projekt-Historie Fehler:', histError);
-          } catch (e) {
-            console.error('Projekt-Historie Ausnahme:', e);
-          }
+          await supabase
+            .from('project_history')
+            .insert({
+              project_id: projectId,
+              user_id: user.id,
+              user_name: displayName,
+              action: 'archive',
+              previous_status: currentProject.status,
+              new_status: 'archived',
+            });
+        } catch (e) {
+          console.error('Projekt-Historie Ausnahme:', e);
         }
 
         const { error } = await supabase
           .from('manufacturing_projects')
-          .update({ status: newStatus })
+          .update({ status: 'archived' })
           .eq('id', projectId);
 
         if (error) throw error;
 
-        // Historie für approve/reject/correct speichern
-        if (action === 'approve' || action === 'reject' || action === 'correct') {
-          const prevStatus = projects.find(p => p.id === projectId)?.status;
-          try {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('display_name')
-              .eq('user_id', user.id)
-              .maybeSingle();
-            const displayName = profile?.display_name || user.full_name || user.email;
-            await supabase
-              .from('project_history')
-              .insert({
-                project_id: projectId,
-                user_id: user.id,
-                user_name: displayName,
-                action,
-                previous_status: prevStatus,
-                new_status: newStatus,
-              });
-          } catch (e) {
-            console.error('Projekt-Historie Ausnahme:', e);
-          }
-        }
-
-        // Reload projects to get fresh data
         await loadProjects();
-        
         toast({
           title: "Erfolgreich",
           description: "Projektstatus wurde aktualisiert",

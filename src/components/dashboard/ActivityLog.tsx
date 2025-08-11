@@ -30,8 +30,12 @@ type ProjectMinimal = {
 const actionLabels: Record<string, string> = {
   create: "Erstellt",
   approve: "Zugesagt",
+  approved_forwarded: "Weitergeleitet (Supply Chain)",
+  location_approved: "Standort zugesagt",
   reject: "Abgesagt",
+  rejected: "Abgelehnt",
   correct: "Korrigiert",
+  corrected: "Korrigiert",
   archive: "Archiviert",
 };
 
