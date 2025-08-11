@@ -133,6 +133,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const [cameFromCalendar, setCameFromCalendar] = useState(false);
   const [calendarWeek, setCalendarWeek] = useState<Date>(new Date());
   const [archivedPrevStatus, setArchivedPrevStatus] = useState<Record<string, Project['status']>>({});
+  const [archiveStatusFilter, setArchiveStatusFilter] = useState<'all' | 'approved' | 'rejected'>("all");
   const { toast } = useToast();
 
   // Load projects from database
@@ -216,8 +217,14 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       ? project.status === "archived"
       : (statusFilter === "all" ? project.status !== "archived" : project.status === statusFilter);
     
-    // Rollenbasierte Filterung: nur relevante Projekte für die eigene Rolle anzeigen
+    // Im Archiv zusätzlich nach vorherigem Status filtern (approved/rejected)
+    const matchesArchivePrev = !isArchiveView 
+      || archiveStatusFilter === 'all' 
+      || (archivedPrevStatus[project.id] && archivedPrevStatus[project.id] === archiveStatusFilter);
+    
+    // Rollenbasierte Filterung nur außerhalb des Archivs anwenden
     const matchesRole = () => {
+      if (isArchiveView) return true;
       switch (user.role) {
         case "supply_chain":
           return project.status === "pending"; // SupplyChain sieht nur Projekte zur ersten Prüfung
@@ -235,7 +242,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       }
     };
     
-    return matchesSearch && matchesStatus && matchesRole();
+    return matchesSearch && matchesStatus && matchesArchivePrev && matchesRole();
   });
 
   const handleProjectAction = async (projectId: string, action: string) => {
@@ -520,20 +527,33 @@ const roleLabel = {
                   className="pl-10 w-full sm:w-80"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="Status filtern" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle Status</SelectItem>
-                  <SelectItem value="pending">Ausstehend</SelectItem>
-                  <SelectItem value="approved">Genehmigt</SelectItem>
-                  <SelectItem value="rejected">Abgelehnt</SelectItem>
-                  <SelectItem value="in_progress">In Bearbeitung</SelectItem>
-                  <SelectItem value="completed">Abgeschlossen</SelectItem>
-                  <SelectItem value="archived">Archiviert</SelectItem>
-                </SelectContent>
-              </Select>
+              {statusFilter === 'archived' ? (
+                <Select value={archiveStatusFilter} onValueChange={(v) => setArchiveStatusFilter(v as 'all' | 'approved' | 'rejected')}>
+                  <SelectTrigger className="w-full sm:w-56">
+                    <SelectValue placeholder="Archiv-Status filtern" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle im Archiv</SelectItem>
+                    <SelectItem value="approved">Genehmigt (archiviert)</SelectItem>
+                    <SelectItem value="rejected">Abgelehnt (archiviert)</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Status filtern" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle Status</SelectItem>
+                    <SelectItem value="pending">Ausstehend</SelectItem>
+                    <SelectItem value="approved">Genehmigt</SelectItem>
+                    <SelectItem value="rejected">Abgelehnt</SelectItem>
+                    <SelectItem value="in_progress">In Bearbeitung</SelectItem>
+                    <SelectItem value="completed">Abgeschlossen</SelectItem>
+                    <SelectItem value="archived">Archiviert</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             
             <div className="flex flex-col gap-2 sm:flex-row">
