@@ -661,7 +661,7 @@ const roleLabel = {
                     {/* Menge */}
                     <div className="flex items-center gap-2 text-sm">
                       <Scale className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <span className="font-medium">{project.gesamtmenge.toFixed(1)} kg</span>
+                      <span className="font-medium">{project.gesamtmenge.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} kg</span>
                       {project.menge_fix && (
                         <Badge variant="outline" className="text-xs py-0">Fix</Badge>
                       )}
