@@ -565,12 +565,11 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                               </Badge>
                             )}
                             {project.standort_verteilung && Object.keys(project.standort_verteilung).length > 0 && (
-                              <div className="text-xs text-muted-foreground truncate max-w-16">
+                              <div className="text-xs text-muted-foreground">
                                 {Object.entries(project.standort_verteilung)
                                   .filter(([_, qty]) => Number(qty) > 0)
                                   .map(([location]) => locationLabels[location as keyof typeof locationLabels] || location)
-                                  .slice(0, 1)
-                                  .join('')
+                                  .join(', ')
                                 }
                               </div>
                             )}
