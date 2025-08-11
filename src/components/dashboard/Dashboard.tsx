@@ -677,6 +677,9 @@ const roleLabel = {
                           <CardDescription className="text-sm truncate">
                             {project.artikel_nummer}
                           </CardDescription>
+                          <div className="text-xs text-muted-foreground truncate">
+                            ID: {project.id}
+                          </div>
                         </div>
                       </div>
                       {(() => {
@@ -785,6 +788,7 @@ const roleLabel = {
                         <TableHead>Kunde</TableHead>
                         <TableHead>Artikel</TableHead>
                         <TableHead>Artikel-Nr.</TableHead>
+                        <TableHead>Projekt-ID</TableHead>
                         <TableHead>Menge</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Verantwortlich</TableHead>
@@ -801,6 +805,7 @@ const roleLabel = {
                             <TableCell className="font-medium">{project.customer}</TableCell>
                             <TableCell className="truncate max-w-[280px]">{project.artikel_bezeichnung}</TableCell>
                             <TableCell className="whitespace-nowrap">{project.artikel_nummer}</TableCell>
+                            <TableCell className="font-mono text-xs text-muted-foreground">{project.id}</TableCell>
                             <TableCell className="whitespace-nowrap">
                               {project.gesamtmenge.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} kg
                             </TableCell>
