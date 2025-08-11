@@ -312,12 +312,20 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
         if (action === "archive" && newStatus === "archived") {
           const prevStatus = projects.find(p => p.id === projectId)?.status;
           try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('display_name')
+              .eq('user_id', user.id)
+              .single();
+
+            const displayName = profile?.display_name || user.full_name || user.email;
+
             const { error: histError } = await supabase
               .from('project_history')
               .insert({
                 project_id: projectId,
                 user_id: user.id,
-                user_name: user.full_name || user.email,
+                user_name: displayName,
                 action: 'archive',
                 previous_status: prevStatus,
                 new_status: 'archived',

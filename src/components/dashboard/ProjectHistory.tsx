@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface HistoryEntry {
   id: string;
+  user_id: string;
   action: string;
   user_name: string;
   reason?: string;
@@ -54,6 +55,7 @@ const statusLabels = {
 export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -65,7 +67,25 @@ export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        setHistory(data || []);
+
+        const historyData = (data || []) as HistoryEntry[];
+        setHistory(historyData);
+
+        const userIds = Array.from(new Set(historyData.map((h) => h.user_id).filter(Boolean)));
+        if (userIds.length > 0) {
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('user_id, display_name')
+            .in('user_id', userIds);
+
+          if (!profilesError && profilesData) {
+            const map: Record<string, string> = {};
+            profilesData.forEach((p: any) => {
+              if (p.user_id && p.display_name) map[p.user_id] = p.display_name;
+            });
+            setDisplayNames(map);
+          }
+        }
       } catch (error) {
         console.error('Error fetching project history:', error);
       } finally {
@@ -165,7 +185,7 @@ export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
                       
                       <div className="flex items-center gap-2 mb-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{entry.user_name}</span>
+                        <span className="font-medium">{displayNames[entry.user_id] || entry.user_name}</span>
                       </div>
                       
                       {entry.previous_status && entry.new_status && (

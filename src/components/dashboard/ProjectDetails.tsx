@@ -86,12 +86,25 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('user_id', user.id)
+        .single();
+
+      const displayName =
+        profile?.display_name ||
+        (user.user_metadata?.display_name as string | undefined) ||
+        (user.user_metadata?.full_name as string | undefined) ||
+        user.email ||
+        'Unbekannt';
+
       await supabase
         .from('project_history')
         .insert({
           project_id: project.id,
           user_id: user.id,
-          user_name: user.user_metadata?.display_name || user.email || 'Unbekannt',
+          user_name: displayName,
           action,
           reason,
           previous_status: previousStatus,
