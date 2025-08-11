@@ -677,7 +677,7 @@ const roleLabel = {
                             .slice(0, 3)
                             .map(([location, amount]) => (
                               <Badge key={location} variant="outline" className="text-xs px-2 py-0">
-                                {location}: {amount}kg
+                                {location.charAt(0).toUpperCase() + location.slice(1)}: {amount.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} kg
                               </Badge>
                             ))
                           }
