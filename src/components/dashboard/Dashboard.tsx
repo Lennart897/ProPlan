@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Filter, Search, Bell, User, LogOut, Calendar, Archive, ArrowLeft, Building2, Package, Scale } from "lucide-react";
+import { Plus, Filter, Search, Bell, User, LogOut, Calendar, Archive, ArrowLeft, Building2, Package, Scale, LayoutGrid, List } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProjectForm } from "./ProjectForm";
 import { ProjectDetails } from "./ProjectDetails";
 import { WeeklyCalendar } from "./WeeklyCalendar";
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 
 // Import the Project type from WeeklyCalendar to avoid type conflicts
 type CalendarProject = {
@@ -136,6 +137,8 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const [archiveStatusFilter, setArchiveStatusFilter] = useState<'all' | 'approved' | 'rejected'>("all");
   const { toast } = useToast();
 
+  const [viewMode, setViewMode] = useState<'matrix' | 'list'>('matrix');
+  
   // Load projects from database
   const loadProjects = async () => {
     try {
@@ -208,6 +211,20 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
     loadProjects();
   }, []);
 
+  // Load saved view preference per user
+  useEffect(() => {
+    const key = `dashboardView_${user.id}`;
+    const saved = localStorage.getItem(key);
+    if (saved === "matrix" || saved === "list") {
+      setViewMode(saved as "matrix" | "list");
+    }
+  }, [user.id]);
+
+  // Persist view preference per user
+  useEffect(() => {
+    const key = `dashboardView_${user.id}`;
+    localStorage.setItem(key, viewMode);
+  }, [viewMode, user.id]);
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.artikel_nummer.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -565,6 +582,30 @@ const roleLabel = {
             </div>
             
             <div className="flex flex-col gap-2 sm:flex-row">
+              {/* Ansicht umschalten: Matrix | Liste */}
+              <div className="flex w-full sm:w-auto">
+                <Button
+                  variant={viewMode === 'matrix' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('matrix')}
+                  className="w-1/2 sm:w-auto rounded-r-none"
+                  aria-pressed={viewMode === 'matrix'}
+                >
+                  <LayoutGrid className="h-4 w-4 mr-2" />
+                  Matrix
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="w-1/2 sm:w-auto rounded-l-none -ml-px"
+                  aria-pressed={viewMode === 'list'}
+                >
+                  <List className="h-4 w-4 mr-2" />
+                  Liste
+                </Button>
+              </div>
+
               {statusFilter !== 'archived' && (
                 <Button 
                   variant="default" 
@@ -608,22 +649,22 @@ const roleLabel = {
             </div>
           </div>
 
-          {/* Projects Grid - Mobile Optimized */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {loading ? (
-              <Card className="col-span-full">
-                <CardContent className="text-center py-12">
-                  <p className="text-muted-foreground">Lade Projekte...</p>
-                </CardContent>
-              </Card>
-            ) : filteredProjects.length === 0 ? (
-              <Card className="col-span-full">
-                <CardContent className="text-center py-12">
-                  <p className="text-muted-foreground">Keine Projekte gefunden</p>
-                </CardContent>
-              </Card>
-            ) : (
-              filteredProjects.map((project) => (
+          {/* Projects - Matrix oder Liste */}
+          {loading ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <p className="text-muted-foreground">Lade Projekte...</p>
+              </CardContent>
+            </Card>
+          ) : filteredProjects.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <p className="text-muted-foreground">Keine Projekte gefunden</p>
+              </CardContent>
+            </Card>
+          ) : viewMode === 'matrix' ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredProjects.map((project) => (
                 <Card key={project.id} className="group hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
@@ -728,9 +769,81 @@ const roleLabel = {
                     </div>
                   </CardContent>
                 </Card>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle>Projekte</CardTitle>
+                <CardDescription>Tabellarische Übersicht</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="relative w-full overflow-auto">
+                  <Table className="min-w-[720px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Kunde</TableHead>
+                        <TableHead>Artikel</TableHead>
+                        <TableHead>Artikel-Nr.</TableHead>
+                        <TableHead>Menge</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Verantwortlich</TableHead>
+                        <TableHead className="text-right">Aktionen</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredProjects.map((project) => {
+                        const displayStatus = statusFilter === "archived" && archivedPrevStatus[project.id]
+                          ? (archivedPrevStatus[project.id] as Project['status'])
+                          : project.status;
+                        return (
+                          <TableRow key={project.id}>
+                            <TableCell className="font-medium">{project.customer}</TableCell>
+                            <TableCell className="truncate max-w-[280px]">{project.artikel_bezeichnung}</TableCell>
+                            <TableCell className="whitespace-nowrap">{project.artikel_nummer}</TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {project.gesamtmenge.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} kg
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`${statusColors[displayStatus]}`}>
+                                {statusLabels[displayStatus]}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {getCurrentResponsibleRole(project.status) ?? "-"}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => setSelectedProject(project)}
+                                  className="h-7 px-3 text-xs"
+                                >
+                                  Prüfen
+                                </Button>
+                                {user.role === "vertrieb" && (project.status === "approved" || project.status === "rejected") && (
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={() => handleProjectAction(project.id, "archive")}
+                                    className="h-7 px-3 text-xs"
+                                  >
+                                    Archivieren
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )
+          }
+         
         </div>
       </div>
     </div>
