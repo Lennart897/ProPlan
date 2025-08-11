@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Calendar, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, getWeek, isWithinInterval } from "date-fns";
+import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, getWeek, isWithinInterval, differenceInCalendarDays } from "date-fns";
 import { de } from "date-fns/locale";
 
 type ProjectStatus = "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed" | "archived";
@@ -615,8 +615,25 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                   }
                 })() : false;
 
-              const totalQuantity = dayProjects.reduce((sum, project) => sum + project.gesamtmenge, 0) + 
-                (previewForDay ? previewProject.gesamtmenge : 0);
+              const totalQuantity = dayProjects.reduce((sum, project) => {
+                try {
+                  const startDate = parseLocalDate(project.erste_anlieferung!);
+                  const endDate = parseLocalDate(project.letzte_anlieferung!);
+                  const days = Math.max(1, differenceInCalendarDays(endDate, startDate) + 1);
+                  return sum + project.gesamtmenge / days;
+                } catch {
+                  return sum;
+                }
+              }, 0) + (previewForDay ? (() => {
+                try {
+                  const startDate = parseLocalDate(previewProject!.erste_anlieferung!);
+                  const endDate = parseLocalDate(previewProject!.letzte_anlieferung!);
+                  const days = Math.max(1, differenceInCalendarDays(endDate, startDate) + 1);
+                  return previewProject!.gesamtmenge / days;
+                } catch {
+                  return 0;
+                }
+              })() : 0);
 
               return (
                 <Card key={index} className="rounded-xl border-2">
