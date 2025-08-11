@@ -23,6 +23,8 @@ type ProjectMinimal = {
   id: string;
   project_number: number | null;
   customer: string;
+  artikel_nummer?: string;
+  artikel_bezeichnung?: string;
 };
 
 const actionLabels: Record<string, string> = {
@@ -31,6 +33,16 @@ const actionLabels: Record<string, string> = {
   reject: "Abgesagt",
   correct: "Korrigiert",
   archive: "Archiviert",
+};
+
+const statusLabels: Record<string, string> = {
+  draft: "Entwurf",
+  pending: "Ausstehend",
+  approved: "Genehmigt",
+  rejected: "Abgelehnt",
+  in_progress: "In Bearbeitung",
+  completed: "Abgeschlossen",
+  archived: "Archiviert",
 };
 
 export function ActivityLog({ userId }: ActivityLogProps) {
@@ -60,7 +72,7 @@ export function ActivityLog({ userId }: ActivityLogProps) {
       if (ids.length) {
         const { data: projs } = await supabase
           .from('manufacturing_projects')
-          .select('id, project_number, customer')
+          .select('id, project_number, customer, artikel_nummer, artikel_bezeichnung')
           .in('id', ids);
         const map: Record<string, ProjectMinimal> = {};
         (projs || []).forEach((p: any) => {
@@ -68,6 +80,8 @@ export function ActivityLog({ userId }: ActivityLogProps) {
             id: p.id,
             project_number: p.project_number ?? null,
             customer: p.customer,
+            artikel_nummer: p.artikel_nummer,
+            artikel_bezeichnung: p.artikel_bezeichnung,
           };
         });
         if (!isMounted) return;
@@ -102,30 +116,36 @@ export function ActivityLog({ userId }: ActivityLogProps) {
 
   return (
     <div className="relative w-full overflow-auto">
-      <Table className="min-w-[720px]">
+      <Table className="min-w-[960px]">
         <TableHeader>
           <TableRow>
             <TableHead>Datum</TableHead>
             <TableHead>Aktion</TableHead>
             <TableHead>Projekt-Nr.</TableHead>
             <TableHead>Kunde</TableHead>
+            <TableHead>Artikel-Nr.</TableHead>
+            <TableHead>Artikel</TableHead>
             <TableHead>Status alt → neu</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {formatted.map((row) => (
-            <TableRow key={row.id}>
-              <TableCell className="whitespace-nowrap">{new Date(row.created_at).toLocaleString('de-DE')}</TableCell>
-              <TableCell>
-                <Badge variant="outline">{actionLabels[row.action] || row.action}</Badge>
-              </TableCell>
-              <TableCell className="whitespace-nowrap">{row.project?.project_number ?? '—'}</TableCell>
-              <TableCell className="truncate max-w-[240px]">{row.project?.customer ?? '—'}</TableCell>
-              <TableCell className="whitespace-nowrap">
-                {(row.previous_status || '—')} → {(row.new_status || '—')}
-              </TableCell>
-            </TableRow>
-          ))}
+          {formatted.map((row) => {
+            const prev = row.previous_status ? (statusLabels[row.previous_status] || row.previous_status) : '—';
+            const next = row.new_status ? (statusLabels[row.new_status] || row.new_status) : '—';
+            return (
+              <TableRow key={row.id}>
+                <TableCell className="whitespace-nowrap">{new Date(row.created_at).toLocaleString('de-DE')}</TableCell>
+                <TableCell>
+                  <Badge variant="outline">{actionLabels[row.action] || row.action}</Badge>
+                </TableCell>
+                <TableCell className="whitespace-nowrap">{row.project?.project_number ?? '—'}</TableCell>
+                <TableCell className="truncate max-w-[200px]">{row.project?.customer ?? '—'}</TableCell>
+                <TableCell className="whitespace-nowrap">{row.project?.artikel_nummer ?? '—'}</TableCell>
+                <TableCell className="truncate max-w-[280px]">{row.project?.artikel_bezeichnung ?? '—'}</TableCell>
+                <TableCell className="whitespace-nowrap">{prev} → {next}</TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
