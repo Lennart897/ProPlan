@@ -154,6 +154,50 @@ export type Database = {
           },
         ]
       }
+      project_location_approvals: {
+        Row: {
+          approved: boolean
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          id: string
+          location: string
+          project_id: string
+          required: boolean
+          updated_at: string
+        }
+        Insert: {
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          location: string
+          project_id: string
+          required?: boolean
+          updated_at?: string
+        }
+        Update: {
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          location?: string
+          project_id?: string
+          required?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_location_approvals_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           budget: number | null
@@ -252,6 +296,10 @@ export type Database = {
         Args: { user_uuid: string; project_id: string }
         Returns: boolean
       }
+      create_location_approvals_for_project: {
+        Args: { p_project_id: string }
+        Returns: undefined
+      }
       get_affected_locations: {
         Args: { standort_verteilung: Json }
         Returns: string[]
@@ -259,6 +307,10 @@ export type Database = {
       get_user_role: {
         Args: { user_uuid: string }
         Returns: string
+      }
+      refresh_project_status_from_approvals: {
+        Args: { p_project_id: string }
+        Returns: undefined
       }
     }
     Enums: {

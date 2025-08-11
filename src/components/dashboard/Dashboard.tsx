@@ -274,16 +274,12 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       
       switch (action) {
         case "approve":
-          // SupplyChain approval → in_progress, Planung approval → approved
+          // SupplyChain: -> in_progress (Standort-Zusagen werden per Trigger erstellt)
           const project = projects.find(p => p.id === projectId);
           if (project?.status === "pending" && user.role === "supply_chain") {
             newStatus = "in_progress";
-          } else if (project?.status === "in_progress" && (
-            user.role === "planung" || 
-            user.role.startsWith("planung_")
-          )) {
-            newStatus = "approved";
           }
+          // Planung-Zusage ändert den Status nicht direkt; DB-Trigger setzt auf approved, sobald alle Standorte zugestimmt haben
           break;
         case "reject":
           newStatus = "rejected";

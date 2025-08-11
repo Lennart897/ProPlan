@@ -117,31 +117,78 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
 
   const handleAction = async (action: string) => {
     try {
+      const previousStatus = project.status;
+
+      // Supply Chain: Zusage -> Status in_progress (Standort-Zusagen werden per Trigger erstellt)
+      if (user.role === "supply_chain" && action === "approve") {
+        const { error } = await supabase
+          .from('manufacturing_projects')
+          .update({ status: "in_progress" })
+          .eq('id', project.id);
+        if (error) throw error;
+
+        await logProjectAction('approved_forwarded', previousStatus, 'in_progress');
+
+        onProjectAction(project.id, action);
+        toast({
+          title: "Zusage erteilt",
+          description: "Projekt wurde an die standortspezifische Planung weitergeleitet.",
+        });
+
+        setTimeout(() => onBack(), 1500);
+        return;
+      }
+
+      // Planung: standortspezifische Zusage -> nur Standort-Zusage setzen, Status bleibt bis alle zu sind
+      if ((user.role === "planung" || user.role.startsWith("planung_")) && action === "approve") {
+        const userLocation = user.role.startsWith("planung_") ? user.role.replace("planung_", "") : null;
+
+        let query = supabase
+          .from('project_location_approvals')
+          .update({
+            approved: true,
+            approved_by: user.id,
+            approved_at: new Date().toISOString(),
+          })
+          .eq('project_id', project.id);
+
+        if (userLocation) {
+          query = query.eq('location', userLocation);
+        }
+
+        const { error } = await query;
+        if (error) throw error;
+
+        await logProjectAction('location_approved', previousStatus, previousStatus);
+
+        onProjectAction(project.id, action);
+        toast({
+          title: "Standort-Zusage erteilt",
+          description: "Projekt bleibt in Bearbeitung, bis alle betroffenen Standorte zugesagt haben.",
+        });
+
+        setTimeout(() => onBack(), 1500);
+        return;
+      }
+
+      // Ablehnung / Korrektur / Archivierung wie bisher
       let newStatus = project.status;
       let actionLabel = "";
-      const previousStatus = project.status;
-      
-      // Workflow-Logik basierend auf Rolle und Aktion
+
       if (user.role === "supply_chain") {
-        if (action === "approve") {
-          newStatus = "in_progress"; // Geht an Planung
-          actionLabel = "genehmigt und an Planung weitergeleitet";
-        } else if (action === "reject") {
+        if (action === "reject") {
           newStatus = "rejected";
           actionLabel = "abgelehnt";
         } else if (action === "correct") {
-          newStatus = "draft"; // Zurück an Vertrieb
+          newStatus = "draft";
           actionLabel = "zur Korrektur an Vertrieb zurückgewiesen";
         }
       } else if (user.role === "planung" || user.role.startsWith("planung_")) {
-        if (action === "approve") {
-          newStatus = "approved"; // Final freigegeben
-          actionLabel = "final freigegeben";
-        } else if (action === "reject") {
-          newStatus = "pending"; // Zurück an SupplyChain
+        if (action === "reject") {
+          newStatus = "pending";
           actionLabel = "abgelehnt und an SupplyChain zurückgewiesen";
         } else if (action === "correct") {
-          newStatus = "pending"; // Zurück an SupplyChain
+          newStatus = "pending";
           actionLabel = "zur Korrektur an SupplyChain zurückgewiesen";
         }
       } else if (user.role === "vertrieb") {
@@ -150,35 +197,29 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
           actionLabel = "archiviert";
         }
       }
-      
+
       if (newStatus && newStatus !== project.status) {
         const { error } = await supabase
           .from('manufacturing_projects')
           .update({ status: newStatus })
           .eq('id', project.id);
-
         if (error) throw error;
 
-        // Log the action
         await logProjectAction(action, previousStatus, newStatus);
 
         onProjectAction(project.id, action);
-
         toast({
           title: "Projekt aktualisiert",
           description: `Das Projekt wurde ${actionLabel}.`,
         });
 
-        // Nach Aktion zurück zum Dashboard
-        setTimeout(() => {
-          onBack();
-        }, 1500);
+        setTimeout(() => onBack(), 1500);
       }
     } catch (error) {
       console.error('Error updating project:', error);
       toast({
         title: "Fehler",
-        description: "Projektstatus konnte nicht aktualisiert werden",
+        description: "Aktion konnte nicht durchgeführt werden",
         variant: "destructive"
       });
     }
