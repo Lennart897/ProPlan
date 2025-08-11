@@ -170,8 +170,8 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
           gesamtmenge: data.gesamtmenge,
           beschreibung: data.beschreibung,
           
-          erste_anlieferung: data.erste_anlieferung?.toISOString().split('T')[0],
-          letzte_anlieferung: data.letzte_anlieferung?.toISOString().split('T')[0],
+          erste_anlieferung: data.erste_anlieferung ? format(data.erste_anlieferung, 'yyyy-MM-dd') : null,
+          letzte_anlieferung: data.letzte_anlieferung ? format(data.letzte_anlieferung, 'yyyy-MM-dd') : null,
           menge_fix: data.menge_fix,
           standort_verteilung: data.standort_verteilung,
           status: 'pending', // Start as pending for SupplyChain review
