@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, getWeek, isWithinInterval, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
 
+type ProjectStatus = "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed" | "archived";
+
 interface Project {
   id: string;
   customer: string;
@@ -17,7 +19,8 @@ interface Project {
   produktgruppe?: string;
   gesamtmenge: number;
   beschreibung?: string;
-  status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed" | "archived";
+  status: ProjectStatus;
+  archivedPrevStatus?: ProjectStatus;
   created_at: string;
   updated_at: string;
   created_by_id: string;
@@ -98,7 +101,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
         const { data, error } = await supabase
           .from('manufacturing_projects')
           .select('*')
-          .eq('status', 'approved')
+          .in('status', ['approved', 'archived'])
           .order('created_at', { ascending: false });
 
         if (error) {
@@ -115,12 +118,32 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
         }
         
         // Transform the data to match our interface
-        const transformedProjects: Project[] = (data || []).map(project => ({
+        let transformedProjects: Project[] = (data || []).map(project => ({
           ...project,
-          status: project.status as Project['status'],
+          status: project.status as ProjectStatus,
           standort_verteilung: project.standort_verteilung as Record<string, number> || {},
           menge_fix: project.menge_fix || false
         }));
+
+        // If there are archived projects, load their vorheriger Status
+        const archivedIds = transformedProjects.filter(p => p.status === 'archived').map(p => p.id);
+        if (archivedIds.length > 0) {
+          const { data: historyRows, error: histError } = await supabase
+            .from('project_history')
+            .select('project_id, previous_status')
+            .in('project_id', archivedIds)
+            .order('changed_at', { ascending: false });
+          if (histError) throw histError;
+          const prevMap: Record<string, ProjectStatus> = {};
+          const seen = new Set<string>();
+          (historyRows || []).forEach((row: any) => {
+            if (!seen.has(row.project_id)) {
+              prevMap[row.project_id] = row.previous_status as ProjectStatus;
+              seen.add(row.project_id);
+            }
+          });
+          transformedProjects = transformedProjects.map(p => p.status === 'archived' ? { ...p, archivedPrevStatus: prevMap[p.id] } : p);
+        }
         
         setProjects(transformedProjects);
       } catch (error) {
@@ -147,13 +170,16 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  // Filter projects based on selected filters
+  // Filter projects based on status (approved or archived with previous approved) and selected filters
   const filteredProjects = projects.filter(project => {
-    const locationMatch = selectedLocation === "all" || 
+    const statusEligible = project.status === 'approved' || (project.status === 'archived' && project.archivedPrevStatus === 'approved');
+    if (!statusEligible) return false;
+
+    const locationMatch = selectedLocation === 'all' || 
       (project.standort_verteilung && typeof project.standort_verteilung === 'object' && 
        project.standort_verteilung[selectedLocation] && Number(project.standort_verteilung[selectedLocation]) > 0);
     
-    const productMatch = selectedProductGroup === "all" || 
+    const productMatch = selectedProductGroup === 'all' || 
       project.produktgruppe === selectedProductGroup;
 
     return locationMatch && productMatch;
