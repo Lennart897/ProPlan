@@ -565,7 +565,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                               </Badge>
                             )}
                             {project.standort_verteilung && Object.keys(project.standort_verteilung).length > 0 && (
-                              <div className="mt-1 grid grid-cols-2 sm:grid-cols-3 gap-1 max-w-[280px]">
+                              <div className="mt-1 flex gap-1 max-w-full overflow-x-auto whitespace-nowrap pr-1">
                                 {Object.entries(project.standort_verteilung)
                                   .filter(([_, qty]) => Number(qty) > 0)
                                   .map(([location, qty]) => (
