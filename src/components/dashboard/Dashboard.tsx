@@ -537,14 +537,16 @@ const roleLabel = {
             </div>
             
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Button 
-                variant="default" 
-                onClick={() => setShowCalendar(true)}
-                className="w-full sm:w-auto"
-              >
-                <Calendar className="h-4 w-4 mr-2" />
-                Wochenkalender
-              </Button>
+              {statusFilter !== 'archived' && (
+                <Button 
+                  variant="default" 
+                  onClick={() => setShowCalendar(true)}
+                  className="w-full sm:w-auto"
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Wochenkalender
+                </Button>
+              )}
               
               {statusFilter === 'archived' ? (
                 <Button 
@@ -566,7 +568,7 @@ const roleLabel = {
                 </Button>
               )}
               
-              {user.role === "vertrieb" && (
+              {user.role === "vertrieb" && statusFilter !== 'archived' && (
                 <Button 
                   onClick={() => setShowProjectForm(true)}
                   className="w-full sm:w-auto"
