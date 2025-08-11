@@ -30,6 +30,7 @@ export type Database = {
           menge_fix: boolean | null
           preis: number | null
           produktgruppe: string | null
+          project_number: number
           rejection_reason: string | null
           standort_verteilung: Json | null
           status: string
@@ -50,6 +51,7 @@ export type Database = {
           menge_fix?: boolean | null
           preis?: number | null
           produktgruppe?: string | null
+          project_number?: number
           rejection_reason?: string | null
           standort_verteilung?: Json | null
           status?: string
@@ -70,6 +72,7 @@ export type Database = {
           menge_fix?: boolean | null
           preis?: number | null
           produktgruppe?: string | null
+          project_number?: number
           rejection_reason?: string | null
           standort_verteilung?: Json | null
           status?: string

@@ -36,6 +36,7 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 interface Project {
   id: string;
+  project_number: number;
   customer: string;
   artikel_nummer: string;
   artikel_bezeichnung: string;
@@ -60,7 +61,7 @@ interface User {
 
 const mockProjects: Project[] = [
   {
-    id: "1",
+    id: "1", project_number: 1,
     customer: "BMW AG",
     artikel_nummer: "ART-001",
     artikel_bezeichnung: "Hochwertige Metallkomponente",
@@ -78,7 +79,7 @@ const mockProjects: Project[] = [
     menge_fix: false
   },
   {
-    id: "2", 
+    id: "2", project_number: 2, 
     customer: "Siemens AG",
     artikel_nummer: "ART-002",
     artikel_bezeichnung: "Elektronikbaugruppe",
@@ -151,6 +152,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       
       const formattedProjects: Project[] = data?.map(project => ({
         id: project.id,
+        project_number: project.project_number as number,
         customer: project.customer,
         artikel_nummer: project.artikel_nummer,
         artikel_bezeichnung: project.artikel_bezeichnung,
@@ -448,8 +450,10 @@ const roleLabel = {
         previewProject={previewProject}
         onShowProjectDetails={(project) => {
           // Convert CalendarProject to Project format
+          const found = projects.find(p => p.id === project.id);
           const projectForDetails: Project = {
             id: project.id,
+            project_number: found?.project_number ?? 0,
             customer: project.customer,
             artikel_nummer: project.artikel_nummer,
             artikel_bezeichnung: project.artikel_bezeichnung,
@@ -678,7 +682,7 @@ const roleLabel = {
                             {project.artikel_nummer}
                           </CardDescription>
                           <div className="text-xs text-muted-foreground truncate">
-                            ID: {project.id}
+                            Nr.: {project.project_number}
                           </div>
                         </div>
                       </div>
@@ -788,7 +792,7 @@ const roleLabel = {
                         <TableHead>Kunde</TableHead>
                         <TableHead>Artikel</TableHead>
                         <TableHead>Artikel-Nr.</TableHead>
-                        <TableHead>Projekt-ID</TableHead>
+                        <TableHead>Projekt-Nr.</TableHead>
                         <TableHead>Menge</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Verantwortlich</TableHead>
@@ -805,7 +809,7 @@ const roleLabel = {
                             <TableCell className="font-medium">{project.customer}</TableCell>
                             <TableCell className="truncate max-w-[280px]">{project.artikel_bezeichnung}</TableCell>
                             <TableCell className="whitespace-nowrap">{project.artikel_nummer}</TableCell>
-                            <TableCell className="font-mono text-xs text-muted-foreground">{project.id}</TableCell>
+                            <TableCell className="font-mono text-xs text-muted-foreground">{project.project_number}</TableCell>
                             <TableCell className="whitespace-nowrap">
                               {project.gesamtmenge.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} kg
                             </TableCell>
