@@ -271,6 +271,22 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
 
   const projectSpans = calculateProjectSpans();
   const weeklyProjectCount = Array.from(new Set(projectSpans.filter(s => !s.isPreview).map(s => s.project.id))).length;
+  const weekEnd = addDays(weekStart, 6);
+  const weeklyTotalQuantity = filteredProjects.reduce((sum, project) => {
+    if (!project.erste_anlieferung || !project.letzte_anlieferung) return sum;
+    try {
+      const startDate = parseLocalDate(project.erste_anlieferung);
+      const endDate = parseLocalDate(project.letzte_anlieferung);
+      const overlapStart = startDate > weekStart ? startDate : weekStart;
+      const overlapEnd = endDate < weekEnd ? endDate : weekEnd;
+      if (overlapStart > overlapEnd) return sum;
+      const projDays = Math.max(1, differenceInCalendarDays(endDate, startDate) + 1);
+      const overlapDays = Math.max(0, differenceInCalendarDays(overlapEnd, overlapStart) + 1);
+      return sum + (project.gesamtmenge * overlapDays) / projDays;
+    } catch {
+      return sum;
+    }
+  }, 0);
 
   // Calculate totals for current week
   const calculateTotals = () => {
@@ -432,7 +448,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
             <CardContent className="p-4">
               <div className="text-center">
                 <div className="text-xl sm:text-2xl font-bold text-foreground">
-                  {totals.totalQuantity.toLocaleString('de-DE')}
+                  {weeklyTotalQuantity.toLocaleString('de-DE', { maximumFractionDigits: 0 })}
                 </div>
                 <div className="text-xs font-medium text-muted-foreground mt-1">
                   kg Gesamtmenge
