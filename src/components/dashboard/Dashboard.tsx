@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Filter, Search, Bell, User, LogOut, Calendar, Building2, Package, Scale } from "lucide-react";
+import { Plus, Filter, Search, Bell, User, LogOut, Calendar, Archive, Building2, Package, Scale } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProjectForm } from "./ProjectForm";
@@ -494,6 +494,15 @@ const roleLabel = {
                 Wochenkalender
               </Button>
               
+              <Button 
+                variant="outline"
+                onClick={() => setStatusFilter('archived')}
+                className="w-full sm:w-auto"
+              >
+                <Archive className="h-4 w-4 mr-2" />
+                Archiv
+              </Button>
+              
               {user.role === "vertrieb" && (
                 <Button 
                   onClick={() => setShowProjectForm(true)}
@@ -596,13 +605,25 @@ const roleLabel = {
                             </span>
                           </p>
                         )}
-                        <Button 
-                          size="sm" 
-                          onClick={() => setSelectedProject(project)}
-                          className="h-7 px-3 text-xs"
-                        >
-                          Prüfen
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            onClick={() => setSelectedProject(project)}
+                            className="h-7 px-3 text-xs"
+                          >
+                            Prüfen
+                          </Button>
+                          {user.role === "vertrieb" && project.status === "approved" && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => handleProjectAction(project.id, "archive")}
+                              className="h-7 px-3 text-xs"
+                            >
+                              Archivieren
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </CardContent>
