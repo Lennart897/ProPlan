@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Calendar, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, getWeek, isWithinInterval, parseISO } from "date-fns";
+import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, getWeek, isWithinInterval } from "date-fns";
 import { de } from "date-fns/locale";
 
 type ProjectStatus = "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed" | "archived";
@@ -70,7 +70,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
     // If we have a preview project, start with the week of its first delivery
     if (previewProject?.erste_anlieferung) {
       try {
-        return parseISO(previewProject.erste_anlieferung);
+        return parseLocalDate(previewProject.erste_anlieferung);
       } catch {
         return new Date();
       }
@@ -82,6 +82,17 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Parse a date-only string (YYYY-MM-DD) as a local Date without timezone shifts
+  const parseLocalDate = (dateStr: string) => {
+    try {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      if (!y || !m || !d) return new Date(dateStr);
+      return new Date(y, m - 1, d);
+    } catch {
+      return new Date(dateStr);
+    }
+  };
 
   // Get unique product groups from projects
   const productGroups = Array.from(new Set(projects.map(p => p.produktgruppe).filter(Boolean))).sort();
@@ -198,8 +209,8 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
     filteredProjects.forEach(project => {
       if (project.erste_anlieferung && project.letzte_anlieferung) {
         try {
-          const startDate = parseISO(project.erste_anlieferung);
-          const endDate = parseISO(project.letzte_anlieferung);
+          const startDate = parseLocalDate(project.erste_anlieferung);
+          const endDate = parseLocalDate(project.letzte_anlieferung);
           
           let startDay = -1;
           let endDay = -1;
@@ -228,8 +239,8 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
     // Process preview project
     if (previewProject && previewProject.erste_anlieferung && previewProject.letzte_anlieferung) {
       try {
-        const startDate = parseISO(previewProject.erste_anlieferung);
-        const endDate = parseISO(previewProject.letzte_anlieferung);
+        const startDate = parseLocalDate(previewProject.erste_anlieferung);
+        const endDate = parseLocalDate(previewProject.letzte_anlieferung);
         
         let startDay = -1;
         let endDay = -1;
@@ -584,8 +595,8 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
               const dayProjects = filteredProjects.filter(project => {
                 if (!project.erste_anlieferung || !project.letzte_anlieferung) return false;
                 try {
-                  const startDate = parseISO(project.erste_anlieferung);
-                  const endDate = parseISO(project.letzte_anlieferung);
+                  const startDate = parseLocalDate(project.erste_anlieferung);
+                  const endDate = parseLocalDate(project.letzte_anlieferung);
                   return isWithinInterval(day, { start: startDate, end: endDate });
                 } catch (error) {
                   return false;
@@ -595,8 +606,8 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
               const previewForDay = previewProject && previewProject.erste_anlieferung && previewProject.letzte_anlieferung ? 
                 (() => {
                   try {
-                    const startDate = parseISO(previewProject.erste_anlieferung);
-                    const endDate = parseISO(previewProject.letzte_anlieferung);
+                    const startDate = parseLocalDate(previewProject.erste_anlieferung);
+                    const endDate = parseLocalDate(previewProject.letzte_anlieferung);
                     return isWithinInterval(day, { start: startDate, end: endDate });
                   } catch (error) {
                     return false;
