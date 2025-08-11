@@ -132,6 +132,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const [loading, setLoading] = useState(true);
   const [cameFromCalendar, setCameFromCalendar] = useState(false);
   const [calendarWeek, setCalendarWeek] = useState<Date>(new Date());
+  const [archivedPrevStatus, setArchivedPrevStatus] = useState<Record<string, Project['status']>>({});
   const { toast } = useToast();
 
   // Load projects from database
@@ -161,6 +162,34 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
         menge_fix: project.menge_fix
       })) || [];
       
+      // Für Archivansicht: Vorherigen Status (vor Archivierung) laden
+      try {
+        const archivedIds = formattedProjects.filter(p => p.status === "archived").map(p => p.id);
+        if (archivedIds.length > 0) {
+          const { data: historyRows, error: histError } = await supabase
+            .from('project_history')
+            .select('project_id, previous_status, new_status, created_at')
+            .in('project_id', archivedIds)
+            .eq('new_status', 'archived')
+            .order('created_at', { ascending: false });
+          if (histError) throw histError;
+          const map: Record<string, Project['status']> = {};
+          const seen = new Set<string>();
+          (historyRows || []).forEach((row: any) => {
+            if (!seen.has(row.project_id)) {
+              map[row.project_id] = row.previous_status as Project['status'];
+              seen.add(row.project_id);
+            }
+          });
+          setArchivedPrevStatus(map);
+        } else {
+          setArchivedPrevStatus({});
+        }
+      } catch (e) {
+        console.error('Fehler beim Laden des Archiv-Statusverlaufs', e);
+        setArchivedPrevStatus({});
+      }
+      
       setProjects(formattedProjects);
     } catch (error) {
       console.error('Error loading projects:', error);
@@ -182,7 +211,10 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
     const matchesSearch = project.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.artikel_nummer.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.artikel_bezeichnung.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || project.status === statusFilter;
+    const isArchiveView = statusFilter === "archived";
+    const matchesStatus = isArchiveView
+      ? project.status === "archived"
+      : (statusFilter === "all" ? project.status !== "archived" : project.status === statusFilter);
     
     // Rollenbasierte Filterung: nur relevante Projekte für die eigene Rolle anzeigen
     const matchesRole = () => {
@@ -269,6 +301,26 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       }
 
       if (newStatus) {
+        // Wenn Archivierung, Historie speichern (vorheriger Status)
+        if (action === "archive" && newStatus === "archived") {
+          const prevStatus = projects.find(p => p.id === projectId)?.status;
+          try {
+            const { error: histError } = await supabase
+              .from('project_history')
+              .insert({
+                project_id: projectId,
+                user_id: user.id,
+                user_name: user.full_name || user.email,
+                action: 'archive',
+                previous_status: prevStatus,
+                new_status: 'archived',
+              });
+            if (histError) console.error('Projekt-Historie Fehler:', histError);
+          } catch (e) {
+            console.error('Projekt-Historie Ausnahme:', e);
+          }
+        }
+
         const { error } = await supabase
           .from('manufacturing_projects')
           .update({ status: newStatus })
@@ -545,9 +597,16 @@ const roleLabel = {
                           </CardDescription>
                         </div>
                       </div>
-                      <Badge className={`${statusColors[project.status]} shrink-0 ml-2`}>
-                        {statusLabels[project.status]}
-                      </Badge>
+                      {(() => {
+                        const displayStatus = statusFilter === "archived" && archivedPrevStatus[project.id]
+                          ? (archivedPrevStatus[project.id] as Project['status'])
+                          : project.status;
+                        return (
+                          <Badge className={`${statusColors[displayStatus]} shrink-0 ml-2`}>
+                            {statusLabels[displayStatus]}
+                          </Badge>
+                        );
+                      })()}
                     </div>
                   </CardHeader>
                   
