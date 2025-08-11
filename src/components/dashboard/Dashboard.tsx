@@ -831,7 +831,9 @@ const roleLabel = {
                         <TableHead>Artikel-Nr.</TableHead>
                         <TableHead>Menge</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Verantwortlich</TableHead>
+                        {statusFilter !== 'archived' && (
+                          <TableHead>Verantwortlich</TableHead>
+                        )}
                         <TableHead className="text-right">Aktionen</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -854,9 +856,11 @@ const roleLabel = {
                                 {statusLabels[displayStatus]}
                               </Badge>
                             </TableCell>
-                            <TableCell>
-                              {getCurrentResponsibleRole(project.status) ?? "-"}
-                            </TableCell>
+                            {statusFilter !== 'archived' && (
+                              <TableCell>
+                                {getCurrentResponsibleRole(project.status) ?? "-"}
+                              </TableCell>
+                            )}
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
                                 <Button 
