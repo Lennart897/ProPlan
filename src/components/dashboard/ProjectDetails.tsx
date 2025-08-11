@@ -310,16 +310,24 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
         }
         return null;
       case "vertrieb":
-        // Vertrieb can archive approved projects
-        if (project.status === "approved") {
+        // Vertrieb: jederzeit ablehnen (außer bereits abgelehnt, archiviert oder abgeschlossen)
+        const canSalesReject = !["rejected", "archived", "completed"].includes(project.status);
+        if (canSalesReject || project.status === "approved") {
           return (
             <div className="flex gap-3">
-              <Button 
-                onClick={() => handleAction("archive")} 
-                className="flex-1 bg-muted hover:bg-muted-foreground/20 text-muted-foreground border border-muted-foreground/30"
-              >
-                Projekt archivieren
-              </Button>
+              {canSalesReject && (
+                <Button variant="destructive" onClick={() => setShowRejectionDialog(true)} className="flex-1">
+                  Absage erteilen
+                </Button>
+              )}
+              {project.status === "approved" && (
+                <Button 
+                  onClick={() => handleAction("archive")} 
+                  className="flex-1 bg-muted hover:bg-muted-foreground/20 text-muted-foreground border border-muted-foreground/30"
+                >
+                  Projekt archivieren
+                </Button>
+              )}
             </div>
           );
         }
