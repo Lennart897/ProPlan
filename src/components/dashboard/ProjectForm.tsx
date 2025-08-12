@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, parse, isValid } from "date-fns";
 import { de } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -111,6 +111,10 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
   
   const { toast } = useToast();
 
+  // Text-Eingaben für Datum (TT.MM.JJJJ)
+  const [ersteInput, setErsteInput] = useState("");
+  const [letzteInput, setLetzteInput] = useState("");
+
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
@@ -137,6 +141,40 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
     });
     return subscription.unsubscribe;
   }, [form.watch]);
+
+  // Sync Eingabefelder mit ausgewählten Daten
+  const ersteDate = form.watch("erste_anlieferung");
+  const letzteDate = form.watch("letzte_anlieferung");
+
+  useEffect(() => {
+    setErsteInput(ersteDate ? format(ersteDate, 'dd.MM.yyyy', { locale: de }) : "");
+  }, [ersteDate]);
+
+  useEffect(() => {
+    setLetzteInput(letzteDate ? format(letzteDate, 'dd.MM.yyyy', { locale: de }) : "");
+  }, [letzteDate]);
+
+  const parseAndSetDate = (
+    field: "erste_anlieferung" | "letzte_anlieferung",
+    value: string
+  ) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      form.setValue(field, undefined, { shouldValidate: true });
+      form.clearErrors(field);
+      return;
+    }
+    const d = parse(trimmed, 'dd.MM.yyyy', new Date());
+    if (isValid(d)) {
+      form.setValue(field, d, { shouldValidate: true });
+      form.clearErrors(field);
+    } else {
+      form.setError(field, {
+        type: 'manual',
+        message: 'Ungültiges Datum (TT.MM.JJJJ)'
+      });
+    }
+  };
 
   const gesamtmenge = form.watch("gesamtmenge");
   const totalDistributed = Object.values(locationQuantities).reduce((sum, val) => sum + val, 0);
@@ -312,20 +350,26 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
             <div className="space-y-2">
               <Label>Erste Anlieferung</Label>
               <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !form.watch("erste_anlieferung") && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {form.watch("erste_anlieferung") 
-                      ? format(form.watch("erste_anlieferung")!, "dd.MM.yyyy", { locale: de })
-                      : "Datum wählen"}
-                  </Button>
-                </PopoverTrigger>
+                <div className="flex gap-2">
+                  <Input
+                    id="erste_anlieferung"
+                    placeholder="TT.MM.JJJJ"
+                    value={ersteInput}
+                    onChange={(e) => setErsteInput(e.target.value)}
+                    onBlur={() => parseAndSetDate("erste_anlieferung", ersteInput)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        parseAndSetDate("erste_anlieferung", ersteInput);
+                      }
+                    }}
+                  />
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" aria-label="Kalender öffnen" className="shrink-0">
+                      <CalendarIcon className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                </div>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
@@ -357,20 +401,26 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
             <div className="space-y-2">
               <Label>Letzte Anlieferung</Label>
               <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !form.watch("letzte_anlieferung") && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {form.watch("letzte_anlieferung") 
-                      ? format(form.watch("letzte_anlieferung")!, "dd.MM.yyyy", { locale: de })
-                      : "Datum wählen"}
-                  </Button>
-                </PopoverTrigger>
+                <div className="flex gap-2">
+                  <Input
+                    id="letzte_anlieferung"
+                    placeholder="TT.MM.JJJJ"
+                    value={letzteInput}
+                    onChange={(e) => setLetzteInput(e.target.value)}
+                    onBlur={() => parseAndSetDate("letzte_anlieferung", letzteInput)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        parseAndSetDate("letzte_anlieferung", letzteInput);
+                      }
+                    }}
+                  />
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" aria-label="Kalender öffnen" className="shrink-0">
+                      <CalendarIcon className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                </div>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
