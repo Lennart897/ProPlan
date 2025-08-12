@@ -40,11 +40,27 @@ const locations = [
   { value: "doebeln", label: "Döbeln" },
 ];
 
+// Feste Auswahlmöglichkeiten für Produktgruppe
+export const PRODUCT_GROUPS = [
+  "Brustfilet",
+  "Flügel",
+  "Ganzes Tier",
+  "Innenfilet",
+  "Innereien",
+  "Mischartikel",
+  "Nebenprodukt",
+  "Oberkeule",
+  "Schenkel",
+  "Unterkeule",
+] as const;
+
+export type ProductGroup = typeof PRODUCT_GROUPS[number];
+
 const projectSchema = z.object({
   customer: z.string().min(1, "Kunde ist erforderlich"),
   artikel_nummer: z.string().min(1, "Artikelnummer ist erforderlich"),
   artikel_bezeichnung: z.string().min(1, "Artikelbezeichnung ist erforderlich"),
-  produktgruppe: z.string().min(1, "Produktgruppe ist erforderlich"),
+  produktgruppe: z.enum(PRODUCT_GROUPS, { required_error: "Produktgruppe ist erforderlich" }),
   gesamtmenge: z.number().min(0.1, "Gesamtmenge muss größer als 0 sein"),
   beschreibung: z.string().optional(),
   
@@ -101,7 +117,6 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
       customer: "",
       artikel_nummer: "",
       artikel_bezeichnung: "",
-      produktgruppe: "",
       gesamtmenge: 0.0,
       beschreibung: "",
       
@@ -270,10 +285,21 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
 
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="produktgruppe">Produktgruppe</Label>
-              <Input
-                id="produktgruppe"
-                {...form.register("produktgruppe")}
-              />
+              <Select
+                value={form.watch("produktgruppe") || undefined}
+                onValueChange={(val) => form.setValue("produktgruppe", val as ProductGroup)}
+              >
+                <SelectTrigger id="produktgruppe">
+                  <SelectValue placeholder="Produktgruppe wählen" />
+                </SelectTrigger>
+                <SelectContent className="z-[60]">
+                  {PRODUCT_GROUPS.map((pg) => (
+                    <SelectItem key={pg} value={pg}>
+                      {pg}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {form.formState.errors.produktgruppe && (
                 <p className="text-sm text-destructive">
                   {form.formState.errors.produktgruppe.message}
