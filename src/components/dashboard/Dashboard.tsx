@@ -140,6 +140,23 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const [archiveStatusFilter, setArchiveStatusFilter] = useState<'all' | 'approved' | 'rejected'>("all");
   const { toast } = useToast();
 
+  const sendTestEmail = async () => {
+    try {
+      const { error } = await supabase.functions.invoke("send-task-email", {
+        body: {
+          id: `debug_${Date.now()}`,
+          title: "Test: Projekt-Mail Versand",
+          description: "Direkter Test aus Dashboard",
+          assigned_to: "ppsupplychain@web.de",
+        },
+      });
+      if (error) throw error;
+      toast({ title: "Testmail ausgelöst", description: "Bitte Postfach prüfen." });
+    } catch (e: any) {
+      toast({ title: "Fehler beim Testmail", description: e?.message || "Unbekannter Fehler", variant: "destructive" });
+    }
+  };
+
   const [viewMode, setViewMode] = useState<'matrix' | 'list'>('matrix');
   const [showActivity, setShowActivity] = useState(false);
   const [previewInitialWeek, setPreviewInitialWeek] = useState<Date | null>(null);
@@ -470,6 +487,11 @@ const roleLabel = {
             </div>
             <div className="flex items-center gap-1 sm:gap-3">
               <ThemeToggle />
+              {(user.role === "vertrieb" || user.role === "admin") && (
+                <Button variant="outline" size="sm" onClick={sendTestEmail}>
+                  Testmail SupplyChain
+                </Button>
+              )}
               {user.role === "admin" && (
                 <a href="/admin" className="hidden sm:inline-block">
                   <Button variant="outline" size="sm">Admin</Button>

@@ -87,6 +87,7 @@ async function sendMail(accessToken: string, senderEmail: string, toEmail: strin
     console.error("Graph sendMail failed", res.status, txt);
     throw new Error(`Graph sendMail error: ${res.status}`);
   }
+  console.log("Graph sendMail success", { toEmail, status: res.status });
 }
 
 serve(async (req: Request) => {
@@ -139,6 +140,7 @@ serve(async (req: Request) => {
       .from('profiles')
       .select('user_id, role, display_name')
       .eq('role', 'supply_chain');
+    console.log('supply_chain profiles', profiles?.length || 0);
 
     if (profErr) {
       console.error('profiles query failed', profErr);
@@ -185,6 +187,7 @@ serve(async (req: Request) => {
       });
     }
 
+    console.log('Fetching Microsoft Graph token...');
     const token = await getAccessToken();
 
     const subject = `Neues Projekt #${project_number}: ${artikel_bezeichnung}`;

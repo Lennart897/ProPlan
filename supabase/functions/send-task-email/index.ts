@@ -78,6 +78,7 @@ async function sendMail(accessToken: string, senderEmail: string, toEmail: strin
     console.error("Graph sendMail failed", res.status, txt);
     throw new Error(`Graph sendMail error: ${res.status}`);
   }
+  console.log("Graph sendMail success", { toEmail, status: res.status });
 }
 
 serve(async (req: Request) => {
