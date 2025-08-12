@@ -79,11 +79,11 @@ Deno.serve(async (req) => {
 
       // 2) Upsert profile
       const user_id = created.user.id;
-      const { error: upsertErr } = await adminClient
+      const { error: profileErr } = await adminClient
         .from('profiles')
-        .upsert({ user_id, display_name: display_name || email, role });
-      if (upsertErr) {
-        return new Response(JSON.stringify({ error: upsertErr.message }), {
+        .upsert({ user_id, display_name: display_name || email, role }, { onConflict: 'user_id' });
+      if (profileErr) {
+        return new Response(JSON.stringify({ error: profileErr.message }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
