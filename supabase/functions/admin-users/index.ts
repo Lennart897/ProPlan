@@ -63,25 +63,50 @@ Deno.serve(async (req) => {
         });
       }
 
-      // 1) Create auth user
+      // 1) Create or reuse existing auth user (idempotent by email)
+      const normalizedEmail = (email || '').trim().toLowerCase();
+      let user_id: string | null = null;
+
       const { data: created, error: createErr } = await adminClient.auth.admin.createUser({
-        email,
+        email: normalizedEmail,
         password,
         email_confirm: true,
         user_metadata: { display_name, role },
       });
+
       if (createErr || !created?.user) {
-        return new Response(JSON.stringify({ error: createErr?.message || 'Create user failed' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        // If email already exists, find existing user by email and continue
+        const message = createErr?.message?.toLowerCase() || '';
+        if (message.includes('already') || message.includes('exists') || message.includes('registered')) {
+          const { data: list, error: listErr } = await adminClient.auth.admin.listUsers({ page: 1, perPage: 1000 });
+          if (listErr) {
+            return new Response(JSON.stringify({ error: listErr.message }), {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+          const existing = list.users.find((u) => (u.email || '').toLowerCase() === normalizedEmail);
+          if (!existing) {
+            return new Response(JSON.stringify({ error: 'Email already registered, but user lookup failed' }), {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+          user_id = existing.id;
+        } else {
+          return new Response(JSON.stringify({ error: createErr?.message || 'Create user failed' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      } else {
+        user_id = created.user.id;
       }
 
       // 2) Upsert profile
-      const user_id = created.user.id;
       const { error: profileErr } = await adminClient
         .from('profiles')
-        .upsert({ user_id, display_name: display_name || email, role }, { onConflict: 'user_id' });
+        .upsert({ user_id, display_name: display_name || normalizedEmail, role }, { onConflict: 'user_id' });
       if (profileErr) {
         return new Response(JSON.stringify({ error: profileErr.message }), {
           status: 400,
