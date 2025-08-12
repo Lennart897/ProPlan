@@ -2,3 +2,6 @@ project_id = "rhubaybwftyypfbiuoyc"
 
 [functions.admin-users]
 verify_jwt = true
+
+[functions.send-task-email]
+verify_jwt = false
