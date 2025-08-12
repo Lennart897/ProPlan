@@ -331,6 +331,11 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
                     mode="single"
                     selected={form.watch("erste_anlieferung")}
                     onSelect={(date) => form.setValue("erste_anlieferung", date)}
+                    locale={de}
+                    showWeekNumber
+                    classNames={{
+                      weeknumber: "text-left w-9 font-normal",
+                    }}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
                   />
@@ -365,6 +370,11 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
                     mode="single"
                     selected={form.watch("letzte_anlieferung")}
                     onSelect={(date) => form.setValue("letzte_anlieferung", date)}
+                    locale={de}
+                    showWeekNumber
+                    classNames={{
+                      weeknumber: "text-left w-9 font-normal",
+                    }}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
                   />
