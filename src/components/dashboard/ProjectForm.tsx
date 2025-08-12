@@ -334,7 +334,13 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
                     locale={de}
                     showWeekNumber
                     classNames={{
-                      weeknumber: "text-left w-9 font-normal",
+                      weeknumber: "text-left w-9 font-medium bg-primary/10 text-primary rounded-md",
+                    }}
+                    modifiers={{
+                      otherDate: form.watch("letzte_anlieferung") || undefined,
+                    }}
+                    modifiersClassNames={{
+                      otherDate: "ring-2 ring-primary",
                     }}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
@@ -373,7 +379,13 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
                     locale={de}
                     showWeekNumber
                     classNames={{
-                      weeknumber: "text-left w-9 font-normal",
+                      weeknumber: "text-left w-9 font-medium bg-primary/10 text-primary rounded-md",
+                    }}
+                    modifiers={{
+                      otherDate: form.watch("erste_anlieferung") || undefined,
+                    }}
+                    modifiersClassNames={{
+                      otherDate: "ring-2 ring-primary",
                     }}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
