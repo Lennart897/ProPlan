@@ -21,75 +21,6 @@ interface ProjectPayload {
   created_by_name: string;
 }
 
-async function getAccessToken() {
-  const tenantId = Deno.env.get("TENANT_ID");
-  const clientId = Deno.env.get("MS_CLIENT_ID");
-  const clientSecret = Deno.env.get("MS_CLIENT_SECRET");
-
-  if (!tenantId || !clientId || !clientSecret) {
-    throw new Error("Missing Microsoft Graph credentials: TENANT_ID, MS_CLIENT_ID, or MS_CLIENT_SECRET");
-  }
-
-  const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
-  const body = new URLSearchParams({
-    grant_type: "client_credentials",
-    client_id: clientId,
-    client_secret: clientSecret,
-    scope: "https://graph.microsoft.com/.default",
-  });
-
-  const res = await fetch(tokenUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
-
-  if (!res.ok) {
-    const txt = await res.text();
-    console.error("Token fetch failed", res.status, txt);
-    throw new Error(`Failed to obtain access token: ${res.status}`);
-  }
-
-  const json = await res.json();
-  return json.access_token as string;
-}
-
-async function sendMail(accessToken: string, senderEmail: string, toEmail: string, subject: string, html: string) {
-  const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(senderEmail)}/sendMail`;
-
-  const payload = {
-    message: {
-      subject,
-      body: {
-        contentType: "HTML",
-        content: html,
-      },
-      toRecipients: [
-        {
-          emailAddress: { address: toEmail },
-        },
-      ],
-    },
-    saveToSentItems: true,
-  };
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok && res.status !== 202) {
-    const txt = await res.text();
-    console.error("Graph sendMail failed", res.status, txt);
-    throw new Error(`Graph sendMail error: ${res.status}`);
-  }
-  console.log("Graph sendMail success", { toEmail, status: res.status });
-}
-
 serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -104,13 +35,13 @@ serve(async (req: Request) => {
       });
     }
 
-    const senderEmail = Deno.env.get("SENDER_EMAIL");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SERVICE_ROLE_KEY");
+    const webhookUrl = Deno.env.get("MAKE_PROJECT_WEBHOOK_URL");
 
-    if (!senderEmail) throw new Error("Missing SENDER_EMAIL secret");
     if (!SUPABASE_URL) throw new Error("Missing SUPABASE_URL secret");
     if (!SERVICE_ROLE_KEY) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY secret");
+    if (!webhookUrl) throw new Error("Missing MAKE_PROJECT_WEBHOOK_URL secret");
 
     const body = (await req.json()) as ProjectPayload;
     const {
@@ -130,17 +61,15 @@ serve(async (req: Request) => {
 
     console.log("send-project-email payload", { id, project_number, customer, artikel_bezeichnung });
 
-    // Admin client to bypass RLS and fetch recipients
+    // Admin client to fetch potential recipients (supply_chain role)
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    // 1) Get all supply_chain profiles
     const { data: profiles, error: profErr } = await admin
       .from('profiles')
       .select('user_id, role, display_name')
       .eq('role', 'supply_chain');
-    console.log('supply_chain profiles', profiles?.length || 0);
 
     if (profErr) {
       console.error('profiles query failed', profErr);
@@ -152,15 +81,7 @@ serve(async (req: Request) => {
 
     const supplyUserIds = (profiles || []).map((p: any) => p.user_id);
 
-    if (!supplyUserIds.length) {
-      console.warn('No supply_chain recipients found');
-      return new Response(JSON.stringify({ success: true, sent: 0 }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
-
-    // 2) List users to map user_id -> email
+    // Map user_id -> email using auth admin list
     const { data: list, error: listErr } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
     if (listErr) {
       console.error('listUsers failed', listErr);
@@ -179,42 +100,46 @@ serve(async (req: Request) => {
       .map((uid: string) => emailById.get(uid))
       .filter(Boolean))) as string[];
 
-    if (!recipients.length) {
-      console.warn('No recipient emails resolved for supply_chain profiles');
-      return new Response(JSON.stringify({ success: true, sent: 0 }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+    console.log('Resolved recipients for supply_chain', { count: recipients.length });
+
+    // Forward to Make as a single event. The scenario can fan-out emails.
+    const payload = {
+      type: "project",
+      triggered_at: new Date().toISOString(),
+      recipients, // Make can iterate this list
+      payload: {
+        id,
+        project_number,
+        customer,
+        artikel_nummer,
+        artikel_bezeichnung,
+        gesamtmenge: typeof gesamtmenge === 'number' ? gesamtmenge : null,
+        erste_anlieferung: erste_anlieferung || null,
+        letzte_anlieferung: letzte_anlieferung || null,
+        beschreibung: beschreibung || null,
+        standort_verteilung: standort_verteilung || null,
+        created_by_id,
+        created_by_name,
+      },
+    };
+
+    console.log("Forwarding project to Make", { id, recipients: recipients.length });
+
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const txt = await res.text();
+      console.error("Make webhook failed", res.status, txt);
+      throw new Error(`Make webhook error: ${res.status}`);
     }
 
-    console.log('Fetching Microsoft Graph token...');
-    const token = await getAccessToken();
+    console.log("Project dispatched to Make", { id, status: res.status });
 
-    const subject = `Neues Projekt #${project_number}: ${artikel_bezeichnung}`;
-    const html = `
-      <div style="font-family: Inter, Arial, sans-serif; line-height: 1.6;">
-        <h2 style="margin: 0 0 12px;">Neues Projekt angelegt</h2>
-        <p><strong>Kunde:</strong> ${customer}</p>
-        <p><strong>Artikel:</strong> ${artikel_nummer} — ${artikel_bezeichnung}</p>
-        ${typeof gesamtmenge !== 'undefined' && gesamtmenge !== null ? `<p><strong>Gesamtmenge:</strong> ${gesamtmenge}</p>` : ''}
-        ${erste_anlieferung ? `<p><strong>Erste Anlieferung:</strong> ${erste_anlieferung}</p>` : ''}
-        ${letzte_anlieferung ? `<p><strong>Letzte Anlieferung:</strong> ${letzte_anlieferung}</p>` : ''}
-        ${beschreibung ? `<p><strong>Beschreibung:</strong> ${beschreibung}</p>` : ''}
-        ${standort_verteilung ? `<pre style="background:#f6f7f9;padding:8px;border-radius:6px;">${JSON.stringify(standort_verteilung, null, 2)}</pre>` : ''}
-        <p style="color:#667085; font-size: 12px;">Angelegt von: ${created_by_name} • Projekt-ID: ${id}</p>
-      </div>
-    `;
-
-    let sent = 0;
-    const results = await Promise.allSettled(
-      recipients.map((to) => sendMail(token, senderEmail, to, subject, html))
-    );
-
-    results.forEach((r) => (sent += r.status === 'fulfilled' ? 1 : 0));
-
-    console.log('Project email dispatched', { id, sent, recipients });
-
-    return new Response(JSON.stringify({ success: true, sent, recipients }), {
+    return new Response(JSON.stringify({ success: true, recipients }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
