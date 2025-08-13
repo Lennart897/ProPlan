@@ -20,7 +20,7 @@ export type Database = {
           artikel_nummer: string
           beschreibung: string | null
           created_at: string
-          created_by_id: string
+          created_by_id: string | null
           created_by_name: string
           customer: string
           erste_anlieferung: string | null
@@ -41,7 +41,7 @@ export type Database = {
           artikel_nummer: string
           beschreibung?: string | null
           created_at?: string
-          created_by_id: string
+          created_by_id?: string | null
           created_by_name: string
           customer: string
           erste_anlieferung?: string | null
@@ -62,7 +62,7 @@ export type Database = {
           artikel_nummer?: string
           beschreibung?: string | null
           created_at?: string
-          created_by_id?: string
+          created_by_id?: string | null
           created_by_name?: string
           customer?: string
           erste_anlieferung?: string | null
