@@ -96,17 +96,23 @@ serve(async (req: Request) => {
       if (u.id && u.email) emailById.set(u.id, u.email);
     }
 
-    const recipients = Array.from(new Set(supplyUserIds
+    const recipientEmails = Array.from(new Set(supplyUserIds
       .map((uid: string) => emailById.get(uid))
       .filter(Boolean))) as string[];
 
-    console.log('Resolved recipients for supply_chain', { count: recipients.length });
+    const toRecipients = recipientEmails.map(email => ({
+      emailAddress: {
+        address: email
+      }
+    }));
+
+    console.log('Resolved recipients for supply_chain', { count: toRecipients.length });
 
     // Forward to Make as a single event. The scenario can fan-out emails.
     const payload = {
       type: "project",
       triggered_at: new Date().toISOString(),
-      recipients, // Make can iterate this list
+      toRecipients, // Make can iterate this list
       payload: {
         id,
         project_number,
@@ -123,7 +129,7 @@ serve(async (req: Request) => {
       },
     };
 
-    console.log("Forwarding project to Make", { id, recipients: recipients.length });
+    console.log("Forwarding project to Make", { id, recipients: toRecipients.length });
 
     const res = await fetch(webhookUrl, {
       method: "POST",
@@ -139,7 +145,7 @@ serve(async (req: Request) => {
 
     console.log("Project dispatched to Make", { id, status: res.status });
 
-    return new Response(JSON.stringify({ success: true, recipients }), {
+    return new Response(JSON.stringify({ success: true, recipients: recipientEmails }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
