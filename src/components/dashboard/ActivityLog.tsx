@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Activity, Clock, User, Building, Package, Hash } from "lucide-react";
 
 interface ActivityLogProps {
   userId: string;
@@ -37,6 +39,18 @@ const actionLabels: Record<string, string> = {
   correct: "Korrigiert",
   corrected: "Korrigiert",
   archive: "Archiviert",
+};
+
+const actionColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  create: "default",
+  approve: "default",
+  approved_forwarded: "secondary",
+  location_approved: "default",
+  reject: "destructive",
+  rejected: "destructive",
+  correct: "secondary",
+  corrected: "secondary",
+  archive: "outline",
 };
 
 const statusLabels: Record<string, string> = {
@@ -122,48 +136,145 @@ export function ActivityLog({ userId }: ActivityLogProps) {
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground">Lade Aktivitäten...</CardContent>
+      <Card className="h-fit">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Activity className="h-5 w-5" />
+            Aktivitätenprotokoll
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center space-x-4">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+              <Skeleton className="h-6 w-20" />
+            </div>
+          ))}
+        </CardContent>
       </Card>
     );
   }
 
   if (!formatted.length) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground">Keine Aktivitäten vorhanden</CardContent>
+      <Card className="h-fit">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Activity className="h-5 w-5" />
+            Aktivitätenprotokoll
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="py-12">
+          <div className="text-center">
+            <Activity className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
+            <p className="text-muted-foreground text-sm">Keine Aktivitäten vorhanden</p>
+            <p className="text-muted-foreground/60 text-xs mt-1">
+              Aktivitäten werden hier angezeigt, sobald Projekte erstellt oder bearbeitet werden.
+            </p>
+          </div>
+        </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="relative w-full overflow-auto">
-      <Table className="min-w-[960px]">
-        <TableHeader>
-          <TableRow>
-            <TableHead>Datum</TableHead>
-            <TableHead>Aktion</TableHead>
-            <TableHead>Projekt-Nr.</TableHead>
-            <TableHead>Kunde</TableHead>
-            <TableHead>Artikel-Nr.</TableHead>
-            <TableHead>Artikel</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {formatted.map((row) => (
-            <TableRow key={row.id}>
-              <TableCell className="whitespace-nowrap">{new Date(row.created_at).toLocaleString('de-DE')}</TableCell>
-              <TableCell>
-                <Badge variant="outline">{actionLabels[row.action] || row.action}</Badge>
-              </TableCell>
-              <TableCell className="whitespace-nowrap">{row.project?.project_number ?? '—'}</TableCell>
-              <TableCell className="truncate max-w-[200px]">{row.project?.customer ?? '—'}</TableCell>
-              <TableCell className="whitespace-nowrap">{row.project?.artikel_nummer ?? '—'}</TableCell>
-              <TableCell className="truncate max-w-[280px]">{row.project?.artikel_bezeichnung ?? '—'}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <Card className="h-fit">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Activity className="h-5 w-5" />
+          Aktivitätenprotokoll
+          <Badge variant="outline" className="ml-auto text-xs">
+            {formatted.length}
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="relative w-full overflow-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent border-b">
+                <TableHead className="w-[140px]">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Zeit
+                  </div>
+                </TableHead>
+                <TableHead className="w-[160px]">Aktion</TableHead>
+                <TableHead className="w-[100px]">
+                  <div className="flex items-center gap-2">
+                    <Hash className="h-4 w-4" />
+                    Projekt
+                  </div>
+                </TableHead>
+                <TableHead className="w-[180px]">
+                  <div className="flex items-center gap-2">
+                    <Building className="h-4 w-4" />
+                    Kunde
+                  </div>
+                </TableHead>
+                <TableHead className="w-[120px]">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Artikel-Nr.
+                  </div>
+                </TableHead>
+                <TableHead>Artikel</TableHead>
+                <TableHead className="w-[100px]">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Nutzer
+                  </div>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {formatted.map((row) => (
+                <TableRow 
+                  key={row.id}
+                  className="hover:bg-muted/30 transition-colors"
+                >
+                  <TableCell className="font-mono text-xs text-muted-foreground">
+                    {new Date(row.created_at).toLocaleString('de-DE', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    <Badge 
+                      variant={actionColors[row.action] || "outline"}
+                      className="text-xs font-medium"
+                    >
+                      {actionLabels[row.action] || row.action}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-semibold">
+                    {row.project?.project_number ?? '—'}
+                  </TableCell>
+                  <TableCell className="truncate max-w-[160px]" title={row.project?.customer}>
+                    {row.project?.customer ?? '—'}
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {row.project?.artikel_nummer ?? '—'}
+                  </TableCell>
+                  <TableCell className="truncate max-w-[200px]" title={row.project?.artikel_bezeichnung}>
+                    {row.project?.artikel_bezeichnung ?? '—'}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {row.user_name}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
