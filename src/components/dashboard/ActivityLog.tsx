@@ -183,9 +183,9 @@ export function ActivityLog({ userId }: ActivityLogProps) {
 
   return (
     <Card className="h-fit max-w-full">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Activity className="h-5 w-5" />
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Activity className="h-4 w-4" />
           Aktivitätenprotokoll
           <Badge variant="outline" className="ml-auto text-xs">
             {formatted.length}
@@ -193,40 +193,44 @@ export function ActivityLog({ userId }: ActivityLogProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="relative w-full overflow-x-auto">
-          <Table className="min-w-[600px]">
-            <TableHeader>
+        <div className="relative w-full h-[400px] overflow-auto border-t">
+          <Table className="text-sm">
+            <TableHeader className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <TableRow className="hover:bg-transparent border-b">
-                <TableHead className="w-[100px] min-w-[100px]">
+                <TableHead className="w-[90px] p-2">
                   <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    <span className="hidden sm:inline">Zeit</span>
+                    <Clock className="h-3 w-3" />
+                    <span className="text-xs">Zeit</span>
                   </div>
                 </TableHead>
-                <TableHead className="w-[110px] min-w-[110px]">Aktion</TableHead>
-                <TableHead className="w-[70px] min-w-[70px]">
+                <TableHead className="w-[100px] p-2">
+                  <span className="text-xs">Aktion</span>
+                </TableHead>
+                <TableHead className="w-[60px] p-2">
                   <div className="flex items-center gap-1">
-                    <Hash className="h-4 w-4" />
-                    <span className="hidden sm:inline">Projekt</span>
+                    <Hash className="h-3 w-3" />
+                    <span className="text-xs hidden sm:inline">Nr.</span>
                   </div>
                 </TableHead>
-                <TableHead className="w-[120px] min-w-[120px]">
+                <TableHead className="w-[100px] p-2">
                   <div className="flex items-center gap-1">
-                    <Building className="h-4 w-4" />
-                    <span className="hidden sm:inline">Kunde</span>
+                    <Building className="h-3 w-3" />
+                    <span className="text-xs">Kunde</span>
                   </div>
                 </TableHead>
-                <TableHead className="w-[90px] min-w-[90px] hidden md:table-cell">
+                <TableHead className="w-[80px] p-2 hidden md:table-cell">
                   <div className="flex items-center gap-1">
-                    <Package className="h-4 w-4" />
-                    <span className="hidden lg:inline">Artikel-Nr.</span>
+                    <Package className="h-3 w-3" />
+                    <span className="text-xs">Art.-Nr.</span>
                   </div>
                 </TableHead>
-                <TableHead className="min-w-[120px] hidden lg:table-cell">Artikel</TableHead>
-                <TableHead className="w-[80px] min-w-[80px]">
+                <TableHead className="w-[120px] p-2 hidden lg:table-cell">
+                  <span className="text-xs">Artikel</span>
+                </TableHead>
+                <TableHead className="w-[70px] p-2">
                   <div className="flex items-center gap-1">
-                    <User className="h-4 w-4" />
-                    <span className="hidden sm:inline">Nutzer</span>
+                    <User className="h-3 w-3" />
+                    <span className="text-xs hidden sm:inline">User</span>
                   </div>
                 </TableHead>
               </TableRow>
@@ -237,7 +241,7 @@ export function ActivityLog({ userId }: ActivityLogProps) {
                   key={row.id}
                   className="hover:bg-muted/30 transition-colors"
                 >
-                  <TableCell className="font-mono text-xs text-muted-foreground">
+                  <TableCell className="font-mono text-xs text-muted-foreground p-2">
                     {new Date(row.created_at).toLocaleString('de-DE', {
                       day: '2-digit',
                       month: '2-digit',
@@ -246,7 +250,7 @@ export function ActivityLog({ userId }: ActivityLogProps) {
                       minute: '2-digit'
                     })}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="p-2">
                     <Badge 
                       variant={actionColors[row.action] || "outline"}
                       className="text-xs font-medium"
@@ -254,19 +258,19 @@ export function ActivityLog({ userId }: ActivityLogProps) {
                       {actionLabels[row.action] || row.action}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-semibold">
+                  <TableCell className="font-semibold text-xs p-2">
                     {row.project?.project_number ?? '—'}
                   </TableCell>
-                  <TableCell className="truncate max-w-[160px]" title={row.project?.customer}>
+                  <TableCell className="truncate text-xs p-2" title={row.project?.customer}>
                     {row.project?.customer ?? '—'}
                   </TableCell>
-                  <TableCell className="font-mono text-sm hidden md:table-cell">
+                  <TableCell className="font-mono text-xs p-2 hidden md:table-cell">
                     {row.project?.artikel_nummer ?? '—'}
                   </TableCell>
-                  <TableCell className="truncate max-w-[200px] hidden lg:table-cell" title={row.project?.artikel_bezeichnung}>
+                  <TableCell className="truncate text-xs p-2 hidden lg:table-cell" title={row.project?.artikel_bezeichnung}>
                     {row.project?.artikel_bezeichnung ?? '—'}
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
+                  <TableCell className="text-xs text-muted-foreground p-2">
                     {row.user_name}
                   </TableCell>
                 </TableRow>
