@@ -128,35 +128,64 @@ serve(async (req: Request) => {
     };
 
     // Professional plain text email content in German
-    const professionalEmailContent = `ProPlan System - Neues Projekt zur Überprüfung
+    const professionalEmailContent = `
+╔═══════════════════════════════════════════════════════════════╗
+║                        PROPLAN SYSTEM                        ║
+║                  Neues Projekt zur Bearbeitung               ║
+╚═══════════════════════════════════════════════════════════════╝
 
-Projekt #${project_number}
-========================
+Sehr geehrte Damen und Herren,
 
-Projektinformationen:
----------------------
-Kunde: ${customer}
-Artikelnummer: ${artikel_nummer}
-Artikelbezeichnung: ${artikel_bezeichnung}
-Gesamtmenge: ${formatQuantity(gesamtmenge)}
-Erste Anlieferung: ${formatDate(erste_anlieferung)}
-Letzte Anlieferung: ${formatDate(letzte_anlieferung)}
-Standortverteilung: 
-${formatLocationDistribution(standort_verteilung)}${beschreibung ? `
-Beschreibung: ${beschreibung}` : ''}
-Erstellt von: ${created_by_name}
+ein neues Fertigungsprojekt wurde im ProPlan System erfasst und 
+wartet auf Ihre fachkundige Prüfung und Bearbeitung.
 
-Handlungserfordernis:
---------------------
-Dieses Projekt wartet auf Ihre Überprüfung und Genehmigung im Supply Chain System. 
-Bitte prüfen Sie die Angaben und nehmen Sie die entsprechende Bearbeitung vor.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PROJEKT-ÜBERSICHT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Link zum System: https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e
+🔢  Projekt-Nr.:         #${project_number}
+🏢  Kunde:               ${customer}
+📦  Artikelnummer:       ${artikel_nummer}
+📋  Artikelbezeichnung:  ${artikel_bezeichnung}
+⚖️   Gesamtmenge:        ${formatQuantity(gesamtmenge)}
+📅  Erste Anlieferung:   ${formatDate(erste_anlieferung)}
+📅  Letzte Anlieferung:  ${formatDate(letzte_anlieferung)}
+👤  Erstellt von:        ${created_by_name}
 
----
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  STANDORTVERTEILUNG
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${formatLocationDistribution(standort_verteilung).split('\n').map(line => `📍  ${line}`).join('\n')}${beschreibung ? `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PROJEKTBESCHREIBUNG
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${beschreibung}` : ''}
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  ⚠️  HANDLUNGSERFORDERNIS                                  ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+Dieses Projekt wurde zur Bearbeitung durch die Supply Chain 
+freigegeben und benötigt Ihre fachliche Bewertung sowie 
+entsprechende Maßnahmen.
+
+Bitte loggen Sie sich in das ProPlan System ein und führen Sie 
+die erforderlichen Prüfungen durch:
+
+🔗 System-Link: https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Mit freundlichen Grüßen
 ProPlan Benachrichtigungssystem
+
 Diese E-Mail wurde automatisch generiert.
-Bei Rückfragen wenden Sie sich bitte an: ${created_by_name}`;
+Bei Rückfragen wenden Sie sich bitte an: ${created_by_name}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
 
     // Forward to Make as Graph-compatible message format
     const payload = {
