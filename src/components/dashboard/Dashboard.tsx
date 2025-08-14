@@ -287,6 +287,49 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
 
   const handleProjectAction = async (projectId: string, action: string) => {
     try {
+      // Handle calendar preview action
+      if (action === "preview_calendar") {
+        const currentProject = projects.find(p => p.id === projectId);
+        if (currentProject) {
+          // Convert Project to CalendarProject format
+          const calendarProject: CalendarProject = {
+            id: currentProject.id,
+            customer: currentProject.customer,
+            artikel_nummer: currentProject.artikel_nummer,
+            artikel_bezeichnung: currentProject.artikel_bezeichnung,
+            produktgruppe: currentProject.produktgruppe,
+            gesamtmenge: currentProject.gesamtmenge,
+            beschreibung: currentProject.beschreibung,
+            erste_anlieferung: currentProject.erste_anlieferung,
+            letzte_anlieferung: currentProject.letzte_anlieferung,
+            status: currentProject.status,
+            created_at: currentProject.created_at,
+            updated_at: new Date().toISOString(),
+            created_by_id: currentProject.id, // Fallback
+            created_by_name: currentProject.created_by,
+            standort_verteilung: currentProject.standort_verteilung,
+            menge_fix: currentProject.menge_fix || false
+          };
+          
+          // Set preview project and initial week
+          setPreviewProject(calendarProject);
+          if (currentProject.erste_anlieferung) {
+            try {
+              const [y, m, d] = currentProject.erste_anlieferung.split('-').map(Number);
+              if (y && m && d) {
+                setPreviewInitialWeek(new Date(y, m - 1, d));
+              }
+            } catch (e) {
+              console.error('Error parsing date for preview:', e);
+            }
+          }
+          
+          // Show calendar
+          setShowCalendar(true);
+        }
+        return;
+      }
+      
       // Aktionen (approve/reject/correct) werden in ProjectDetails bereits ausgeführt und protokolliert.
       // Damit es keine doppelten Protokolle gibt, machen wir hier nur ein Refresh —
       // außer bei Archivierung aus der Listenansicht.
