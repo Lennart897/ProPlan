@@ -108,25 +108,36 @@ serve(async (req: Request) => {
 
     console.log('Resolved recipients for supply_chain', { count: toRecipients.length });
 
-    // Forward to Make as a single event. The scenario can fan-out emails.
+    // Forward to Make as Graph-compatible message format
     const payload = {
-      type: "project",
-      triggered_at: new Date().toISOString(),
-      toRecipients, // Make can iterate this list
-      payload: {
-        id,
-        project_number,
-        customer,
-        artikel_nummer,
-        artikel_bezeichnung,
-        gesamtmenge: typeof gesamtmenge === 'number' ? gesamtmenge : null,
-        erste_anlieferung: erste_anlieferung || null,
-        letzte_anlieferung: letzte_anlieferung || null,
-        beschreibung: beschreibung || null,
-        standort_verteilung: standort_verteilung || null,
-        created_by_id,
-        created_by_name,
+      message: {
+        subject: `Neues Projekt #${project_number}: ${artikel_bezeichnung}`,
+        body: {
+          contentType: "HTML",
+          content: `
+            <h2>Neues Projekt erstellt</h2>
+            <p><strong>Projekt Nr.:</strong> ${project_number}</p>
+            <p><strong>Kunde:</strong> ${customer}</p>
+            <p><strong>Artikel:</strong> ${artikel_bezeichnung}</p>
+            <p><strong>Artikel Nr.:</strong> ${artikel_nummer}</p>
+            ${gesamtmenge ? `<p><strong>Gesamtmenge:</strong> ${gesamtmenge}</p>` : ''}
+            ${erste_anlieferung ? `<p><strong>Erste Anlieferung:</strong> ${erste_anlieferung}</p>` : ''}
+            ${letzte_anlieferung ? `<p><strong>Letzte Anlieferung:</strong> ${letzte_anlieferung}</p>` : ''}
+            ${beschreibung ? `<p><strong>Beschreibung:</strong> ${beschreibung}</p>` : ''}
+            <p><strong>Erstellt von:</strong> ${created_by_name}</p>
+            <p><strong>Erstellt am:</strong> ${new Date().toLocaleString('de-DE')}</p>
+          `
+        },
+        toRecipients
       },
+      metadata: {
+        type: "project",
+        triggered_at: new Date().toISOString(),
+        project_id: id,
+        project_number,
+        created_by_id,
+        standort_verteilung
+      }
     };
 
     console.log("Forwarding project to Make", { id, recipients: toRecipients.length });
