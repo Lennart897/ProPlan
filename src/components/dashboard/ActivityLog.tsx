@@ -194,39 +194,39 @@ export function ActivityLog({ userId }: ActivityLogProps) {
       </CardHeader>
       <CardContent className="p-0">
         <div className="relative w-full overflow-x-auto">
-          <Table className="min-w-[800px]">
+          <Table className="min-w-[600px]">
             <TableHeader>
               <TableRow className="hover:bg-transparent border-b">
-                <TableHead className="w-[120px] min-w-[120px]">
-                  <div className="flex items-center gap-2">
+                <TableHead className="w-[100px] min-w-[100px]">
+                  <div className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
-                    Zeit
+                    <span className="hidden sm:inline">Zeit</span>
                   </div>
                 </TableHead>
-                <TableHead className="w-[130px] min-w-[130px]">Aktion</TableHead>
-                <TableHead className="w-[80px] min-w-[80px]">
-                  <div className="flex items-center gap-2">
+                <TableHead className="w-[110px] min-w-[110px]">Aktion</TableHead>
+                <TableHead className="w-[70px] min-w-[70px]">
+                  <div className="flex items-center gap-1">
                     <Hash className="h-4 w-4" />
-                    Projekt
+                    <span className="hidden sm:inline">Projekt</span>
                   </div>
                 </TableHead>
-                <TableHead className="w-[150px] min-w-[150px]">
-                  <div className="flex items-center gap-2">
+                <TableHead className="w-[120px] min-w-[120px]">
+                  <div className="flex items-center gap-1">
                     <Building className="h-4 w-4" />
-                    Kunde
+                    <span className="hidden sm:inline">Kunde</span>
                   </div>
                 </TableHead>
-                <TableHead className="w-[110px] min-w-[110px] hidden sm:table-cell">
-                  <div className="flex items-center gap-2">
+                <TableHead className="w-[90px] min-w-[90px] hidden md:table-cell">
+                  <div className="flex items-center gap-1">
                     <Package className="h-4 w-4" />
-                    Artikel-Nr.
+                    <span className="hidden lg:inline">Artikel-Nr.</span>
                   </div>
                 </TableHead>
-                <TableHead className="min-w-[150px] hidden md:table-cell">Artikel</TableHead>
-                <TableHead className="w-[90px] min-w-[90px]">
-                  <div className="flex items-center gap-2">
+                <TableHead className="min-w-[120px] hidden lg:table-cell">Artikel</TableHead>
+                <TableHead className="w-[80px] min-w-[80px]">
+                  <div className="flex items-center gap-1">
                     <User className="h-4 w-4" />
-                    Nutzer
+                    <span className="hidden sm:inline">Nutzer</span>
                   </div>
                 </TableHead>
               </TableRow>
@@ -260,10 +260,10 @@ export function ActivityLog({ userId }: ActivityLogProps) {
                   <TableCell className="truncate max-w-[160px]" title={row.project?.customer}>
                     {row.project?.customer ?? '—'}
                   </TableCell>
-                  <TableCell className="font-mono text-sm hidden sm:table-cell">
+                  <TableCell className="font-mono text-sm hidden md:table-cell">
                     {row.project?.artikel_nummer ?? '—'}
                   </TableCell>
-                  <TableCell className="truncate max-w-[200px] hidden md:table-cell" title={row.project?.artikel_bezeichnung}>
+                  <TableCell className="truncate max-w-[200px] hidden lg:table-cell" title={row.project?.artikel_bezeichnung}>
                     {row.project?.artikel_bezeichnung ?? '—'}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
