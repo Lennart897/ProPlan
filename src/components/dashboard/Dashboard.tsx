@@ -157,7 +157,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
     }
   };
 
-  const [viewMode, setViewMode] = useState<'matrix' | 'list'>('matrix');
+  const [viewMode, setViewMode] = useState<'matrix' | 'list'>('list');
   const [showActivity, setShowActivity] = useState(false);
   const [previewInitialWeek, setPreviewInitialWeek] = useState<Date | null>(null);
   
