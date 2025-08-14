@@ -108,25 +108,112 @@ serve(async (req: Request) => {
 
     console.log('Resolved recipients for supply_chain', { count: toRecipients.length });
 
+    // Helper functions for professional formatting
+    const formatDate = (dateStr: string | null) => {
+      if (!dateStr) return 'Nicht angegeben';
+      return new Date(dateStr).toLocaleDateString('de-DE');
+    };
+
+    const formatQuantity = (quantity: number | null) => {
+      if (!quantity) return 'Nicht angegeben';
+      return new Intl.NumberFormat('de-DE').format(quantity) + ' kg';
+    };
+
+    const formatLocationDistribution = (distribution: Record<string, any> | null) => {
+      if (!distribution) return 'Keine Verteilung angegeben';
+      return Object.entries(distribution)
+        .filter(([_, qty]) => Number(qty) > 0)
+        .map(([location, qty]) => `${location.charAt(0).toUpperCase() + location.slice(1)}: ${formatQuantity(Number(qty))}`)
+        .join('<br>');
+    };
+
+    // Professional email content in German
+    const professionalEmailContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+          <h1 style="color: #2c3e50; margin: 0; font-size: 28px;">ProPlan System</h1>
+          <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 16px;">Neues Projekt zur Überprüfung</p>
+        </div>
+        
+        <div style="background-color: white; padding: 30px; border: 1px solid #e9ecef; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="color: #495057; border-bottom: 3px solid #007bff; padding-bottom: 15px; margin-bottom: 25px; font-size: 22px;">
+            Projekt #${project_number}
+          </h2>
+          
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8f9fa; border-radius: 5px;">
+            <tr style="background-color: #e9ecef;">
+              <td style="padding: 12px 15px; font-weight: bold; color: #495057; width: 35%; border-bottom: 1px solid #dee2e6;">Kunde:</td>
+              <td style="padding: 12px 15px; color: #6c757d; border-bottom: 1px solid #dee2e6;">${customer}</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 15px; font-weight: bold; color: #495057; border-bottom: 1px solid #dee2e6;">Artikelnummer:</td>
+              <td style="padding: 12px 15px; color: #6c757d; border-bottom: 1px solid #dee2e6;">${artikel_nummer}</td>
+            </tr>
+            <tr style="background-color: #e9ecef;">
+              <td style="padding: 12px 15px; font-weight: bold; color: #495057; border-bottom: 1px solid #dee2e6;">Artikelbezeichnung:</td>
+              <td style="padding: 12px 15px; color: #6c757d; border-bottom: 1px solid #dee2e6; font-weight: 500;">${artikel_bezeichnung}</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 15px; font-weight: bold; color: #495057; border-bottom: 1px solid #dee2e6;">Gesamtmenge:</td>
+              <td style="padding: 12px 15px; color: #6c757d; border-bottom: 1px solid #dee2e6;">${formatQuantity(gesamtmenge)}</td>
+            </tr>
+            <tr style="background-color: #e9ecef;">
+              <td style="padding: 12px 15px; font-weight: bold; color: #495057; border-bottom: 1px solid #dee2e6;">Erste Anlieferung:</td>
+              <td style="padding: 12px 15px; color: #6c757d; border-bottom: 1px solid #dee2e6;">${formatDate(erste_anlieferung)}</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 15px; font-weight: bold; color: #495057; border-bottom: 1px solid #dee2e6;">Letzte Anlieferung:</td>
+              <td style="padding: 12px 15px; color: #6c757d; border-bottom: 1px solid #dee2e6;">${formatDate(letzte_anlieferung)}</td>
+            </tr>
+            <tr style="background-color: #e9ecef;">
+              <td style="padding: 12px 15px; font-weight: bold; color: #495057; vertical-align: top; border-bottom: 1px solid #dee2e6;">Standortverteilung:</td>
+              <td style="padding: 12px 15px; color: #6c757d; border-bottom: 1px solid #dee2e6;">${formatLocationDistribution(standort_verteilung)}</td>
+            </tr>
+            ${beschreibung ? `
+            <tr>
+              <td style="padding: 12px 15px; font-weight: bold; color: #495057; vertical-align: top; border-bottom: 1px solid #dee2e6;">Beschreibung:</td>
+              <td style="padding: 12px 15px; color: #6c757d; border-bottom: 1px solid #dee2e6;">${beschreibung}</td>
+            </tr>
+            ` : ''}
+            <tr style="background-color: #e9ecef;">
+              <td style="padding: 12px 15px; font-weight: bold; color: #495057;">Erstellt von:</td>
+              <td style="padding: 12px 15px; color: #6c757d;">${created_by_name}</td>
+            </tr>
+          </table>
+          
+          <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 5px solid #2196f3;">
+            <h3 style="margin: 0 0 10px 0; color: #1565c0; font-size: 18px;">📋 Handlungserfordernis</h3>
+            <p style="margin: 0; color: #1565c0; font-size: 16px; line-height: 1.5;">
+              Dieses Projekt wartet auf Ihre Überprüfung und Genehmigung im Supply Chain System. 
+              Bitte prüfen Sie die Angaben und nehmen Sie die entsprechende Bearbeitung vor.
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e" 
+               style="background-color: #007bff; color: white; padding: 15px 35px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px; box-shadow: 0 2px 4px rgba(0,123,255,0.3); transition: background-color 0.3s;">
+              🔗 Projekt im System öffnen
+            </a>
+          </div>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px; font-size: 14px; color: #6c757d; text-align: center; border-top: 3px solid #28a745;">
+          <p style="margin: 0 0 5px 0; font-weight: 500;">ProPlan Benachrichtigungssystem</p>
+          <p style="margin: 0; line-height: 1.4;">
+            Diese E-Mail wurde automatisch generiert.<br>
+            Bei Rückfragen wenden Sie sich bitte an: <strong>${created_by_name}</strong>
+          </p>
+        </div>
+      </div>
+    `;
+
     // Forward to Make as Graph-compatible message format
     const payload = {
       message: {
-        subject: `Neues Projekt #${project_number}: ${artikel_bezeichnung}`,
+        subject: `ProPlan - Neues Projekt #${project_number}: ${artikel_bezeichnung}`,
         body: {
           contentType: "HTML",
-          content: `
-            <h2>Neues Projekt erstellt</h2>
-            <p><strong>Projekt Nr.:</strong> ${project_number}</p>
-            <p><strong>Kunde:</strong> ${customer}</p>
-            <p><strong>Artikel:</strong> ${artikel_bezeichnung}</p>
-            <p><strong>Artikel Nr.:</strong> ${artikel_nummer}</p>
-            ${gesamtmenge ? `<p><strong>Gesamtmenge:</strong> ${gesamtmenge}</p>` : ''}
-            ${erste_anlieferung ? `<p><strong>Erste Anlieferung:</strong> ${erste_anlieferung}</p>` : ''}
-            ${letzte_anlieferung ? `<p><strong>Letzte Anlieferung:</strong> ${letzte_anlieferung}</p>` : ''}
-            ${beschreibung ? `<p><strong>Beschreibung:</strong> ${beschreibung}</p>` : ''}
-            <p><strong>Erstellt von:</strong> ${created_by_name}</p>
-            <p><strong>Erstellt am:</strong> ${new Date().toLocaleString('de-DE')}</p>
-          `
+          content: professionalEmailContent
         },
         toRecipients
       },

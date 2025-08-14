@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -296,7 +296,7 @@ export type Database = {
     }
     Functions: {
       can_user_approve_project: {
-        Args: { user_uuid: string; project_id: string }
+        Args: { project_id: string; user_uuid: string }
         Returns: boolean
       }
       create_location_approvals_for_project: {
@@ -312,7 +312,7 @@ export type Database = {
         Returns: string
       }
       is_project_pending_for_user_location: {
-        Args: { user_uuid: string; p_project_id: string }
+        Args: { p_project_id: string; user_uuid: string }
         Returns: boolean
       }
       refresh_project_status_from_approvals: {
