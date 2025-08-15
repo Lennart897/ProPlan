@@ -120,79 +120,71 @@ serve(async (req: Request) => {
     };
 
     const formatLocationDistribution = (distribution: Record<string, any> | null) => {
-      if (!distribution) return 'Keine Verteilung angegeben';
+      if (!distribution) return '<li>Keine Verteilung angegeben</li>';
       return Object.entries(distribution)
         .filter(([_, qty]) => Number(qty) > 0)
-        .map(([location, qty]) => `${location.charAt(0).toUpperCase() + location.slice(1)}: ${formatQuantity(Number(qty))}`)
-        .join('\n');
+        .map(([location, qty]) => `<li><strong>${location.charAt(0).toUpperCase() + location.slice(1)}:</strong> ${formatQuantity(Number(qty))}</li>`)
+        .join('');
     };
 
-    // Professional plain text email content in German
+    // Professional HTML email content in German
     const professionalEmailContent = `
-╔═══════════════════════════════════════════════════════════════╗
-║                        PROPLAN SYSTEM                        ║
-║                  Neues Projekt zur Bearbeitung               ║
-╚═══════════════════════════════════════════════════════════════╝
+<h1>🏭 ProPlan System – Neues Projekt zur Bearbeitung</h1>
 
-Sehr geehrte Damen und Herren,
+<p>Sehr geehrte Damen und Herren,</p>
 
-ein neues Fertigungsprojekt wurde im ProPlan System erfasst und 
-wartet auf Ihre fachkundige Prüfung und Bearbeitung.
+<p>ein neues Fertigungsprojekt wurde im ProPlan System erfasst und wartet auf Ihre fachkundige Prüfung und Bearbeitung.</p>
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PROJEKT-ÜBERSICHT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+<hr>
 
-🔢  Projekt-Nr.:         #${project_number}
-🏢  Kunde:               ${customer}
-📦  Artikelnummer:       ${artikel_nummer}
-📋  Artikelbezeichnung:  ${artikel_bezeichnung}
-⚖️   Gesamtmenge:        ${formatQuantity(gesamtmenge)}
-📅  Erste Anlieferung:   ${formatDate(erste_anlieferung)}
-📅  Letzte Anlieferung:  ${formatDate(letzte_anlieferung)}
-👤  Erstellt von:        ${created_by_name}
+<h2>📋 Projektübersicht</h2>
+<ul>
+  <li><strong>Projekt-Nr.:</strong> #${project_number}</li>
+  <li><strong>🏢 Kunde:</strong> ${customer}</li>
+  <li><strong>📦 Artikelnummer:</strong> ${artikel_nummer}</li>
+  <li><strong>📋 Artikelbezeichnung:</strong> ${artikel_bezeichnung}</li>
+  <li><strong>⚖️ Gesamtmenge:</strong> ${formatQuantity(gesamtmenge)}</li>
+  <li><strong>📅 Erste Anlieferung:</strong> ${formatDate(erste_anlieferung)}</li>
+  <li><strong>📅 Letzte Anlieferung:</strong> ${formatDate(letzte_anlieferung)}</li>
+  <li><strong>👤 Erstellt von:</strong> ${created_by_name}</li>
+</ul>
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  STANDORTVERTEILUNG
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+<hr>
 
-${formatLocationDistribution(standort_verteilung).split('\n').map(line => `📍  ${line}`).join('\n')}${beschreibung ? `
+<h2>📍 Standortverteilung</h2>
+<ul>
+  ${formatLocationDistribution(standort_verteilung)}
+</ul>
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PROJEKTBESCHREIBUNG
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${beschreibung ? `<hr>
 
-${beschreibung}` : ''}
+<h2>📝 Projektbeschreibung</h2>
+<p>${beschreibung}</p>` : ''}
 
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃  ⚠️  HANDLUNGSERFORDERNIS                                  ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+<hr>
 
-Dieses Projekt wurde zur Bearbeitung durch die Supply Chain 
-freigegeben und benötigt Ihre fachliche Bewertung sowie 
-entsprechende Maßnahmen.
+<div style="border: 2px solid #ff6b35; border-radius: 8px; padding: 16px; background-color: #fff3f0; margin: 20px 0;">
+  <h3 style="color: #ff6b35; margin-top: 0;">⚠️ Handlungserfordernis</h3>
+  <p>Dieses Projekt wurde zur Bearbeitung durch die Supply Chain freigegeben und benötigt Ihre fachliche Bewertung sowie entsprechende Maßnahmen.</p>
+  <p>Bitte loggen Sie sich in das ProPlan System ein und führen Sie die erforderlichen Prüfungen durch.</p>
+</div>
 
-Bitte loggen Sie sich in das ProPlan System ein und führen Sie 
-die erforderlichen Prüfungen durch:
+<p>🔗 <a href="https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p>
 
-🔗 System-Link: https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e
+<hr>
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+<p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>
+ProPlan Benachrichtigungssystem</p>
 
-Mit freundlichen Grüßen
-ProPlan Benachrichtigungssystem
-
-Diese E-Mail wurde automatisch generiert.
-Bei Rückfragen wenden Sie sich bitte an: ${created_by_name}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+<p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em><br>
+Bei Rückfragen wenden Sie sich bitte an: <strong>${created_by_name}</strong></p>`;
 
     // Forward to Make as Graph-compatible message format
     const payload = {
       message: {
         subject: `ProPlan - Neues Projekt #${project_number}: ${artikel_bezeichnung}`,
         body: {
-          contentType: "Text",
+          contentType: "HTML",
           content: professionalEmailContent
         },
         toRecipients
