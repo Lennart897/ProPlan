@@ -530,11 +530,6 @@ const roleLabel = {
             </div>
             <div className="flex items-center gap-1 sm:gap-3">
               <ThemeToggle />
-              {(user.role === "vertrieb" || user.role === "admin") && (
-                <Button variant="outline" size="sm" onClick={sendTestEmail}>
-                  Testmail SupplyChain
-                </Button>
-              )}
               {user.role === "admin" && (
                 <a href="/admin" className="hidden sm:inline-block">
                   <Button variant="outline" size="sm">Admin</Button>
