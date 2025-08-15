@@ -182,12 +182,31 @@ ${formatLocationDistribution(project.standort_verteilung)}
 <p style="color: #666; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em></p>
 <p><strong>Mit freundlichen Grüßen,<br>ProPlan Benachrichtigungssystem</strong></p>`;
 
-    // Prepare webhook payload
+    const toRecipients = recipientEmails.map(email => ({
+      emailAddress: {
+        address: email
+      }
+    }));
+
+    // Prepare webhook payload in the same format as project creation
     const webhookPayload = {
-      to: recipientEmails,
-      subject: `✅ Projekt #${project.project_number} freigegeben - ${project.customer}`,
-      content: htmlContent,
-      contentType: 'HTML'
+      message: {
+        subject: `✅ ProPlan - Projekt freigegeben #${project.project_number}: ${project.artikel_bezeichnung}`,
+        body: {
+          contentType: "HTML",
+          content: htmlContent
+        },
+        toRecipients
+      },
+      metadata: {
+        type: "project_approval",
+        triggered_at: new Date().toISOString(),
+        project_id: project.id,
+        project_number: project.project_number,
+        created_by_id: project.created_by_id,
+        affected_locations: affectedLocations,
+        standort_verteilung: project.standort_verteilung
+      }
     };
 
     console.log('Sending webhook to:', webhookUrl);
