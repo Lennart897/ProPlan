@@ -127,57 +127,8 @@ serve(async (req: Request) => {
         .join('');
     };
 
-    // Professional HTML email content in German
-    const professionalEmailContent = `
-<h1>🏭 ProPlan System – Neues Projekt zur Bearbeitung</h1>
-
-<p>Sehr geehrte Damen und Herren,</p>
-
-<p>ein neues Fertigungsprojekt wurde im ProPlan System erfasst und wartet auf Ihre fachkundige Prüfung und Bearbeitung.</p>
-
-<hr>
-
-<h2>📋 Projektübersicht</h2>
-<ul>
-  <li><strong>Projekt-Nr.:</strong> #${project_number}</li>
-  <li><strong>🏢 Kunde:</strong> ${customer}</li>
-  <li><strong>📦 Artikelnummer:</strong> ${artikel_nummer}</li>
-  <li><strong>📋 Artikelbezeichnung:</strong> ${artikel_bezeichnung}</li>
-  <li><strong>⚖️ Gesamtmenge:</strong> ${formatQuantity(gesamtmenge)}</li>
-  <li><strong>📅 Erste Anlieferung:</strong> ${formatDate(erste_anlieferung)}</li>
-  <li><strong>📅 Letzte Anlieferung:</strong> ${formatDate(letzte_anlieferung)}</li>
-  <li><strong>👤 Erstellt von:</strong> ${created_by_name}</li>
-</ul>
-
-<hr>
-
-<h2>📍 Standortverteilung</h2>
-<ul>
-  ${formatLocationDistribution(standort_verteilung)}
-</ul>
-
-${beschreibung ? `<hr>
-
-<h2>📝 Projektbeschreibung</h2>
-<p>${beschreibung}</p>` : ''}
-
-<hr>
-
-<div style="border: 2px solid #ff6b35; border-radius: 8px; padding: 16px; background-color: #fff3f0; margin: 20px 0;">
-  <h3 style="color: #ff6b35; margin-top: 0;">⚠️ Handlungserfordernis</h3>
-  <p>Dieses Projekt wurde zur Bearbeitung durch die Supply Chain freigegeben und benötigt Ihre fachliche Bewertung sowie entsprechende Maßnahmen.</p>
-  <p>Bitte loggen Sie sich in das ProPlan System ein und führen Sie die erforderlichen Prüfungen durch.</p>
-</div>
-
-<p>🔗 <a href="https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p>
-
-<hr>
-
-<p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>
-ProPlan Benachrichtigungssystem</p>
-
-<p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em><br>
-Bei Rückfragen wenden Sie sich bitte an: <strong>${created_by_name}</strong></p>`;
+    // Clean HTML email content without line breaks in template
+    const professionalEmailContent = `<h1>🏭 ProPlan System – Neues Projekt zur Bearbeitung</h1><p>Sehr geehrte Damen und Herren,</p><p>ein neues Fertigungsprojekt wurde im ProPlan System erfasst und wartet auf Ihre fachkundige Prüfung und Bearbeitung.</p><hr><h2>📋 Projektübersicht</h2><ul><li><strong>Projekt-Nr.:</strong> #${project_number}</li><li><strong>🏢 Kunde:</strong> ${customer}</li><li><strong>📦 Artikelnummer:</strong> ${artikel_nummer}</li><li><strong>📋 Artikelbezeichnung:</strong> ${artikel_bezeichnung}</li><li><strong>⚖️ Gesamtmenge:</strong> ${formatQuantity(gesamtmenge)}</li><li><strong>📅 Erste Anlieferung:</strong> ${formatDate(erste_anlieferung)}</li><li><strong>📅 Letzte Anlieferung:</strong> ${formatDate(letzte_anlieferung)}</li><li><strong>👤 Erstellt von:</strong> ${created_by_name}</li></ul><hr><h2>📍 Standortverteilung</h2><ul>${formatLocationDistribution(standort_verteilung)}</ul>${beschreibung ? `<hr><h2>📝 Projektbeschreibung</h2><p>${beschreibung}</p>` : ''}<hr><div style="border: 2px solid #ff6b35; border-radius: 8px; padding: 16px; background-color: #fff3f0; margin: 20px 0;"><h3 style="color: #ff6b35; margin-top: 0;">⚠️ Handlungserfordernis</h3><p>Dieses Projekt wurde zur Bearbeitung durch die Supply Chain freigegeben und benötigt Ihre fachliche Bewertung sowie entsprechende Maßnahmen.</p><p>Bitte loggen Sie sich in das ProPlan System ein und führen Sie die erforderlichen Prüfungen durch.</p></div><p>🔗 <a href="https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p><hr><p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>ProPlan Benachrichtigungssystem</p><p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em><br>Bei Rückfragen wenden Sie sich bitte an: <strong>${created_by_name}</strong></p>`;
 
     // Forward to Make as Graph-compatible message format
     const payload = {
