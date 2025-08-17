@@ -134,10 +134,7 @@ serve(async (req: Request) => {
     const payload = {
       message: {
         subject: `ProPlan - Neues Projekt #${project_number}: ${artikel_bezeichnung}`,
-        body: {
-          contentType: "HTML",
-          content: professionalEmailContent
-        },
+        body: professionalEmailContent,
         toRecipients
       },
       metadata: {
