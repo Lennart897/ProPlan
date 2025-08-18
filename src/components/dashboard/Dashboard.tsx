@@ -538,7 +538,13 @@ const roleLabel = {
               <Button variant="ghost" size="sm" className="hidden sm:flex">
                 <Bell className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" className="hidden sm:flex">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="hidden sm:flex"
+                onClick={() => window.location.href = '/password-settings'}
+                title="Passwort-Einstellungen"
+              >
                 <User className="h-4 w-4" />
               </Button>
               <Button variant="ghost" size="sm" onClick={onSignOut} className="text-xs sm:text-sm">

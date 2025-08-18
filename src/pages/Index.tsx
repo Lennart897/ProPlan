@@ -230,6 +230,17 @@ const Index = () => {
         
         <AuthForm mode="signin" onSuccess={() => {}} />
 
+        {/* Passwort vergessen Link */}
+        <div className="text-center pt-4">
+          <Button 
+            variant="link" 
+            onClick={() => window.location.href = '/password-settings'}
+            className="text-sm text-primary hover:underline"
+          >
+            Passwort vergessen?
+          </Button>
+        </div>
+
         {/* Demo Login for Testing */}
         <div className="text-center pt-4 border-t space-y-3">
           <p className="text-sm text-muted-foreground">Demo Accounts:</p>
