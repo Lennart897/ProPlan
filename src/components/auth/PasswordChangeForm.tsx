@@ -168,7 +168,7 @@ export const PasswordChangeForm = ({ onSuccess }: PasswordChangeFormProps) => {
         <CardDescription>
           {isLoggedIn 
             ? "Ändern Sie Ihr Passwort für erhöhte Sicherheit"
-            : "Geben Sie Ihre E-Mail-Adresse und ein neues Passwort ein"
+            : "Geben Sie Ihre E-Mail-Adresse ein, um einen Reset-Link zu erhalten"
           }
         </CardDescription>
       </CardHeader>
@@ -191,100 +191,103 @@ export const PasswordChangeForm = ({ onSuccess }: PasswordChangeFormProps) => {
             </div>
           )}
 
-          {/* Aktuelles Passwort nur für eingeloggte User */}
+          {/* Eingeloggte User: Komplette Passwort-Änderungs-Form */}
           {isLoggedIn && (
-            <div className="space-y-2">
-              <Label htmlFor="currentPassword">Aktuelles Passwort</Label>
-              <div className="relative">
-                <Input
-                  id="currentPassword"
-                  type={showCurrentPassword ? "text" : "password"}
-                  placeholder="Ihr aktuelles Passwort eingeben"
-                  {...register("currentPassword")}
-                  className="apple-input pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                >
-                  {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
-              {errors.currentPassword && (
-                <p className="text-sm text-destructive">{errors.currentPassword.message}</p>
-              )}
-            </div>
-          )}
-
-          {/* Neues Passwort */}
-          <div className="space-y-2">
-            <Label htmlFor="newPassword">Neues Passwort</Label>
-            <div className="relative">
-              <Input
-                id="newPassword"
-                type={showNewPassword ? "text" : "password"}
-                placeholder="Neues sicheres Passwort eingeben"
-                {...register("newPassword", {
-                  onChange: handleNewPasswordChange
-                })}
-                className="apple-input pr-10"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowNewPassword(!showNewPassword)}
-              >
-                {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-            </div>
-            {errors.newPassword && (
-              <p className="text-sm text-destructive">{errors.newPassword.message}</p>
-            )}
-          </div>
-
-          {/* Passwort bestätigen */}
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Neues Passwort bestätigen</Label>
-            <div className="relative">
-              <Input
-                id="confirmPassword"
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="Neues Passwort erneut eingeben"
-                {...register("confirmPassword")}
-                className="apple-input pr-10"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-            </div>
-            {errors.confirmPassword && (
-              <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
-            )}
-          </div>
-
-          {/* Passwort-Validierung Anzeige */}
-          {newPassword && !passwordValidation.isValid && (
-            <Alert>
-              <AlertDescription>
-                <div className="space-y-1">
-                  <p className="font-medium">Passwort-Anforderungen:</p>
-                  {passwordValidation.errors.map((error, index) => (
-                    <p key={index} className="text-sm">• {error}</p>
-                  ))}
+            <>
+              {/* Aktuelles Passwort */}
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword">Aktuelles Passwort</Label>
+                <div className="relative">
+                  <Input
+                    id="currentPassword"
+                    type={showCurrentPassword ? "text" : "password"}
+                    placeholder="Ihr aktuelles Passwort eingeben"
+                    {...register("currentPassword")}
+                    className="apple-input pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  >
+                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
                 </div>
-              </AlertDescription>
-            </Alert>
+                {errors.currentPassword && (
+                  <p className="text-sm text-destructive">{errors.currentPassword.message}</p>
+                )}
+              </div>
+
+              {/* Neues Passwort */}
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">Neues Passwort</Label>
+                <div className="relative">
+                  <Input
+                    id="newPassword"
+                    type={showNewPassword ? "text" : "password"}
+                    placeholder="Neues sicheres Passwort eingeben"
+                    {...register("newPassword", {
+                      onChange: handleNewPasswordChange
+                    })}
+                    className="apple-input pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                  >
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {errors.newPassword && (
+                  <p className="text-sm text-destructive">{errors.newPassword.message}</p>
+                )}
+              </div>
+
+              {/* Passwort bestätigen */}
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Neues Passwort bestätigen</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Neues Passwort erneut eingeben"
+                    {...register("confirmPassword")}
+                    className="apple-input pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {errors.confirmPassword && (
+                  <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+                )}
+              </div>
+
+              {/* Passwort-Validierung Anzeige */}
+              {newPassword && !passwordValidation.isValid && (
+                <Alert>
+                  <AlertDescription>
+                    <div className="space-y-1">
+                      <p className="font-medium">Passwort-Anforderungen:</p>
+                      {passwordValidation.errors.map((error, index) => (
+                        <p key={index} className="text-sm">• {error}</p>
+                      ))}
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </>
           )}
 
           {/* Info für nicht-eingeloggte User */}
@@ -292,8 +295,8 @@ export const PasswordChangeForm = ({ onSuccess }: PasswordChangeFormProps) => {
             <Alert>
               <Mail className="h-4 w-4" />
               <AlertDescription>
-                Da Sie nicht eingeloggt sind, wird eine E-Mail mit einem Reset-Link an die angegebene Adresse gesendet.
-                Folgen Sie dem Link in der E-Mail, um Ihr Passwort zu ändern.
+                Sie erhalten eine E-Mail mit einem Reset-Link an die angegebene Adresse.
+                Folgen Sie dem Link in der E-Mail, um Ihr neues Passwort zu setzen.
               </AlertDescription>
             </Alert>
           )}
@@ -301,7 +304,7 @@ export const PasswordChangeForm = ({ onSuccess }: PasswordChangeFormProps) => {
           <Button 
             type="submit" 
             className="w-full apple-button" 
-            disabled={isLoading || !passwordValidation.isValid}
+            disabled={isLoading || (isLoggedIn && !passwordValidation.isValid)}
           >
             {isLoading 
               ? (isLoggedIn ? "Wird geändert..." : "Wird gesendet...") 
