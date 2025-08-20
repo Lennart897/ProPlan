@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.send-project-email]
 verify_jwt = false
+
+[functions.send-project-approval-email]
+verify_jwt = false
+
+[functions.send-planning-notification]
+verify_jwt = false
