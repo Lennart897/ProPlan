@@ -53,73 +53,38 @@ serve(async (req) => {
     // Create Supabase admin client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get affected locations from standort_verteilung
-    const affectedLocations: string[] = [];
-    if (project.standort_verteilung) {
-      for (const [location, quantity] of Object.entries(project.standort_verteilung)) {
-        if (quantity > 0) {
-          affectedLocations.push(location);
-        }
-      }
-    }
-
-    console.log('Affected locations:', affectedLocations);
-
-    // Get planning users for affected locations
-    const planningRoles = [
-      'planung',
-      ...affectedLocations.map(loc => `planung_${loc}`)
-    ];
-
-    const { data: planningUsers, error: usersError } = await supabase
-      .from('profiles')
-      .select('user_id, display_name, role')
-      .in('role', planningRoles);
-
-    if (usersError) {
-      console.error('Error fetching planning users:', usersError);
-      return new Response('Error fetching users', { 
-        status: 500, 
-        headers: corsHeaders 
-      });
-    }
-
-    console.log('Found planning users:', planningUsers?.length || 0);
-
-    // Get email addresses from auth.users
-    const userIds = planningUsers?.map(user => user.user_id) || [];
-    if (userIds.length === 0) {
-      console.log('No planning users found for affected locations');
-      return new Response('No recipients found', { 
+    // Get the project creator (Vertrieb user) to notify them about approval
+    if (!project.created_by_id) {
+      console.log('No created_by_id found in project');
+      return new Response('No project creator found', { 
         status: 200, 
         headers: corsHeaders 
       });
     }
 
-    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+    console.log('Project created by user ID:', project.created_by_id);
+
+    // Get the creator's email from auth.users
+    const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(project.created_by_id);
     
     if (authError) {
-      console.error('Error fetching auth users:', authError);
-      return new Response('Error fetching user emails', { 
+      console.error('Error fetching creator email:', authError);
+      return new Response('Error fetching creator email', { 
         status: 500, 
         headers: corsHeaders 
       });
     }
 
-    const recipientEmails = authUsers.users
-      .filter(user => userIds.includes(user.id))
-      .map(user => user.email)
-      .filter(email => email);
-
-    console.log('Recipient emails:', recipientEmails.length);
-
-    if (recipientEmails.length === 0) {
-      console.log('No valid email addresses found');
-      return new Response('No valid recipients', { 
+    if (!authUser.user?.email) {
+      console.log('No email found for project creator');
+      return new Response('No email for creator', { 
         status: 200, 
         headers: corsHeaders 
       });
     }
+
+    const recipientEmails = [authUser.user.email];
+    console.log('Sending approval notification to project creator:', authUser.user.email);
 
     // Helper functions
     const formatDate = (dateStr?: string): string => {
@@ -151,10 +116,10 @@ serve(async (req) => {
         .join('');
     };
 
-    // Create HTML email content for approval notification
-    const htmlContent = `<h1>📋 ProPlan System – Projekt freigegeben</h1>
-<p>Sehr geehrte Damen und Herren,</p>
-<p>Ein Fertigungsprojekt wurde von der Supply Chain freigegeben und ist nun zur Bearbeitung bereit.</p>
+    // Create HTML email content for approval notification to project creator
+    const htmlContent = `<h1>🎉 ProPlan System – Ihr Projekt wurde genehmigt!</h1>
+<p>Hallo ${project.created_by_name},</p>
+<p>Ihr Fertigungsprojekt wurde erfolgreich von allen beteiligten Standorten genehmigt und ist nun vollständig freigegeben!</p>
 <hr>
 <h2>📊 Projektübersicht</h2>
 <ul>
@@ -173,9 +138,9 @@ ${project.beschreibung ? `<h2>📝 Beschreibung</h2><p>${project.beschreibung}</
 ${formatLocationDistribution(project.standort_verteilung)}
 </ul>
 <hr>
-<div style="background-color: #e3f2fd; border-left: 4px solid #2196f3; padding: 16px; margin: 16px 0;">
-  <h2 style="margin-top: 0; color: #1976d2;">⚡ Status: Freigegeben</h2>
-  <p style="margin-bottom: 0;"><strong>Das Projekt wurde von der Supply Chain genehmigt und kann nun von Ihnen bearbeitet werden.</strong></p>
+<div style="background-color: #e8f5e8; border-left: 4px solid #4caf50; padding: 16px; margin: 16px 0;">
+  <h2 style="margin-top: 0; color: #2e7d32;">✅ Status: Vollständig genehmigt</h2>
+  <p style="margin-bottom: 0;"><strong>Alle beteiligten Standorte haben Ihr Projekt genehmigt. Die Produktion kann beginnen!</strong></p>
 </div>
 <p>🔗 <a href="https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e" style="color: #2196f3; text-decoration: none;">Zum Projekt im ProPlan System</a></p>
 <hr>
@@ -191,7 +156,7 @@ ${formatLocationDistribution(project.standort_verteilung)}
     // Prepare webhook payload in the same format as project creation
     const webhookPayload = {
       message: {
-        subject: `✅ ProPlan - Projekt freigegeben #${project.project_number}: ${project.artikel_bezeichnung}`,
+        subject: `🎉 ProPlan - Ihr Projekt wurde genehmigt #${project.project_number}: ${project.artikel_bezeichnung}`,
         body: {
           contentType: "HTML",
           content: htmlContent
@@ -204,7 +169,7 @@ ${formatLocationDistribution(project.standort_verteilung)}
         project_id: project.id,
         project_number: project.project_number,
         created_by_id: project.created_by_id,
-        affected_locations: affectedLocations,
+        recipient_email: authUser.user.email,
         standort_verteilung: project.standort_verteilung
       }
     };
