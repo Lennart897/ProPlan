@@ -155,14 +155,9 @@ ${formatLocationDistribution(project.standort_verteilung)}
 
     // Prepare webhook payload in the same format as project creation
     const webhookPayload = {
-      message: {
-        subject: `🎉 ProPlan - Ihr Projekt wurde genehmigt #${project.project_number}: ${project.artikel_bezeichnung}`,
-        body: {
-          contentType: "HTML",
-          content: htmlContent
-        },
-        toRecipients
-      },
+      subject: `🎉 ProPlan - Ihr Projekt wurde genehmigt #${project.project_number}: ${project.artikel_bezeichnung}`,
+      body: htmlContent,
+      toRecipients,
       metadata: {
         type: "project_approval",
         triggered_at: new Date().toISOString(),
