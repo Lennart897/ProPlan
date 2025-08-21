@@ -262,21 +262,20 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       || archiveStatusFilter === 'all' 
       || (archivedPrevStatus[project.id] && archivedPrevStatus[project.id] === archiveStatusFilter);
     
-    // Rollenbasierte Filterung nur außerhalb des Archivs anwenden
+    // Rollenbasierte Filterung 
     const matchesRole = () => {
-      if (isArchiveView) return true;
       switch (user.role) {
         case "supply_chain":
-          return project.status === "pending"; // SupplyChain sieht nur Projekte zur ersten Prüfung
+          return isArchiveView || project.status === "pending"; // SupplyChain sieht nur Projekte zur ersten Prüfung + Archiv
         case "planung":
         case "planung_storkow":
         case "planung_brenz":
         case "planung_gudensberg":
         case "planung_doebeln":
         case "planung_visbek":
-          return project.status === "in_progress"; // Planung sieht nur von SupplyChain weitergeleitete Projekte
+          return isArchiveView || project.status === "in_progress"; // Planung sieht nur von SupplyChain weitergeleitete Projekte + Archiv
         case "vertrieb":
-          return true; // Vertrieb sieht alle Projekte (Überwachung)
+          return true; // Vertrieb sieht alle Projekte (Überwachung) + Archiv
         default:
           return true;
       }
