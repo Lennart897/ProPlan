@@ -267,14 +267,16 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       if (isArchiveView) return true;
       switch (user.role) {
         case "supply_chain":
-          return project.status === "pending"; // SupplyChain sieht nur Projekte zur ersten Prüfung
+          // SupplyChain sieht Projekte zur Prüfung und genehmigte/abgelehnte zum Archivieren
+          return project.status === "pending" || project.status === "approved" || project.status === "rejected";
         case "planung":
         case "planung_storkow":
         case "planung_brenz":
         case "planung_gudensberg":
         case "planung_doebeln":
         case "planung_visbek":
-          return project.status === "in_progress"; // Planung sieht nur von SupplyChain weitergeleitete Projekte
+          // Planung sieht in_progress Projekte und genehmigte/abgelehnte zum Archivieren
+          return project.status === "in_progress" || project.status === "approved" || project.status === "rejected";
         case "vertrieb":
           return true; // Vertrieb sieht alle Projekte (Überwachung)
         default:
