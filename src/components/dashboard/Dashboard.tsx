@@ -646,9 +646,12 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                         <TableHead>Artikel-Nr.</TableHead>
                         <TableHead>Menge</TableHead>
                         <TableHead>Status</TableHead>
-                        {statusFilter !== 'archived' && (
-                          <TableHead>Verantwortlich</TableHead>
-                        )}
+                         {statusFilter !== 'archived' && (
+                           <>
+                             <TableHead>Erste Anlieferung</TableHead>
+                             <TableHead>Letzte Anlieferung</TableHead>
+                           </>
+                         )}
                         <TableHead className="text-right">Aktionen</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -667,11 +670,22 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                               {project.status_label || getStatusLabel(project.status)}
                             </Badge>
                           </TableCell>
-                          {statusFilter !== 'archived' && (
-                            <TableCell>
-                              {getCurrentResponsibleRole(project.status) ?? "-"}
-                            </TableCell>
-                          )}
+                           {statusFilter !== 'archived' && (
+                             <>
+                               <TableCell>
+                                 {project.erste_anlieferung 
+                                   ? new Date(project.erste_anlieferung).toLocaleDateString("de-DE")
+                                   : "-"
+                                 }
+                               </TableCell>
+                               <TableCell>
+                                 {project.letzte_anlieferung 
+                                   ? new Date(project.letzte_anlieferung).toLocaleDateString("de-DE")
+                                   : "-"
+                                 }
+                               </TableCell>
+                             </>
+                           )}
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button 
