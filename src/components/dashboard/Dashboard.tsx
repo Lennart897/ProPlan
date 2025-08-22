@@ -179,6 +179,9 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
           // Korrekturdaten werden separat verarbeitet
           updateData = reason; // reason enthält hier die Korrekturdaten
           break;
+        case 'cancel':
+          updateData = { status: PROJECT_STATUS.ABGELEHNT, rejection_reason: 'Projekt vom Ersteller abgesagt' };
+          break;
         default:
           throw new Error(`Unbekannte Aktion: ${action}`);
       }
@@ -197,7 +200,8 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
         archive: "Projekt wurde archiviert.",
         send_to_progress: "Projekt wurde zur Bearbeitung weitergeleitet.",
         send_to_vertrieb: "Projekt wurde an Vertrieb weitergeleitet.",
-        correct: "Projekt wurde korrigiert."
+        correct: "Projekt wurde korrigiert.",
+        cancel: "Projekt wurde abgesagt."
       };
 
       toast({
