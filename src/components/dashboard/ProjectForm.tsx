@@ -17,6 +17,7 @@ import { format, parse, isValid } from "date-fns";
 import { de } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { PROJECT_STATUS } from "@/utils/statusUtils";
 
 // Hilfsfunktionen für Zahlenformatierung
 const formatNumberWithThousandSeparator = (value: number): string => {
@@ -227,7 +228,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
           letzte_anlieferung: data.letzte_anlieferung ? format(data.letzte_anlieferung, 'yyyy-MM-dd') : null,
           menge_fix: data.menge_fix,
           standort_verteilung: data.standort_verteilung,
-          status: 'pending', // Start as pending for SupplyChain review
+          status: PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN, // Start with SupplyChain review
           created_by_id: currentUser.id,
           created_by_name: user.full_name || user.email
         })
@@ -243,7 +244,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
         user_name: user.full_name || user.email,
         action: 'create',
         previous_status: null,
-        new_status: 'pending'
+        new_status: 'Prüfung SupplyChain'
       });
       
       toast({
