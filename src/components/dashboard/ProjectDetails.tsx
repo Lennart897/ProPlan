@@ -564,40 +564,57 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                 await handleCorrection(updateData);
               }}
             >
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="corrected-quantity">Korrigierte Gesamtmenge (kg)</Label>
-                  <Input
-                    id="corrected-quantity"
-                    type="number"
-                    value={correctedQuantity}
-                    onChange={(e) => setCorrectedQuantity(e.target.value)}
-                    min="1"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <Label>Standortverteilung</Label>
-                  <div className="grid grid-cols-2 gap-3 mt-2">
-                    {Object.entries(locationLabels).map(([key, label]) => (
-                      <div key={key}>
-                        <Label htmlFor={`location-${key}`} className="text-sm">{label}</Label>
-                        <Input
-                          id={`location-${key}`}
-                          type="number"
-                          value={locationQuantities[key] || 0}
-                          onChange={(e) => setLocationQuantities(prev => ({
-                            ...prev,
-                            [key]: parseInt(e.target.value) || 0
-                          }))}
-                          min="0"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+               <div className="space-y-4">
+                 {/* Nur SupplyChain darf Gesamtmenge ändern */}
+                 {user.role === 'supply_chain' && (
+                   <div>
+                     <Label htmlFor="corrected-quantity">Korrigierte Gesamtmenge (kg)</Label>
+                     <Input
+                       id="corrected-quantity"
+                       type="number"
+                       value={correctedQuantity}
+                       onChange={(e) => setCorrectedQuantity(e.target.value)}
+                       min="1"
+                       required
+                     />
+                   </div>
+                 )}
+                 
+                 <div>
+                   <Label>Standortverteilung</Label>
+                   <div className="grid grid-cols-2 gap-3 mt-2">
+                     {Object.entries(locationLabels).map(([key, label]) => {
+                       // Prüfe ob User standortspezifische Planungsrolle hat
+                       const isLocationSpecificPlanning = user.role.startsWith('planung_');
+                       const userLocation = isLocationSpecificPlanning ? user.role.replace('planung_', '') : null;
+                       const canEditThisLocation = !isLocationSpecificPlanning || userLocation === key;
+                       
+                       return (
+                         <div key={key}>
+                           <Label htmlFor={`location-${key}`} className="text-sm">{label}</Label>
+                           <Input
+                             id={`location-${key}`}
+                             type="number"
+                             value={locationQuantities[key] || 0}
+                             onChange={(e) => setLocationQuantities(prev => ({
+                               ...prev,
+                               [key]: parseInt(e.target.value) || 0
+                             }))}
+                             min="0"
+                             disabled={!canEditThisLocation}
+                             className={!canEditThisLocation ? "bg-muted cursor-not-allowed" : ""}
+                           />
+                           {!canEditThisLocation && (
+                             <p className="text-xs text-muted-foreground mt-1">
+                               Nur betroffener Standort kann diese Menge anpassen
+                             </p>
+                           )}
+                         </div>
+                       );
+                     })}
+                   </div>
+                 </div>
+               </div>
               
               <DialogFooter className="mt-6">
                 <Button type="button" variant="outline" onClick={() => setShowCorrectionDialog(false)}>
