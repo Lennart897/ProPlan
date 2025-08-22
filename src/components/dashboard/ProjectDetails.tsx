@@ -176,11 +176,12 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
 
   const handleCorrection = async (updateData: any) => {
     try {
-      await logProjectAction('correction', { 
-        status: project.status,
-        gesamtmenge: project.gesamtmenge,
-        standort_verteilung: project.standort_verteilung 
-      }, updateData);
+      // Skip logging for now
+      // await logProjectAction('correction', { 
+      //   status: project.status,
+      //   gesamtmenge: project.gesamtmenge,
+      //   standort_verteilung: project.standort_verteilung 
+      // }, updateData);
 
       const { error } = await supabase
         .from('manufacturing_projects')
@@ -522,11 +523,27 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
               onSubmit={async (e) => {
                 e.preventDefault();
                 
-                // Bei Korrektur durch SupplyChain: Status auf 2 (Prüfung Vertrieb) setzen
+                // SupplyChain Korrektur-Logik:
+                // - Wenn Gesamtmenge geändert wurde → Status 2 (Vertrieb prüft)
+                // - Wenn nur Standortverteilung geändert wurde → Status 4 (Planung prüft)
+                const originalQuantity = project.gesamtmenge;
+                const newQuantity = parseInt(correctedQuantity);
+                const quantityChanged = originalQuantity !== newQuantity;
+                
+                let newStatus = project.status; // Default: Status bleibt gleich
+                
+                if (user.role === 'supply_chain') {
+                  if (quantityChanged) {
+                    newStatus = PROJECT_STATUS.PRUEFUNG_VERTRIEB; // Status 2
+                  } else {
+                    newStatus = PROJECT_STATUS.PRUEFUNG_PLANUNG; // Status 4
+                  }
+                }
+                
                 const updateData = {
-                  gesamtmenge: parseInt(correctedQuantity),
+                  gesamtmenge: newQuantity,
                   standort_verteilung: locationQuantities,
-                  ...(user.role === 'supply_chain' ? { status: PROJECT_STATUS.PRUEFUNG_VERTRIEB } : {})
+                  ...(user.role === 'supply_chain' ? { status: newStatus } : {})
                 };
                 
                 await handleCorrection(updateData);
