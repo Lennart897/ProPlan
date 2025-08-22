@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, getWeek, isWithinInterval, differenceInCalendarDays } from "date-fns";
 import { de } from "date-fns/locale";
 
-type ProjectStatus = "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed" | "archived";
+type ProjectStatus = number;
 
 interface Project {
   id: string;
@@ -20,6 +20,7 @@ interface Project {
   gesamtmenge: number;
   beschreibung?: string;
   status: ProjectStatus;
+  archived?: boolean;
   archivedPrevStatus?: ProjectStatus;
   created_at: string;
   updated_at: string;
@@ -112,7 +113,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
         const { data, error } = await supabase
           .from('manufacturing_projects')
           .select('*')
-          .in('status', ['approved', 'archived'])
+          .in('status', [5, 7]) // 5 = Genehmigt, 7 = Abgeschlossen
           .order('created_at', { ascending: false });
 
         if (error) {
@@ -137,24 +138,30 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
         }));
 
         // If there are archived projects, load their vorheriger Status
-        const archivedIds = transformedProjects.filter(p => p.status === 'archived').map(p => p.id);
+        const archivedIds = transformedProjects.filter(p => p.archived === true).map(p => p.id);
         if (archivedIds.length > 0) {
           const { data: historyRows, error: histError } = await supabase
             .from('project_history')
             .select('project_id, previous_status, new_status, created_at')
             .in('project_id', archivedIds)
-            .eq('new_status', 'archived')
+            .eq('action', 'archive')
             .order('created_at', { ascending: false });
           if (histError) throw histError;
           const prevMap: Record<string, ProjectStatus> = {};
           const seen = new Set<string>();
           (historyRows || []).forEach((row: any) => {
             if (!seen.has(row.project_id)) {
-              prevMap[row.project_id] = row.previous_status as ProjectStatus;
+              // Map the previous status string to status number
+              const statusMap: Record<string, number> = {
+                'Genehmigt': 5,
+                'Abgelehnt': 6,
+                'Abgeschlossen': 7
+              };
+              prevMap[row.project_id] = statusMap[row.previous_status] || 0;
               seen.add(row.project_id);
             }
           });
-          transformedProjects = transformedProjects.map(p => p.status === 'archived' ? { ...p, archivedPrevStatus: prevMap[p.id] } : p);
+          transformedProjects = transformedProjects.map(p => p.archived === true ? { ...p, archivedPrevStatus: prevMap[p.id] } : p);
         }
         
         setProjects(transformedProjects);
@@ -184,7 +191,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
 
   // Filter projects based on status (approved or archived with previous approved) and selected filters
   const filteredProjects = projects.filter(project => {
-    const statusEligible = project.status === 'approved' || (project.status === 'archived' && project.archivedPrevStatus === 'approved');
+    const statusEligible = project.status === 5 || (project.archived === true && project.archivedPrevStatus === 5);
     if (!statusEligible) return false;
 
     const locationMatch = selectedLocation === 'all' || 
