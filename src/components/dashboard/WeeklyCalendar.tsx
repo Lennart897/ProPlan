@@ -130,39 +130,12 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
         }
         
         // Transform the data to match our interface
-        let transformedProjects: Project[] = (data || []).map(project => ({
+        const transformedProjects: Project[] = (data || []).map(project => ({
           ...project,
           status: project.status as ProjectStatus,
           standort_verteilung: project.standort_verteilung as Record<string, number> || {},
           menge_fix: project.menge_fix || false
         }));
-
-        // If there are archived projects, load their vorheriger Status
-        const archivedIds = transformedProjects.filter(p => p.archived === true).map(p => p.id);
-        if (archivedIds.length > 0) {
-          const { data: historyRows, error: histError } = await supabase
-            .from('project_history')
-            .select('project_id, previous_status, new_status, created_at')
-            .in('project_id', archivedIds)
-            .eq('action', 'archive')
-            .order('created_at', { ascending: false });
-          if (histError) throw histError;
-          const prevMap: Record<string, ProjectStatus> = {};
-          const seen = new Set<string>();
-          (historyRows || []).forEach((row: any) => {
-            if (!seen.has(row.project_id)) {
-              // Map the previous status string to status number
-              const statusMap: Record<string, number> = {
-                'Genehmigt': 5,
-                'Abgelehnt': 6,
-                'Abgeschlossen': 7
-              };
-              prevMap[row.project_id] = statusMap[row.previous_status] || 0;
-              seen.add(row.project_id);
-            }
-          });
-          transformedProjects = transformedProjects.map(p => p.archived === true ? { ...p, archivedPrevStatus: prevMap[p.id] } : p);
-        }
         
         setProjects(transformedProjects);
       } catch (error) {
@@ -189,9 +162,11 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  // Filter projects based on status (approved or archived with previous approved) and selected filters
+  // Filter projects based on status and selected filters  
   const filteredProjects = projects.filter(project => {
-    const statusEligible = project.status === 5 || (project.archived === true && project.archivedPrevStatus === 5);
+    // Include both approved (5) and completed (7) projects, whether archived or not
+    const statusEligible = (project.status === 5 || project.status === 7) && 
+                          project.erste_anlieferung && project.letzte_anlieferung;
     if (!statusEligible) return false;
 
     const locationMatch = selectedLocation === 'all' || 
