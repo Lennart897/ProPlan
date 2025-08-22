@@ -372,6 +372,13 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
           }
         }}
         onProjectAction={handleProjectAction}
+        onShowPreview={(previewProj) => {
+          setPreviewProject(previewProj);
+          if (previewProj.erste_anlieferung) {
+            setPreviewInitialWeek(new Date(previewProj.erste_anlieferung));
+          }
+          setShowCalendar(true);
+        }}
       />
     );
   }

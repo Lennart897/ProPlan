@@ -43,6 +43,7 @@ interface ProjectDetailsProps {
   user: User;
   onBack: () => void;
   onProjectAction: (project: Project, action: string, data?: any) => void;
+  onShowPreview?: (project: any) => void;
 }
 
 const locationLabels = {
@@ -53,7 +54,7 @@ const locationLabels = {
   doebeln: "Döbeln"
 };
 
-export const ProjectDetails = ({ project, user, onBack, onProjectAction }: ProjectDetailsProps) => {
+export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowPreview }: ProjectDetailsProps) => {
   const [showCorrectionDialog, setShowCorrectionDialog] = useState(false);
   const [showRejectionDialog, setShowRejectionDialog] = useState(false);
   const [correctedQuantity, setCorrectedQuantity] = useState(project.gesamtmenge.toString());
@@ -259,6 +260,31 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
 
   const getActionButtons = () => {
     const buttons = [];
+
+    // Vorschau-Button für Projekte in Prüfstatus (2, 3, 4)
+    if ([2, 3, 4].includes(project.status) && onShowPreview && project.erste_anlieferung && project.letzte_anlieferung) {
+      buttons.push(
+        <Button key="preview" variant="outline" className="w-64" onClick={() => onShowPreview({
+          id: project.id,
+          customer: project.customer,
+          artikel_nummer: project.artikel_nummer,
+          artikel_bezeichnung: project.artikel_bezeichnung,
+          produktgruppe: project.produktgruppe,
+          gesamtmenge: project.gesamtmenge,
+          beschreibung: project.beschreibung,
+          erste_anlieferung: project.erste_anlieferung,
+          letzte_anlieferung: project.letzte_anlieferung,
+          status: project.status,
+          created_at: project.created_at,
+          created_by_name: project.created_by_name || project.created_by,
+          standort_verteilung: project.standort_verteilung,
+          menge_fix: project.menge_fix
+        })}>
+          <Calendar className="h-4 w-4 mr-2" />
+          Vorschau im Kalender
+        </Button>
+      );
+    }
 
     // Ersteller kann Projekt in Status 2,3,4,5 absagen (außer SupplyChain)
     if (project.created_by_id === user.id && [2, 3, 4, 5].includes(project.status) && user.role !== 'supply_chain') {
