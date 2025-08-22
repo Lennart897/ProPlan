@@ -40,5 +40,5 @@ export const getStatusColor = (status: ProjectStatus): string => {
 };
 
 export const canArchiveProject = (status: ProjectStatus): boolean => {
-  return [PROJECT_STATUS.GENEHMIGT, PROJECT_STATUS.ABGELEHNT, PROJECT_STATUS.ABGESCHLOSSEN].includes(status);
+  return [PROJECT_STATUS.GENEHMIGT, PROJECT_STATUS.ABGELEHNT, PROJECT_STATUS.ABGESCHLOSSEN].includes(status as typeof PROJECT_STATUS.GENEHMIGT | typeof PROJECT_STATUS.ABGELEHNT | typeof PROJECT_STATUS.ABGESCHLOSSEN);
 };

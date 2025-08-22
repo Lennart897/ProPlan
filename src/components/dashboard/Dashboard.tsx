@@ -329,7 +329,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
             beschreibung: project.beschreibung,
             erste_anlieferung: project.erste_anlieferung || undefined,
             letzte_anlieferung: project.letzte_anlieferung || undefined,
-            status: project.status,
+            status: Number(project.status),
             created_at: project.created_at,
             created_by: project.created_by_name || "",
             standort_verteilung: project.standort_verteilung,
