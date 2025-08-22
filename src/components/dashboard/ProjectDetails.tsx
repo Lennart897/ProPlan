@@ -233,7 +233,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
     // Ersteller kann Projekt in Status 2,3,4,5 absagen
     if (project.created_by_id === user.id && [2, 3, 4, 5].includes(project.status)) {
       buttons.push(
-        <Button key="cancel" variant="destructive" className="w-48" onClick={() => handleAction('cancel')}>
+        <Button key="cancel" variant="destructive" className="w-[26.4rem]" onClick={() => handleAction('cancel')}>
           Projekt absagen
         </Button>
       );
