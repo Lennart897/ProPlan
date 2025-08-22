@@ -49,6 +49,8 @@ interface Project {
   erste_anlieferung?: string;
   letzte_anlieferung?: string;
   status: number;
+  status_label?: string;
+  status_color?: string;
   created_at: string;
   created_by: string;
   standort_verteilung?: Record<string, number>;
@@ -93,7 +95,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const fetchProjects = async () => {
     try {
       const { data, error } = await supabase
-        .from('manufacturing_projects')
+        .from('manufacturing_projects_with_status_label')
         .select('*')
         .eq('archived', false)
         .order('created_at', { ascending: false });
@@ -114,7 +116,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const fetchArchivedProjects = async () => {
     try {
       const { data, error } = await supabase
-        .from('manufacturing_projects')
+        .from('manufacturing_projects_with_status_label')
         .select('*')
         .eq('archived', true)
         .order('archived_at', { ascending: false });
@@ -564,8 +566,8 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                           </div>
                         </div>
                       </div>
-                      <Badge className={getStatusColor(project.status)}>
-                        {getStatusLabel(project.status)}
+                      <Badge className={project.status_color || getStatusColor(project.status)}>
+                        {project.status_label || getStatusLabel(project.status)}
                       </Badge>
                     </div>
                   </CardHeader>
@@ -657,8 +659,8 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                             {project.gesamtmenge.toLocaleString('de-DE')} kg
                           </TableCell>
                           <TableCell>
-                            <Badge className={getStatusColor(project.status)}>
-                              {getStatusLabel(project.status)}
+                            <Badge className={project.status_color || getStatusColor(project.status)}>
+                              {project.status_label || getStatusLabel(project.status)}
                             </Badge>
                           </TableCell>
                           {statusFilter !== 'archived' && (
