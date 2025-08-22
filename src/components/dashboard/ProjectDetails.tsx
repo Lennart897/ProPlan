@@ -263,7 +263,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
     // Ersteller kann Projekt in Status 2,3,4,5 absagen (außer SupplyChain)
     if (project.created_by_id === user.id && [2, 3, 4, 5].includes(project.status) && user.role !== 'supply_chain') {
       buttons.push(
-        <Button key="cancel" variant="destructive" className="w-32" onClick={() => handleAction('cancel')}>
+        <Button key="cancel" variant="destructive" className="w-64" onClick={() => handleAction('cancel')}>
           Projekt absagen
         </Button>
       );
@@ -274,17 +274,17 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
       case 'supply_chain':
         if (project.status === PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN) {
           buttons.push(
-             <Button key="approve" className="bg-green-600 hover:bg-green-700 w-32" onClick={() => handleAction('send_to_progress')}>
+             <Button key="approve" className="bg-green-600 hover:bg-green-700 w-64" onClick={() => handleAction('send_to_progress')}>
               Zur Planung weiterleiten
             </Button>
           );
           buttons.push(
-             <Button key="correct" className="bg-orange-600 hover:bg-orange-700 text-white w-32" onClick={() => setShowCorrectionDialog(true)}>
+             <Button key="correct" className="bg-orange-600 hover:bg-orange-700 text-white w-64" onClick={() => setShowCorrectionDialog(true)}>
               Korrigieren
             </Button>
           );
           buttons.push(
-             <Button key="reject" variant="destructive" size="default" className="w-32" onClick={() => setShowRejectionDialog(true)}>
+             <Button key="reject" variant="destructive" size="default" className="w-64" onClick={() => setShowRejectionDialog(true)}>
               Ablehnen
             </Button>
           );
@@ -294,12 +294,12 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
       case 'vertrieb':
         if (project.status === PROJECT_STATUS.PRUEFUNG_VERTRIEB) {
           buttons.push(
-             <Button key="approve" className="bg-green-600 hover:bg-green-700 w-32" onClick={() => handleAction('send_to_progress')}>
+             <Button key="approve" className="bg-green-600 hover:bg-green-700 w-64" onClick={() => handleAction('send_to_progress')}>
               Zur Planung weiterleiten
             </Button>
           );
           buttons.push(
-             <Button key="reject" variant="destructive" size="default" className="w-32" onClick={() => setShowRejectionDialog(true)}>
+             <Button key="reject" variant="destructive" size="default" className="w-64" onClick={() => setShowRejectionDialog(true)}>
               Ablehnen
             </Button>
           );
@@ -307,7 +307,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
         // Vertrieb kann genehmigte, abgelehnte und abgeschlossene Projekte archivieren
         if (canArchiveProject(project.status)) {
           buttons.push(
-             <Button key="archive" variant="outline" className="w-32" onClick={() => handleAction('archive')}>
+             <Button key="archive" variant="outline" className="w-64" onClick={() => handleAction('archive')}>
               Archivieren
             </Button>
           );
@@ -322,19 +322,19 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
       case 'planung_visbek':
         if (project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
           buttons.push(
-             <Button key="approve" className="w-32" onClick={() => handleAction('approve')}>
+             <Button key="approve" className="w-64" onClick={() => handleAction('approve')}>
               Genehmigen
             </Button>
           );
           buttons.push(
-            <Button key="correct" className="bg-orange-600 hover:bg-orange-700 text-white w-32" onClick={() => setShowCorrectionDialog(true)}>
+            <Button key="correct" className="bg-orange-600 hover:bg-orange-700 text-white w-64" onClick={() => setShowCorrectionDialog(true)}>
               Korrigieren
             </Button>
           );
           // Nur allgemeine 'planung' Rolle darf ablehnen, nicht die standortspezifischen
           if (user.role === 'planung') {
             buttons.push(
-              <Button key="reject" variant="destructive" size="default" className="w-32" onClick={() => setShowRejectionDialog(true)}>
+              <Button key="reject" variant="destructive" size="default" className="w-64" onClick={() => setShowRejectionDialog(true)}>
                 Ablehnen
               </Button>
             );
@@ -346,45 +346,45 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
         // Admin kann alle Aktionen durchführen
         if (project.status === PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN) {
           buttons.push(
-             <Button key="approve" className="bg-green-600 hover:bg-green-700 w-32" onClick={() => handleAction('send_to_progress')}>
+             <Button key="approve" className="bg-green-600 hover:bg-green-700 w-64" onClick={() => handleAction('send_to_progress')}>
               Zur Planung weiterleiten
             </Button>
           );
           buttons.push(
-            <Button key="send_vertrieb" className="bg-orange-600 hover:bg-orange-700 text-white w-32" onClick={() => handleAction('send_to_vertrieb')}>
+            <Button key="send_vertrieb" className="bg-orange-600 hover:bg-orange-700 text-white w-64" onClick={() => handleAction('send_to_vertrieb')}>
               An Vertrieb weiterleiten
             </Button>
           );
         }
         if (project.status === PROJECT_STATUS.PRUEFUNG_VERTRIEB) {
           buttons.push(
-            <Button key="approve" className="bg-green-600 hover:bg-green-700 w-32" onClick={() => handleAction('send_to_progress')}>
+            <Button key="approve" className="bg-green-600 hover:bg-green-700 w-64" onClick={() => handleAction('send_to_progress')}>
               Zur Planung weiterleiten
             </Button>
           );
         }
         if (project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
           buttons.push(
-            <Button key="approve" className="w-32" onClick={() => handleAction('approve')}>
+            <Button key="approve" className="w-64" onClick={() => handleAction('approve')}>
               Genehmigen
             </Button>
           );
           buttons.push(
-            <Button key="correct" variant="secondary" className="w-32" onClick={() => setShowCorrectionDialog(true)}>
+            <Button key="correct" variant="secondary" className="w-64" onClick={() => setShowCorrectionDialog(true)}>
               Korrigieren
             </Button>
           );
         }
         if (canArchiveProject(project.status)) {
           buttons.push(
-            <Button key="archive" variant="outline" className="w-32" onClick={() => handleAction('archive')}>
+            <Button key="archive" variant="outline" className="w-64" onClick={() => handleAction('archive')}>
               Archivieren
             </Button>
           );
         }
         if (project.status !== PROJECT_STATUS.GENEHMIGT && project.status !== PROJECT_STATUS.ABGESCHLOSSEN) {
           buttons.push(
-            <Button key="reject" variant="destructive" className="w-32" onClick={() => setShowRejectionDialog(true)}>
+            <Button key="reject" variant="destructive" className="w-64" onClick={() => setShowRejectionDialog(true)}>
               Ablehnen
             </Button>
           );
