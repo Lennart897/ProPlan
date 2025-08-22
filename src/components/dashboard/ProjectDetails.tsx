@@ -61,6 +61,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
     project.standort_verteilung || {}
   );
   const [rejectionReason, setRejectionReason] = useState("");
+  const [correctionReason, setCorrectionReason] = useState("");
   const { toast } = useToast();
 
   const logProjectAction = async (action: string, oldData?: any, newData?: any) => {
@@ -73,17 +74,17 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
 
       const displayName = profile?.display_name || user.full_name || user.email;
 
-      await supabase
-        .from('project_history')
-        .insert({
-          project_id: project.id,
-          user_id: user.id,
-          user_name: displayName,
-          action: action,
-          previous_status: oldData?.status ? getStatusLabel(oldData.status) : null,
-          new_status: newData?.status ? getStatusLabel(newData.status) : null,
-          reason: newData?.rejection_reason || null
-        });
+       await supabase
+         .from('project_history')
+         .insert({
+           project_id: project.id,
+           user_id: user.id,
+           user_name: displayName,
+           action: action,
+           previous_status: oldData?.status ? getStatusLabel(oldData.status) : null,
+           new_status: newData?.status ? getStatusLabel(newData.status) : null,
+           reason: newData?.rejection_reason || newData?.correction_reason || null
+         });
     } catch (error) {
       console.error('Fehler beim Protokollieren der Aktion:', error);
     }
@@ -180,11 +181,21 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
 
   const handleCorrection = async (updateData: any) => {
     try {
+      // Validate correction reason
+      if (!correctionReason.trim()) {
+        toast({
+          title: "Fehler",
+          description: "Bitte geben Sie eine Begründung für die Korrektur an.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       await logProjectAction('correction', { 
         status: project.status,
         gesamtmenge: project.gesamtmenge,
         standort_verteilung: project.standort_verteilung 
-      }, updateData);
+      }, { ...updateData, correction_reason: correctionReason });
 
       const { error } = await supabase
         .from('manufacturing_projects')
@@ -199,6 +210,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
       });
 
       setShowCorrectionDialog(false);
+      setCorrectionReason("");
       
       // Notify parent component
       onProjectAction(project, 'correct', updateData);
@@ -613,8 +625,20 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                        );
                      })}
                    </div>
-                 </div>
-               </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="correction-reason">Begründung für die Korrektur</Label>
+                    <Textarea
+                      id="correction-reason"
+                      value={correctionReason}
+                      onChange={(e) => setCorrectionReason(e.target.value)}
+                      placeholder="Beschreiben Sie den Grund für die Korrektur..."
+                      rows={3}
+                      required
+                    />
+                  </div>
+                </div>
               
               <DialogFooter className="mt-6">
                 <Button type="button" variant="outline" onClick={() => setShowCorrectionDialog(false)}>
