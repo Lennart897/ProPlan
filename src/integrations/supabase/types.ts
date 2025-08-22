@@ -408,6 +408,15 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string
       }
+      handle_planning_correction: {
+        Args: {
+          p_gesamtmenge: number
+          p_project_id: string
+          p_standort_verteilung: Json
+          p_status: number
+        }
+        Returns: undefined
+      }
       is_project_pending_for_user_location: {
         Args: { p_project_id: string; user_uuid: string }
         Returns: boolean
