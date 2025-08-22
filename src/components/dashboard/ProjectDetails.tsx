@@ -301,11 +301,14 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
               Korrigieren
             </Button>
           );
-          buttons.push(
-            <Button key="reject" variant="destructive" size="default" className="w-48" onClick={() => setShowRejectionDialog(true)}>
-              Ablehnen
-            </Button>
-          );
+          // Nur allgemeine 'planung' Rolle darf ablehnen, nicht die standortspezifischen
+          if (user.role === 'planung') {
+            buttons.push(
+              <Button key="reject" variant="destructive" size="default" className="w-48" onClick={() => setShowRejectionDialog(true)}>
+                Ablehnen
+              </Button>
+            );
+          }
         }
         break;
 
