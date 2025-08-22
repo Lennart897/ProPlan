@@ -640,36 +640,31 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                   <Table className="min-w-[720px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Projekt-Nr.</TableHead>
-                        <TableHead>Kunde</TableHead>
-                        <TableHead>Artikel</TableHead>
-                        <TableHead>Artikel-Nr.</TableHead>
-                        <TableHead>Menge</TableHead>
-                        <TableHead>Status</TableHead>
+                         <TableHead>Projekt-Nr.</TableHead>
+                         <TableHead>Kunde</TableHead>
+                         <TableHead>Artikel</TableHead>
+                         <TableHead>Artikel-Nr.</TableHead>
+                         <TableHead>Menge</TableHead>
                          {statusFilter !== 'archived' && (
                            <>
                              <TableHead>Erste Anlieferung</TableHead>
                              <TableHead>Letzte Anlieferung</TableHead>
                            </>
                          )}
-                        <TableHead className="text-right">Aktionen</TableHead>
+                         <TableHead>Status</TableHead>
+                         <TableHead className="text-right">Aktionen</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredProjects.map((project) => (
                         <TableRow key={project.id}>
-                          <TableCell className="whitespace-nowrap">{project.project_number}</TableCell>
-                          <TableCell className="font-medium">{project.customer}</TableCell>
-                          <TableCell className="truncate max-w-[280px]">{project.artikel_bezeichnung}</TableCell>
-                          <TableCell className="whitespace-nowrap">{project.artikel_nummer}</TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            {project.gesamtmenge.toLocaleString('de-DE')} kg
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={project.status_color || getStatusColor(project.status)}>
-                              {project.status_label || getStatusLabel(project.status)}
-                            </Badge>
-                          </TableCell>
+                           <TableCell className="whitespace-nowrap">{project.project_number}</TableCell>
+                           <TableCell className="font-medium">{project.customer}</TableCell>
+                           <TableCell className="truncate max-w-[280px]">{project.artikel_bezeichnung}</TableCell>
+                           <TableCell className="whitespace-nowrap">{project.artikel_nummer}</TableCell>
+                           <TableCell className="whitespace-nowrap">
+                             {project.gesamtmenge.toLocaleString('de-DE')} kg
+                           </TableCell>
                            {statusFilter !== 'archived' && (
                              <>
                                <TableCell>
@@ -686,12 +681,17 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                                </TableCell>
                              </>
                            )}
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button 
-                                size="sm" 
-                                onClick={() => setSelectedProject(project)}
-                                className="h-7 px-3 text-xs"
+                           <TableCell>
+                             <Badge className={project.status_color || getStatusColor(project.status)}>
+                               {project.status_label || getStatusLabel(project.status)}
+                             </Badge>
+                           </TableCell>
+                           <TableCell className="text-right">
+                             <div className="flex justify-end gap-2">
+                               <Button 
+                                 size="sm" 
+                                 onClick={() => setSelectedProject(project)}
+                                 className="h-7 px-3 text-xs"
                               >
                                 Prüfen
                               </Button>
