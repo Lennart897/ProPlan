@@ -89,6 +89,8 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
 
   const handleAction = async (action: string) => {
     try {
+      console.log('Starting action:', action, 'for project:', project.id);
+      
       let updateData: any = {};
       let actionType = '';
 
@@ -120,16 +122,32 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
           throw new Error(`Unbekannte Aktion: ${action}`);
       }
 
-      // Log the action
-      await logProjectAction(action, { status: project.status }, updateData);
+      console.log('Update data:', updateData);
+      console.log('User role:', user.role);
+      console.log('Current project status:', project.status);
+
+      // Log the action first
+      try {
+        await logProjectAction(action, { status: project.status }, updateData);
+        console.log('Project action logged successfully');
+      } catch (logError) {
+        console.error('Error logging project action:', logError);
+        // Continue with update even if logging fails
+      }
 
       // Update the project
+      console.log('Attempting to update project...');
       const { error } = await supabase
         .from('manufacturing_projects')
         .update(updateData)
         .eq('id', project.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database update error:', error);
+        throw error;
+      }
+
+      console.log('Project updated successfully');
 
       toast({
         title: "Erfolgreich",
@@ -149,7 +167,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
       console.error(`Fehler bei ${action}:`, error);
       toast({
         title: "Fehler",
-        description: `${action} konnte nicht durchgeführt werden.`,
+        description: `${action} konnte nicht durchgeführt werden: ${error}`,
         variant: "destructive",
       });
     }
