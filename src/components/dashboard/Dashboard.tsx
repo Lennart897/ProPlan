@@ -86,7 +86,25 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const [archivedPrevStatus, setArchivedPrevStatus] = useState<Record<string, number>>({});
   const [archiveStatusFilter, setArchiveStatusFilter] = useState<'all' | 'approved' | 'rejected'>("all");
   const [activeTab, setActiveTab] = useState<'projects' | 'archive'>('projects');
+  const [viewMode, setViewMode] = useState<'matrix' | 'list'>('list');
+  const [showActivity, setShowActivity] = useState(false);
+  const [previewInitialWeek, setPreviewInitialWeek] = useState<Date | null>(null);
   const { toast } = useToast();
+
+  // Load saved view preference per user
+  useEffect(() => {
+    const key = `dashboardView_${user.id}`;
+    const saved = localStorage.getItem(key);
+    if (saved === "matrix" || saved === "list") {
+      setViewMode(saved as "matrix" | "list");
+    }
+  }, [user.id]);
+
+  // Persist view preference per user
+  useEffect(() => {
+    const key = `dashboardView_${user.id}`;
+    localStorage.setItem(key, viewMode);
+  }, [viewMode, user.id]);
 
   useEffect(() => {
     fetchProjects();
@@ -202,27 +220,15 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
     }
   };
 
-  const [viewMode, setViewMode] = useState<'matrix' | 'list'>('list');
-  const [showActivity, setShowActivity] = useState(false);
-  const [previewInitialWeek, setPreviewInitialWeek] = useState<Date | null>(null);
-  
-  // Load saved view preference per user
-  useEffect(() => {
-    const key = `dashboardView_${user.id}`;
-    const saved = localStorage.getItem(key);
-    if (saved === "matrix" || saved === "list") {
-      setViewMode(saved as "matrix" | "list");
-    }
-  }, [user.id]);
-
-  // Persist view preference per user
-  useEffect(() => {
-    const key = `dashboardView_${user.id}`;
-    localStorage.setItem(key, viewMode);
-  }, [viewMode, user.id]);
-
   const isArchiveView = statusFilter === "archived";
   const displayProjects = isArchiveView ? archivedProjects : projects;
+
+  // Load archived projects when archive tab is activated
+  useEffect(() => {
+    if (isArchiveView && archivedProjects.length === 0) {
+      fetchArchivedProjects();
+    }
+  }, [isArchiveView]);
 
   const filteredProjects = displayProjects.filter(project => {
     const matchesSearch = project.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -366,12 +372,6 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
     );
   }
 
-  // Load archived projects when archive tab is activated
-  useEffect(() => {
-    if (isArchiveView && archivedProjects.length === 0) {
-      fetchArchivedProjects();
-    }
-  }, [isArchiveView]);
 
   return (
     <div className="min-h-screen bg-background">
