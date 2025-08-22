@@ -78,8 +78,8 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
           user_id: user.id,
           user_name: displayName,
           action: action,
-          previous_status: oldData?.status,
-          new_status: newData?.status,
+          previous_status: oldData?.status ? getStatusLabel(oldData.status) : null,
+          new_status: newData?.status ? getStatusLabel(newData.status) : null,
           reason: newData?.rejection_reason || null
         });
     } catch (error) {

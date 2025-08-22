@@ -84,7 +84,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const [cameFromCalendar, setCameFromCalendar] = useState(false);
   const [calendarWeek, setCalendarWeek] = useState<Date>(new Date());
   const [archivedPrevStatus, setArchivedPrevStatus] = useState<Record<string, number>>({});
-  const [archiveStatusFilter, setArchiveStatusFilter] = useState<'all' | 'approved' | 'rejected'>("all");
+  const [archiveStatusFilter, setArchiveStatusFilter] = useState<'all' | '5' | '6'>("all");
   const [activeTab, setActiveTab] = useState<'projects' | 'archive'>('projects');
   const [viewMode, setViewMode] = useState<'matrix' | 'list'>('list');
   const [showActivity, setShowActivity] = useState(false);
@@ -436,14 +436,14 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                 />
               </div>
               {statusFilter === 'archived' ? (
-                <Select value={archiveStatusFilter} onValueChange={(v) => setArchiveStatusFilter(v as 'all' | 'approved' | 'rejected')}>
+                <Select value={archiveStatusFilter} onValueChange={(v) => setArchiveStatusFilter(v as 'all' | '5' | '6')}>
                   <SelectTrigger className="w-full sm:w-56">
                     <SelectValue placeholder="Archiv-Status filtern" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Alle im Archiv</SelectItem>
-                    <SelectItem value="approved">Genehmigt (archiviert)</SelectItem>
-                    <SelectItem value="rejected">Abgelehnt (archiviert)</SelectItem>
+                    <SelectItem value="5">Genehmigt (archiviert)</SelectItem>
+                    <SelectItem value="6">Abgelehnt (archiviert)</SelectItem>
                   </SelectContent>
                 </Select>
               ) : (
