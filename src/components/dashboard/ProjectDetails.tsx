@@ -25,6 +25,7 @@ interface Project {
   status: number;
   created_at: string;
   created_by: string;
+  created_by_id?: string;
   created_by_name?: string;
   standort_verteilung?: Record<string, number>;
   menge_fix?: boolean;
@@ -118,6 +119,10 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
         case 'send_to_vertrieb':
           updateData = { status: PROJECT_STATUS.PRUEFUNG_VERTRIEB };
           actionType = 'Weiterleitung an Vertrieb';
+          break;
+        case 'cancel':
+          updateData = { status: PROJECT_STATUS.ABGELEHNT, rejection_reason: 'Projekt vom Ersteller abgesagt' };
+          actionType = 'Projektstornierung';
           break;
         default:
           throw new Error(`Unbekannte Aktion: ${action}`);
@@ -224,6 +229,15 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
 
   const getActionButtons = () => {
     const buttons = [];
+
+    // Ersteller kann Projekt in Status 2,3,4,5 absagen
+    if (project.created_by_id === user.id && [2, 3, 4, 5].includes(project.status)) {
+      buttons.push(
+        <Button key="cancel" variant="destructive" className="w-48" onClick={() => handleAction('cancel')}>
+          Projekt absagen
+        </Button>
+      );
+    }
 
     // Status-spezifische Aktionen basierend auf Benutzerrolle
     switch (user.role) {
