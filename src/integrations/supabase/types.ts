@@ -158,6 +158,13 @@ export type Database = {
             referencedRelation: "manufacturing_projects"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "project_history_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_projects_with_status_label"
+            referencedColumns: ["id"]
+          },
         ]
       }
       project_location_approvals: {
@@ -200,6 +207,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "manufacturing_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_location_approvals_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_projects_with_status_label"
             referencedColumns: ["id"]
           },
         ]
@@ -298,7 +312,84 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      manufacturing_projects_with_status_label: {
+        Row: {
+          archived: boolean | null
+          archived_at: string | null
+          artikel_bezeichnung: string | null
+          artikel_nummer: string | null
+          beschreibung: string | null
+          created_at: string | null
+          created_by_id: string | null
+          created_by_name: string | null
+          customer: string | null
+          erste_anlieferung: string | null
+          gesamtmenge: number | null
+          id: string | null
+          letzte_anlieferung: string | null
+          menge_fix: boolean | null
+          preis: number | null
+          produktgruppe: string | null
+          project_number: number | null
+          rejection_reason: string | null
+          standort_verteilung: Json | null
+          status: number | null
+          status_color: string | null
+          status_label: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          archived?: boolean | null
+          archived_at?: string | null
+          artikel_bezeichnung?: string | null
+          artikel_nummer?: string | null
+          beschreibung?: string | null
+          created_at?: string | null
+          created_by_id?: string | null
+          created_by_name?: string | null
+          customer?: string | null
+          erste_anlieferung?: string | null
+          gesamtmenge?: number | null
+          id?: string | null
+          letzte_anlieferung?: string | null
+          menge_fix?: boolean | null
+          preis?: number | null
+          produktgruppe?: string | null
+          project_number?: number | null
+          rejection_reason?: string | null
+          standort_verteilung?: Json | null
+          status?: number | null
+          status_color?: never
+          status_label?: never
+          updated_at?: string | null
+        }
+        Update: {
+          archived?: boolean | null
+          archived_at?: string | null
+          artikel_bezeichnung?: string | null
+          artikel_nummer?: string | null
+          beschreibung?: string | null
+          created_at?: string | null
+          created_by_id?: string | null
+          created_by_name?: string | null
+          customer?: string | null
+          erste_anlieferung?: string | null
+          gesamtmenge?: number | null
+          id?: string | null
+          letzte_anlieferung?: string | null
+          menge_fix?: boolean | null
+          preis?: number | null
+          produktgruppe?: string | null
+          project_number?: number | null
+          rejection_reason?: string | null
+          standort_verteilung?: Json | null
+          status?: number | null
+          status_color?: never
+          status_label?: never
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_user_approve_project: {
