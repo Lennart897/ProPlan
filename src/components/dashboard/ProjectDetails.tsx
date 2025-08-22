@@ -100,8 +100,39 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
 
       switch (action) {
         case 'approve':
-          updateData = { status: PROJECT_STATUS.GENEHMIGT };
-          actionType = 'Genehmigung';
+          // For planning users, update location approval instead of project status
+          if (user.role?.startsWith('planung_') || user.role === 'planung') {
+            // Get user's location from role
+            const userLocation = user.role === 'planung' ? null : user.role.replace('planung_', '');
+            
+            if (userLocation) {
+              // Update the specific location approval
+              const { error: approvalError } = await supabase
+                .from('project_location_approvals')
+                .update({ 
+                  approved: true, 
+                  approved_at: new Date().toISOString(),
+                  approved_by: user.id 
+                })
+                .eq('project_id', project.id)
+                .eq('location', userLocation);
+
+              if (approvalError) {
+                throw approvalError;
+              }
+
+              actionType = 'Standort-Genehmigung';
+              // Don't update project status directly - triggers will handle it
+              updateData = null;
+            } else {
+              // Legacy planung role - approve project directly
+              updateData = { status: PROJECT_STATUS.GENEHMIGT };
+              actionType = 'Genehmigung';
+            }
+          } else {
+            updateData = { status: PROJECT_STATUS.GENEHMIGT };
+            actionType = 'Genehmigung';
+          }
           break;
         case 'reject':
           updateData = { status: PROJECT_STATUS.ABGELEHNT, rejection_reason: rejectionReason };
@@ -142,19 +173,23 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         // Continue with update even if logging fails
       }
 
-      // Update the project
-      console.log('Attempting to update project...');
-      const { error } = await supabase
-        .from('manufacturing_projects')
-        .update(updateData)
-        .eq('id', project.id);
+      // Update the project only if there's data to update
+      if (updateData && Object.keys(updateData).length > 0) {
+        console.log('Attempting to update project...');
+        const { error } = await supabase
+          .from('manufacturing_projects')
+          .update(updateData)
+          .eq('id', project.id);
 
-      if (error) {
-        console.error('Database update error:', error);
-        throw error;
+        if (error) {
+          console.error('Database update error:', error);
+          throw error;
+        }
+
+        console.log('Project updated successfully');
+      } else {
+        console.log('No project update needed - location approval updated instead');
       }
-
-      console.log('Project updated successfully');
 
       toast({
         title: "Erfolgreich",
