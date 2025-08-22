@@ -280,7 +280,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
           );
           buttons.push(
              <Button key="correct" className="bg-orange-600 hover:bg-orange-700 text-white w-[20.4rem]" onClick={() => setShowCorrectionDialog(true)}>
-              Korrigieren (an Vertrieb)
+              Korrigieren
             </Button>
           );
           buttons.push(
