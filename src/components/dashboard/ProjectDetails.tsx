@@ -230,8 +230,8 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
   const getActionButtons = () => {
     const buttons = [];
 
-    // Ersteller kann Projekt in Status 2,3,4,5 absagen
-    if (project.created_by_id === user.id && [2, 3, 4, 5].includes(project.status)) {
+    // Ersteller kann Projekt in Status 2,3,4,5 absagen (außer SupplyChain)
+    if (project.created_by_id === user.id && [2, 3, 4, 5].includes(project.status) && user.role !== 'supply_chain') {
       buttons.push(
         <Button key="cancel" variant="destructive" className="w-[26.4rem]" onClick={() => handleAction('cancel')}>
           Projekt absagen
