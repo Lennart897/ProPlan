@@ -126,10 +126,11 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
       console.log('User role:', user.role);
       console.log('Current project status:', project.status);
 
-      // Log the action first
+      // Log the action first (temporarily disabled for debugging)
       try {
-        await logProjectAction(action, { status: project.status }, updateData);
-        console.log('Project action logged successfully');
+        // Skip logging for now to isolate the issue
+        // await logProjectAction(action, { status: project.status }, updateData);
+        console.log('Skipping project action logging for debugging');
       } catch (logError) {
         console.error('Error logging project action:', logError);
         // Continue with update even if logging fails
