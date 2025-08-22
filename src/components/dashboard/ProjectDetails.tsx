@@ -25,6 +25,7 @@ interface Project {
   status: number;
   created_at: string;
   created_by: string;
+  created_by_name?: string;
   standort_verteilung?: Record<string, number>;
   menge_fix?: boolean;
 }
@@ -390,7 +391,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                   <Label className="text-sm font-medium text-muted-foreground">Erstellt von</Label>
                   <div className="flex items-center gap-2 mt-1">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span>{project.created_by}</span>
+                    <span>{project.created_by_name || project.created_by || "Unbekannt"}</span>
                   </div>
                 </div>
                 <div>
