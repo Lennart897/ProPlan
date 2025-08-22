@@ -10,6 +10,7 @@ import { ArrowLeft, User, Calendar, Package, Building2, Truck, Clock } from "luc
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectHistory } from "./ProjectHistory";
+import { getStatusLabel, getStatusColor, canArchiveProject, PROJECT_STATUS } from "@/utils/statusUtils";
 
 interface Project {
   id: string;
@@ -21,7 +22,7 @@ interface Project {
   beschreibung?: string;
   erste_anlieferung?: string;
   letzte_anlieferung?: string;
-  status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed" | "archived";
+  status: number;
   created_at: string;
   created_by: string;
   standort_verteilung?: Record<string, number>;
@@ -39,28 +40,8 @@ interface ProjectDetailsProps {
   project: Project;
   user: User;
   onBack: () => void;
-  onProjectAction: (projectId: string, action: string) => void;
+  onProjectAction: (project: Project, action: string, data?: any) => void;
 }
-
-const statusColors = {
-  draft: "bg-gray-500",
-  pending: "bg-warning",
-  approved: "bg-success",
-  rejected: "bg-destructive",
-  in_progress: "bg-warning",
-  completed: "bg-primary",
-  archived: "bg-muted"
-};
-
-const statusLabels = {
-  draft: "Entwurf",
-  pending: "Ausstehend",
-  approved: "Genehmigt", 
-  rejected: "Abgelehnt",
-  in_progress: "In Bearbeitung",
-  completed: "Abgeschlossen",
-  archived: "Archiviert"
-};
 
 const locationLabels = {
   gudensberg: "Gudensberg",
@@ -71,33 +52,24 @@ const locationLabels = {
 };
 
 export const ProjectDetails = ({ project, user, onBack, onProjectAction }: ProjectDetailsProps) => {
-  const { toast } = useToast();
   const [showCorrectionDialog, setShowCorrectionDialog] = useState(false);
   const [showRejectionDialog, setShowRejectionDialog] = useState(false);
+  const [correctedQuantity, setCorrectedQuantity] = useState(project.gesamtmenge.toString());
+  const [locationQuantities, setLocationQuantities] = useState<Record<string, number>>(
+    project.standort_verteilung || {}
+  );
   const [rejectionReason, setRejectionReason] = useState("");
-  const [correctionData, setCorrectionData] = useState({
-    newQuantity: project.gesamtmenge,
-    description: "",
-    locationDistribution: project.standort_verteilung || {}
-  });
+  const { toast } = useToast();
 
-  const logProjectAction = async (action: string, previousStatus: string, newStatus: string, reason?: string) => {
+  const logProjectAction = async (action: string, oldData?: any, newData?: any) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       const { data: profile } = await supabase
         .from('profiles')
         .select('display_name')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      const displayName =
-        profile?.display_name ||
-        (user.user_metadata?.display_name as string | undefined) ||
-        (user.user_metadata?.full_name as string | undefined) ||
-        user.email ||
-        'Unbekannt';
+      const displayName = profile?.display_name || user.full_name || user.email;
 
       await supabase
         .from('project_history')
@@ -105,709 +77,520 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
           project_id: project.id,
           user_id: user.id,
           user_name: displayName,
-          action,
-          reason,
-          previous_status: previousStatus,
-          new_status: newStatus
+          action: action,
+          previous_status: oldData?.status,
+          new_status: newData?.status,
+          reason: newData?.rejection_reason || null
         });
     } catch (error) {
-      console.error('Error logging project action:', error);
+      console.error('Fehler beim Protokollieren der Aktion:', error);
     }
   };
 
   const handleAction = async (action: string) => {
     try {
-      const previousStatus = project.status;
+      let updateData: any = {};
+      let actionType = '';
 
-      // Supply Chain: Zusage -> Status in_progress (Standort-Zusagen werden per Trigger erstellt)
-      if (user.role === "supply_chain" && action === "approve") {
-        const { error } = await supabase
-          .from('manufacturing_projects')
-          .update({ status: "in_progress" })
-          .eq('id', project.id);
-        if (error) throw error;
-
-        await logProjectAction('approved_forwarded', previousStatus, 'in_progress');
-
-        onProjectAction(project.id, action);
-        toast({
-          title: "Zusage erteilt",
-          description: "Projekt wurde an die standortspezifische Planung weitergeleitet.",
-        });
-
-        setTimeout(() => onBack(), 1500);
-        return;
+      switch (action) {
+        case 'approve':
+          updateData = { status: PROJECT_STATUS.GENEHMIGT };
+          actionType = 'Genehmigung';
+          break;
+        case 'reject':
+          updateData = { status: PROJECT_STATUS.ABGELEHNT, rejection_reason: rejectionReason };
+          actionType = 'Ablehnung';
+          break;
+        case 'archive':
+          if (!canArchiveProject(project.status)) {
+            throw new Error('Projekt kann nur archiviert werden wenn es genehmigt, abgelehnt oder abgeschlossen ist.');
+          }
+          updateData = { archived: true, archived_at: new Date().toISOString() };
+          actionType = 'Archivierung';
+          break;
+        case 'send_to_progress':
+          updateData = { status: PROJECT_STATUS.PRUEFUNG_PLANUNG };
+          actionType = 'Weiterleitung zur Bearbeitung';
+          break;
+        case 'send_to_vertrieb':
+          updateData = { status: PROJECT_STATUS.PRUEFUNG_VERTRIEB };
+          actionType = 'Weiterleitung an Vertrieb';
+          break;
+        default:
+          throw new Error(`Unbekannte Aktion: ${action}`);
       }
 
-      // Planung: standortspezifische Zusage -> nur Standort-Zusage setzen, Status bleibt bis alle zu sind
-      if ((user.role === "planung" || user.role.startsWith("planung_")) && action === "approve") {
-        const userLocation = user.role.startsWith("planung_") ? user.role.replace("planung_", "") : null;
+      // Log the action
+      await logProjectAction(action, { status: project.status }, updateData);
 
-        let query = supabase
-          .from('project_location_approvals')
-          .update({
-            approved: true,
-            approved_by: user.id,
-            approved_at: new Date().toISOString(),
-          })
-          .eq('project_id', project.id);
-
-        if (userLocation) {
-          query = query.eq('location', userLocation);
-        }
-
-        const { error } = await query;
-        if (error) throw error;
-
-        await logProjectAction('location_approved', previousStatus, previousStatus);
-
-        onProjectAction(project.id, action);
-        toast({
-          title: "Standort-Zusage erteilt",
-          description: "Projekt bleibt in Bearbeitung, bis alle betroffenen Standorte zugesagt haben.",
-        });
-
-        setTimeout(() => onBack(), 1500);
-        return;
-      }
-
-      // Ablehnung / Korrektur / Archivierung wie bisher
-      let newStatus = project.status;
-      let actionLabel = "";
-
-      if (user.role === "supply_chain") {
-        if (action === "reject") {
-          newStatus = "rejected";
-          actionLabel = "abgelehnt";
-        } else if (action === "correct") {
-          newStatus = "draft";
-          actionLabel = "zur Korrektur an Vertrieb zurückgewiesen";
-        }
-      } else if (user.role === "planung" || user.role.startsWith("planung_")) {
-        if (action === "reject") {
-          newStatus = "pending";
-          actionLabel = "abgelehnt und an SupplyChain zurückgewiesen";
-        } else if (action === "correct") {
-          newStatus = "pending";
-          actionLabel = "zur Korrektur an SupplyChain zurückgewiesen";
-        }
-      } else if (user.role === "vertrieb") {
-        if (action === "archive" && project.status === "approved") {
-          newStatus = "archived";
-          actionLabel = "archiviert";
-        }
-      }
-
-      if (newStatus && newStatus !== project.status) {
-        const { error } = await supabase
-          .from('manufacturing_projects')
-          .update({ status: newStatus })
-          .eq('id', project.id);
-        if (error) throw error;
-
-        await logProjectAction(action, previousStatus, newStatus);
-
-        onProjectAction(project.id, action);
-        toast({
-          title: "Projekt aktualisiert",
-          description: `Das Projekt wurde ${actionLabel}.`,
-        });
-
-        setTimeout(() => onBack(), 1500);
-      }
-    } catch (error) {
-      console.error('Error updating project:', error);
-      toast({
-        title: "Fehler",
-        description: "Aktion konnte nicht durchgeführt werden",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleCorrection = async () => {
-    try {
-      const previousStatus = project.status;
-      
-      // Determine next status based on Supply Chain correction logic
-      let newStatus = "pending";
-      if (user.role === "supply_chain") {
-        // Check if Gesamtmenge was changed
-        const quantityChanged = correctionData.newQuantity !== project.gesamtmenge;
-        
-        if (quantityChanged) {
-          // Gesamtmenge changed -> back to Vertrieb
-          newStatus = "draft";
-        } else {
-          // Only location distribution changed -> to location-specific planning
-          newStatus = "pending";
-        }
-      } else {
-        // Other roles (planning) -> back to pending
-        newStatus = "pending";
-      }
-      
+      // Update the project
       const { error } = await supabase
         .from('manufacturing_projects')
-        .update({
-          gesamtmenge: correctionData.newQuantity,
-          standort_verteilung: correctionData.locationDistribution,
-          status: newStatus
-        })
+        .update(updateData)
         .eq('id', project.id);
 
       if (error) throw error;
 
-      // Log the correction action with specific description
-      const actionDescription = user.role === "supply_chain" && correctionData.newQuantity !== project.gesamtmenge
-        ? `${correctionData.description} (Gesamtmenge geändert: ${project.gesamtmenge} → ${correctionData.newQuantity} kg)`
-        : correctionData.description;
-      
-      await logProjectAction('corrected', previousStatus, newStatus, actionDescription);
-
-      onProjectAction(project.id, "correct");
-      
-      const nextStep = user.role === "supply_chain" && correctionData.newQuantity !== project.gesamtmenge
-        ? "Vertrieb" 
-        : "standortspezifische Planung";
-      
       toast({
-        title: "Korrektur gesendet",
-        description: `Das Projekt wurde zur Korrektur an ${nextStep} weitergeleitet.`,
-      });
-      
-      setShowCorrectionDialog(false);
-      setCorrectionData({ 
-        newQuantity: project.gesamtmenge, 
-        description: "",
-        locationDistribution: project.standort_verteilung || {}
+        title: "Erfolgreich",
+        description: `${actionType} wurde durchgeführt.`,
       });
 
-      // Nach Aktion zurück zum Dashboard
-      setTimeout(() => {
-        onBack();
-      }, 1500);
+      // Close dialogs
+      setShowRejectionDialog(false);
+      setRejectionReason("");
+
+      // Notify parent component
+      onProjectAction(project, action);
+
+      // Go back to list
+      onBack();
     } catch (error) {
-      console.error('Error correcting project:', error);
+      console.error(`Fehler bei ${action}:`, error);
       toast({
         title: "Fehler",
-        description: "Korrektur konnte nicht gespeichert werden",
-        variant: "destructive"
+        description: `${action} konnte nicht durchgeführt werden.`,
+        variant: "destructive",
       });
     }
   };
 
-  const getActionButtons = () => {
-    switch (user.role) {
-      case "supply_chain":
-        if (project.status === "pending") {
-          return (
-            <div className="flex gap-3">
-              <Button onClick={() => handleAction("approve")} className="flex-1 bg-green-600 hover:bg-green-700 text-white">
-                Zusage erteilen
-              </Button>
-              <Button variant="outline" onClick={() => setShowCorrectionDialog(true)} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white border-orange-500">
-                Korrektur anfordern
-              </Button>
-              <Button onClick={() => setShowRejectionDialog(true)} className="flex-1 bg-red-600 hover:bg-red-700 text-white">
-                Absage erteilen
-              </Button>
-            </div>
-          );
-        }
-        break;
-      case "planung":
-      case "planung_storkow":
-      case "planung_brenz":
-      case "planung_gudensberg":
-      case "planung_doebeln":
-      case "planung_visbek":
-        if (project.status === "in_progress") {
-          // For location-specific planning roles, check if they can approve this project
-          const userLocation = user.role.startsWith("planung_") ? user.role.replace("planung_", "") : null;
-          const affectedLocations = project.standort_verteilung ? 
-            Object.keys(project.standort_verteilung).filter(location => 
-              project.standort_verteilung![location] > 0
-            ) : [];
-          
-          // Legacy "planung" role can approve any project, location-specific roles only their relevant ones
-          const canApprove = user.role === "planung" || 
-            (userLocation && affectedLocations.includes(userLocation));
-          
-          if (!canApprove && userLocation) {
-            return (
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  Dieses Projekt betrifft nicht Ihren Standort ({userLocation}). 
-                  Es muss von {affectedLocations.map(loc => `Planung ${loc.charAt(0).toUpperCase() + loc.slice(1)}`).join(", ")} geprüft werden.
-                </p>
-              </div>
-            );
-          }
-          
-          return (
-            <div className="flex gap-3">
-              <Button onClick={() => handleAction("approve")} className="flex-1 bg-green-600 hover:bg-green-700 text-white">
-                Zusage erteilen
-              </Button>
-              <Button variant="outline" onClick={() => setShowCorrectionDialog(true)} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white border-orange-500">
-                Korrektur anfordern
-              </Button>
-              {/* Only legacy "planung" role can reject, location-specific roles cannot */}
-              {user.role === "planung" && (
-                <Button variant="outline" onClick={() => handleAction("reject")} className="flex-1 border-red-500 text-red-600 hover:bg-red-50">
-                  Ablehnen
-                </Button>
-              )}
-            </div>
-          );
-        }
-        return null;
-      case "vertrieb":
-        // Vertrieb: jederzeit ablehnen (außer bereits abgelehnt, archiviert oder abgeschlossen)
-        const canSalesReject = !["rejected", "archived", "completed"].includes(project.status);
-        if (canSalesReject || project.status === "approved") {
-          return (
-            <div className="flex gap-3">
-              {canSalesReject && (
-                <Button variant="destructive" onClick={() => setShowRejectionDialog(true)} className="flex-1">
-                  Absage erteilen
-                </Button>
-              )}
-              {project.status === "approved" && (
-                <Button 
-                  onClick={() => handleAction("archive")} 
-                  className="flex-1 bg-muted hover:bg-muted-foreground/20 text-muted-foreground border border-muted-foreground/30"
-                >
-                  Projekt archivieren
-                </Button>
-              )}
-            </div>
-          );
-        }
-        return null;
-      default:
-        return null;
+  const handleCorrection = async (updateData: any) => {
+    try {
+      await logProjectAction('correction', { 
+        status: project.status,
+        gesamtmenge: project.gesamtmenge,
+        standort_verteilung: project.standort_verteilung 
+      }, updateData);
+
+      const { error } = await supabase
+        .from('manufacturing_projects')
+        .update(updateData)
+        .eq('id', project.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Erfolgreich",
+        description: "Korrektur wurde durchgeführt.",
+      });
+
+      setShowCorrectionDialog(false);
+      
+      // Notify parent component
+      onProjectAction(project, 'correct', updateData);
+      
+      // Go back to list
+      onBack();
+    } catch (error) {
+      console.error('Fehler bei Korrektur:', error);
+      toast({
+        title: "Fehler",
+        description: "Korrektur konnte nicht durchgeführt werden.",
+        variant: "destructive",
+      });
     }
-    return null;
   };
 
   const handleRejection = async () => {
     if (!rejectionReason.trim()) {
       toast({
-        title: "Begründung erforderlich",
-        description: "Bitte geben Sie eine Begründung für die Ablehnung ein.",
-        variant: "destructive"
+        title: "Fehler",
+        description: "Bitte geben Sie einen Ablehnungsgrund an.",
+        variant: "destructive",
       });
       return;
     }
+    await handleAction('reject');
+  };
 
-    try {
-      const { error } = await supabase
-        .from('manufacturing_projects')
-        .update({ 
-          status: "rejected",
-          rejection_reason: rejectionReason
-        })
-        .eq('id', project.id);
+  const getActionButtons = () => {
+    const buttons = [];
 
-      if (error) throw error;
+    // Status-spezifische Aktionen basierend auf Benutzerrolle
+    switch (user.role) {
+      case 'supply_chain':
+        if (project.status === PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN) {
+          buttons.push(
+            <Button key="approve" onClick={() => handleAction('send_to_progress')}>
+              Zur Planung weiterleiten
+            </Button>
+          );
+          buttons.push(
+            <Button key="correct" variant="secondary" onClick={() => setShowCorrectionDialog(true)}>
+              Korrigieren (an Vertrieb)
+            </Button>
+          );
+          buttons.push(
+            <Button key="reject" variant="destructive" onClick={() => setShowRejectionDialog(true)}>
+              Ablehnen
+            </Button>
+          );
+        }
+        break;
 
-      // Log the rejection action
-      await logProjectAction('rejected', project.status, 'rejected', rejectionReason);
+      case 'vertrieb':
+        if (project.status === PROJECT_STATUS.PRUEFUNG_VERTRIEB) {
+          buttons.push(
+            <Button key="approve" onClick={() => handleAction('send_to_progress')}>
+              Zur Planung weiterleiten
+            </Button>
+          );
+          buttons.push(
+            <Button key="reject" variant="destructive" onClick={() => setShowRejectionDialog(true)}>
+              Ablehnen
+            </Button>
+          );
+        }
+        // Vertrieb kann genehmigte, abgelehnte und abgeschlossene Projekte archivieren
+        if (canArchiveProject(project.status)) {
+          buttons.push(
+            <Button key="archive" variant="outline" onClick={() => handleAction('archive')}>
+              Archivieren
+            </Button>
+          );
+        }
+        break;
 
-      onProjectAction(project.id, "reject");
-      
-      toast({
-        title: "Projekt abgelehnt",
-        description: `Das Projekt wurde abgelehnt. Begründung: ${rejectionReason}`,
-      });
-      
-      setShowRejectionDialog(false);
-      setRejectionReason("");
+      case 'planung':
+      case 'planung_storkow':
+      case 'planung_brenz':
+      case 'planung_gudensberg':
+      case 'planung_doebeln':
+      case 'planung_visbek':
+        if (project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
+          buttons.push(
+            <Button key="approve" onClick={() => handleAction('approve')}>
+              Genehmigen
+            </Button>
+          );
+          buttons.push(
+            <Button key="correct" variant="secondary" onClick={() => setShowCorrectionDialog(true)}>
+              Korrigieren
+            </Button>
+          );
+          buttons.push(
+            <Button key="reject" variant="destructive" onClick={() => setShowRejectionDialog(true)}>
+              Ablehnen
+            </Button>
+          );
+        }
+        break;
 
-      // Nach Aktion zurück zum Dashboard
-      setTimeout(() => {
-        onBack();
-      }, 1500);
-    } catch (error) {
-      console.error('Error rejecting project:', error);
-      toast({
-        title: "Fehler",
-        description: "Projekt konnte nicht abgelehnt werden",
-        variant: "destructive"
-      });
+      case 'admin':
+        // Admin kann alle Aktionen durchführen
+        if (project.status === PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN) {
+          buttons.push(
+            <Button key="approve" onClick={() => handleAction('send_to_progress')}>
+              Zur Planung weiterleiten
+            </Button>
+          );
+          buttons.push(
+            <Button key="send_vertrieb" variant="secondary" onClick={() => handleAction('send_to_vertrieb')}>
+              An Vertrieb weiterleiten
+            </Button>
+          );
+        }
+        if (project.status === PROJECT_STATUS.PRUEFUNG_VERTRIEB) {
+          buttons.push(
+            <Button key="approve" onClick={() => handleAction('send_to_progress')}>
+              Zur Planung weiterleiten
+            </Button>
+          );
+        }
+        if (project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
+          buttons.push(
+            <Button key="approve" onClick={() => handleAction('approve')}>
+              Genehmigen
+            </Button>
+          );
+          buttons.push(
+            <Button key="correct" variant="secondary" onClick={() => setShowCorrectionDialog(true)}>
+              Korrigieren
+            </Button>
+          );
+        }
+        if (canArchiveProject(project.status)) {
+          buttons.push(
+            <Button key="archive" variant="outline" onClick={() => handleAction('archive')}>
+              Archivieren
+            </Button>
+          );
+        }
+        if (project.status !== PROJECT_STATUS.GENEHMIGT && project.status !== PROJECT_STATUS.ABGESCHLOSSEN) {
+          buttons.push(
+            <Button key="reject" variant="destructive" onClick={() => setShowRejectionDialog(true)}>
+              Ablehnen
+            </Button>
+          );
+        }
+        break;
     }
+
+    return buttons;
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={onBack}>
-                <ArrowLeft className="h-4 w-4" />
-                Zurück
-              </Button>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                  <span className="text-sm font-bold text-primary-foreground">PP</span>
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-primary">ProPlan</h1>
-                  <p className="text-muted-foreground">Projektdetails - Prüfung und Bearbeitung</p>
-                </div>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" onClick={onBack} className="mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Zurück zur Übersicht
+          </Button>
+          <Badge className={getStatusColor(project.status)}>
+            {getStatusLabel(project.status)}
+          </Badge>
         </div>
-      </header>
 
-      <div className="container mx-auto p-6 max-w-4xl">
-        <div className="space-y-6">
-          {/* Projekt Übersicht */}
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="flex items-center gap-3 text-xl">
-                    <Building2 className="h-5 w-5" />
-                    {project.customer}
-                    <Badge className={statusColors[project.status]}>
-                      {statusLabels[project.status]}
-                    </Badge>
-                  </CardTitle>
-                  <CardDescription className="text-base mt-1">
-                    {project.artikel_nummer} - {project.artikel_bezeichnung}
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="flex items-center gap-3">
-                  <Package className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Gesamtmenge (kg)</p>
-                    <p className="font-semibold">{project.gesamtmenge.toLocaleString('de-DE')} kg</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Erstellt am</p>
-                    <p className="font-semibold">{new Date(project.created_at).toLocaleDateString("de-DE")}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <User className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Erstellt von</p>
-                    <p className="font-semibold">{project.created_by}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Clock className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Menge fix</p>
-                    <p className="font-semibold">{project.menge_fix ? "Ja" : "Nein"}</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Artikeldetails */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Artikeldetails</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Artikelnummer</label>
-                  <p className="text-lg font-mono">{project.artikel_nummer}</p>
-                </div>
-                {project.produktgruppe && (
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Produktgruppe</label>
-                    <p className="text-lg">{project.produktgruppe}</p>
-                  </div>
-                )}
-                <div className="md:col-span-2">
-                  <label className="text-sm font-medium text-muted-foreground">Artikelbezeichnung</label>
-                  <p className="text-lg">{project.artikel_bezeichnung}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Beschreibung */}
-          {project.beschreibung && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Projektbeschreibung</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm leading-relaxed">{project.beschreibung}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Anlieferungsdetails */}
-          {(project.erste_anlieferung || project.letzte_anlieferung) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Truck className="h-5 w-5" />
-                  Anlieferungszeitraum
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {project.erste_anlieferung && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Erste Anlieferung</label>
-                      <p className="text-lg">{project.erste_anlieferung.split('-').reverse().join('.')}</p>
-                    </div>
-                  )}
-                  {project.letzte_anlieferung && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Letzte Anlieferung</label>
-                      <p className="text-lg">{project.letzte_anlieferung.split('-').reverse().join('.')}</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Standortverteilung */}
-          {project.standort_verteilung && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Standortverteilung</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                  {Object.entries(project.standort_verteilung).map(([location, quantity]) => (
-                    <div key={location} className="text-center p-4 bg-muted/50 rounded-lg">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        {locationLabels[location as keyof typeof locationLabels] || location}
-                      </p>
-                      <p className="text-2xl font-bold text-primary">{quantity.toLocaleString('de-DE')} kg</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 pt-4 border-t">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Gesamt verteilt:</span>
-                    <span className="font-semibold">
-                      {Object.values(project.standort_verteilung).reduce((sum, val) => sum + val, 0).toLocaleString('de-DE')} kg / {project.gesamtmenge.toLocaleString('de-DE')} kg
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Aktionen */}
-          {getActionButtons() && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Prüfung und Entscheidung</CardTitle>
-                <CardDescription>
-                  Wählen Sie eine Aktion für dieses Projekt
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Wochenkalender Vorschau Button - nur für Planung und Supply Chain */}
-                  {(user.role === 'planung' || user.role.startsWith('planung_') || user.role === 'supply_chain') && (
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Mengenplanung Vorschau</h4>
-                          <p className="text-sm text-muted-foreground">
-                            Sehen Sie, wie sich dieses Projekt auf die Wochenplanung auswirken würde
-                          </p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            console.log('Wochenkalender Vorschau clicked for project:', project.id);
-                            onProjectAction(project.id, 'preview_calendar');
-                          }}
-                        >
-                          <Calendar className="w-4 h-4 mr-2" />
-                          Wochenkalender Vorschau
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {getActionButtons()}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Projektprotokoll */}
-          <ProjectHistory projectId={project.id} />
-        </div>
-      </div>
-
-      {/* Korrektur Dialog */}
-      <Dialog open={showCorrectionDialog} onOpenChange={setShowCorrectionDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Korrektur anfordern</DialogTitle>
-            <DialogDescription>
-              Passen Sie die Menge an und fügen Sie eine Beschreibung für die gewünschten Änderungen hinzu.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {/* Gesamtmenge - nur für Supply Chain */}
-            {user.role === "supply_chain" && (
-              <div className="space-y-2">
-                <Label htmlFor="newQuantity">Neue Gesamtmenge (kg)</Label>
-                <Input
-                  id="newQuantity"
-                  type="number"
-                  step="0.1"
-                  value={correctionData.newQuantity}
-                  onChange={(e) => setCorrectionData(prev => ({ 
-                    ...prev, 
-                    newQuantity: parseFloat(e.target.value) || 0 
-                  }))}
-                  placeholder="Neue Menge eingeben"
-                  min={0.1}
-                />
-              </div>
-            )}
-
-            {/* Standortverteilung */}
-            {project.standort_verteilung && (
+        {/* Project Overview */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Projektübersicht
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
-                  <Label>Standortverteilung anpassen</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {user.role === "supply_chain" ? 
-                      "Passen Sie die Mengen pro Standort an" : 
-                      `Passen Sie die Menge für ${user.role.replace("planung_", "").charAt(0).toUpperCase() + user.role.replace("planung_", "").slice(1)} an`
-                    }
-                  </p>
+                  <Label className="text-sm font-medium text-muted-foreground">Kunde</Label>
+                  <p className="text-lg font-semibold">{project.customer}</p>
                 </div>
-                <div className="grid grid-cols-1 gap-3">
-                  {Object.entries(project.standort_verteilung)
-                    .filter(([location, originalQuantity]) => {
-                      // Supply Chain can edit all locations, location-specific roles can only edit their location
-                      if (user.role === "supply_chain" || user.role === "planung") {
-                        return true;
-                      }
-                      // Location-specific planning roles can only edit their specific location
-                      const userLocation = user.role.replace("planung_", "");
-                      return location === userLocation;
-                    })
-                    .map(([location, originalQuantity]) => (
-                    <div key={location} className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <Label className="text-sm">
-                          {locationLabels[location as keyof typeof locationLabels] || location} (kg)
-                        </Label>
-                      </div>
-                      <div className="w-24">
-                        <Input
-                          type="number"
-                          step="0.1"
-                          value={correctionData.locationDistribution[location] || 0}
-                          onChange={(e) => setCorrectionData(prev => ({
-                            ...prev,
-                            locationDistribution: {
-                              ...prev.locationDistribution,
-                              [location]: parseFloat(e.target.value) || 0
-                            }
-                          }))}
-                          min={0}
-                          className="text-center"
-                        />
-                      </div>
-                    </div>
-                  ))}
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Artikel-Nummer</Label>
+                  <p className="font-medium">{project.artikel_nummer}</p>
                 </div>
-                <div className="mt-2 p-3 bg-muted/50 rounded-lg">
-                  <div className="flex justify-between items-center text-sm">
-                    <span>Gesamt verteilt:</span>
-                    <span className="font-semibold">
-                      {Object.values(correctionData.locationDistribution).reduce((sum, val) => sum + val, 0).toFixed(1)} kg
-                      {user.role === "supply_chain" && ` / ${correctionData.newQuantity.toFixed(1)} kg`}
-                    </span>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Produktgruppe</Label>
+                  <p className="font-medium">{project.produktgruppe || "Nicht angegeben"}</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Erstellt von</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>{project.created_by}</span>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Erstellt am</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>{new Date(project.created_at).toLocaleString("de-DE")}</span>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Gesamtmenge</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-semibold">{project.gesamtmenge.toLocaleString('de-DE')} kg</span>
+                    {project.menge_fix && (
+                      <Badge variant="outline" className="text-xs">Menge fix</Badge>
+                    )}
                   </div>
                 </div>
               </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Beschreibung der Änderungen</Label>
-              <Textarea
-                id="description"
-                value={correctionData.description}
-                onChange={(e) => setCorrectionData(prev => ({ 
-                  ...prev, 
-                  description: e.target.value 
-                }))}
-                placeholder="Beschreiben Sie die gewünschten Änderungen..."
-                rows={4}
-              />
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCorrectionDialog(false)}>
-              Abbrechen
-            </Button>
-            <Button onClick={handleCorrection}>
-              Korrektur senden
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </CardContent>
+        </Card>
 
-      {/* Ablehnungs-Dialog */}
-      <Dialog open={showRejectionDialog} onOpenChange={setShowRejectionDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Projekt ablehnen</DialogTitle>
-            <DialogDescription>
-              Bitte geben Sie eine Begründung für die Ablehnung des Projekts ein.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="rejection-reason">Begründung für die Ablehnung</Label>
-              <Textarea
-                id="rejection-reason"
-                placeholder="Begründung eingeben..."
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                className="min-h-[100px]"
-              />
+        {/* Article Details */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Artikeldetails</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Artikelbezeichnung</Label>
+                <p className="text-lg">{project.artikel_bezeichnung}</p>
+              </div>
+              {project.beschreibung && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Beschreibung</Label>
+                  <p className="whitespace-pre-wrap">{project.beschreibung}</p>
+                </div>
+              )}
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRejectionDialog(false)}>
-              Abbrechen
-            </Button>
-            <Button 
-              onClick={handleRejection}
-              className="bg-red-600 hover:bg-red-700 text-white"
+          </CardContent>
+        </Card>
+
+        {/* Delivery Information */}
+        {(project.erste_anlieferung || project.letzte_anlieferung) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Truck className="h-5 w-5" />
+                Lieferinformationen
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {project.erste_anlieferung && (
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Erste Anlieferung</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span>{new Date(project.erste_anlieferung).toLocaleDateString("de-DE")}</span>
+                    </div>
+                  </div>
+                )}
+                {project.letzte_anlieferung && (
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Letzte Anlieferung</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span>{new Date(project.letzte_anlieferung).toLocaleDateString("de-DE")}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Location Distribution */}
+        {project.standort_verteilung && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Standortverteilung</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Object.entries(project.standort_verteilung)
+                  .filter(([_, amount]) => amount > 0)
+                  .map(([location, amount]) => (
+                    <div key={location} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                      <span className="font-medium">
+                        {locationLabels[location as keyof typeof locationLabels] || location}
+                      </span>
+                      <span className="font-semibold">{amount.toLocaleString('de-DE')} kg</span>
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Action Buttons */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-wrap gap-3">
+              {getActionButtons()}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Project History */}
+        <ProjectHistory projectId={project.id} />
+
+        {/* Correction Dialog */}
+        <Dialog open={showCorrectionDialog} onOpenChange={setShowCorrectionDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Projekt korrigieren</DialogTitle>
+              <DialogDescription>
+                Korrigieren Sie die Mengenangaben und Standortverteilung.
+              </DialogDescription>
+            </DialogHeader>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                
+                // Bei Korrektur durch SupplyChain: Status auf 2 (Prüfung Vertrieb) setzen
+                const updateData = {
+                  gesamtmenge: parseInt(correctedQuantity),
+                  standort_verteilung: locationQuantities,
+                  ...(user.role === 'supply_chain' ? { status: PROJECT_STATUS.PRUEFUNG_VERTRIEB } : {})
+                };
+                
+                await handleCorrection(updateData);
+              }}
             >
-              Projekt ablehnen
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="corrected-quantity">Korrigierte Gesamtmenge (kg)</Label>
+                  <Input
+                    id="corrected-quantity"
+                    type="number"
+                    value={correctedQuantity}
+                    onChange={(e) => setCorrectedQuantity(e.target.value)}
+                    min="1"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label>Standortverteilung</Label>
+                  <div className="grid grid-cols-2 gap-3 mt-2">
+                    {Object.entries(locationLabels).map(([key, label]) => (
+                      <div key={key}>
+                        <Label htmlFor={`location-${key}`} className="text-sm">{label}</Label>
+                        <Input
+                          id={`location-${key}`}
+                          type="number"
+                          value={locationQuantities[key] || 0}
+                          onChange={(e) => setLocationQuantities(prev => ({
+                            ...prev,
+                            [key]: parseInt(e.target.value) || 0
+                          }))}
+                          min="0"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <DialogFooter className="mt-6">
+                <Button type="button" variant="outline" onClick={() => setShowCorrectionDialog(false)}>
+                  Abbrechen
+                </Button>
+                <Button type="submit">
+                  Korrektur übernehmen
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Rejection Dialog */}
+        <Dialog open={showRejectionDialog} onOpenChange={setShowRejectionDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Projekt ablehnen</DialogTitle>
+              <DialogDescription>
+                Bitte geben Sie einen Grund für die Ablehnung an.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="rejection-reason">Ablehnungsgrund</Label>
+                <Textarea
+                  id="rejection-reason"
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Beschreiben Sie den Grund für die Ablehnung..."
+                  rows={4}
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRejectionDialog(false)}>
+                Abbrechen
+              </Button>
+              <Button variant="destructive" onClick={handleRejection}>
+                Projekt ablehnen
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 };

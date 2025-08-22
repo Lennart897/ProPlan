@@ -16,6 +16,8 @@ export type Database = {
     Tables: {
       manufacturing_projects: {
         Row: {
+          archived: boolean
+          archived_at: string | null
           artikel_bezeichnung: string
           artikel_nummer: string
           beschreibung: string | null
@@ -33,10 +35,12 @@ export type Database = {
           project_number: number
           rejection_reason: string | null
           standort_verteilung: Json | null
-          status: string
+          status: number
           updated_at: string
         }
         Insert: {
+          archived?: boolean
+          archived_at?: string | null
           artikel_bezeichnung: string
           artikel_nummer: string
           beschreibung?: string | null
@@ -54,10 +58,12 @@ export type Database = {
           project_number?: number
           rejection_reason?: string | null
           standort_verteilung?: Json | null
-          status?: string
+          status?: number
           updated_at?: string
         }
         Update: {
+          archived?: boolean
+          archived_at?: string | null
           artikel_bezeichnung?: string
           artikel_nummer?: string
           beschreibung?: string | null
@@ -75,7 +81,7 @@ export type Database = {
           project_number?: number
           rejection_reason?: string | null
           standort_verteilung?: Json | null
-          status?: string
+          status?: number
           updated_at?: string
         }
         Relationships: []

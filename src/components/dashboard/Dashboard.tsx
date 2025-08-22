@@ -12,6 +12,10 @@ import { WeeklyCalendar } from "./WeeklyCalendar";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ActivityLog } from "./ActivityLog";
+import { getStatusLabel, getStatusColor, canArchiveProject, PROJECT_STATUS } from "@/utils/statusUtils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 // Import the Project type from WeeklyCalendar to avoid type conflicts
 type CalendarProject = {
@@ -24,7 +28,7 @@ type CalendarProject = {
   beschreibung?: string;
   erste_anlieferung?: string;
   letzte_anlieferung?: string;
-  status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed" | "archived";
+  status: number;
   created_at: string;
   updated_at: string;
   created_by_id: string;
@@ -32,9 +36,6 @@ type CalendarProject = {
   standort_verteilung?: Record<string, number>;
   menge_fix: boolean;
 };
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 interface Project {
   id: string;
@@ -47,11 +48,13 @@ interface Project {
   beschreibung?: string;
   erste_anlieferung?: string;
   letzte_anlieferung?: string;
-  status: "draft" | "pending" | "approved" | "rejected" | "in_progress" | "completed" | "archived";
+  status: number;
   created_at: string;
   created_by: string;
   standort_verteilung?: Record<string, number>;
   menge_fix?: boolean;
+  archived?: boolean;
+  archived_at?: string;
 }
 
 interface User {
@@ -61,65 +64,6 @@ interface User {
   full_name?: string;
 }
 
-const mockProjects: Project[] = [
-  {
-    id: "1", project_number: 1,
-    customer: "BMW AG",
-    artikel_nummer: "ART-001",
-    artikel_bezeichnung: "Hochwertige Metallkomponente",
-    gesamtmenge: 1000,
-    status: "pending",
-    created_at: "2024-01-15T10:00:00Z",
-    created_by: "Max Mustermann",
-    standort_verteilung: {
-      gudensberg: 300,
-      brenz: 250,
-      storkow: 200,
-      visbek: 150,
-      doebeln: 100
-    },
-    menge_fix: false
-  },
-  {
-    id: "2", project_number: 2, 
-    customer: "Siemens AG",
-    artikel_nummer: "ART-002",
-    artikel_bezeichnung: "Elektronikbaugruppe",
-    gesamtmenge: 500,
-    status: "approved",
-    created_at: "2024-01-14T15:30:00Z",
-    created_by: "Anna Schmidt",
-    standort_verteilung: {
-      gudensberg: 200,
-      brenz: 150,
-      storkow: 100,
-      visbek: 50,
-      doebeln: 0
-    },
-    menge_fix: true
-  },
-];
-
-const statusColors = {
-  draft: "bg-gray-500",
-  pending: "bg-warning",
-  approved: "bg-success",
-  rejected: "bg-destructive",
-  in_progress: "bg-warning",
-  completed: "bg-primary",
-  archived: "bg-muted"
-};
-
-const statusLabels = {
-  draft: "Entwurf",
-  pending: "Ausstehend",
-  approved: "Genehmigt", 
-  rejected: "Abgelehnt",
-  in_progress: "In Bearbeitung",
-  completed: "Abgeschlossen",
-  archived: "Archiviert"
-};
-
 interface DashboardProps {
   user: User;
   onSignOut: () => void;
@@ -127,6 +71,7 @@ interface DashboardProps {
 
 export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [archivedProjects, setArchivedProjects] = useState<Project[]>([]);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -136,24 +81,122 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const [loading, setLoading] = useState(true);
   const [cameFromCalendar, setCameFromCalendar] = useState(false);
   const [calendarWeek, setCalendarWeek] = useState<Date>(new Date());
-  const [archivedPrevStatus, setArchivedPrevStatus] = useState<Record<string, Project['status']>>({});
+  const [archivedPrevStatus, setArchivedPrevStatus] = useState<Record<string, number>>({});
   const [archiveStatusFilter, setArchiveStatusFilter] = useState<'all' | 'approved' | 'rejected'>("all");
+  const [activeTab, setActiveTab] = useState<'projects' | 'archive'>('projects');
   const { toast } = useToast();
 
-  const sendTestEmail = async () => {
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const fetchProjects = async () => {
     try {
-      const { error } = await supabase.functions.invoke("send-task-email", {
-        body: {
-          id: `debug_${Date.now()}`,
-          title: "Test: Projekt-Mail Versand",
-          description: "Direkter Test aus Dashboard",
-          assigned_to: "ppsupplychain@web.de",
-        },
-      });
+      const { data, error } = await supabase
+        .from('manufacturing_projects')
+        .select('*')
+        .eq('archived', false)
+        .order('created_at', { ascending: false });
+
       if (error) throw error;
-      toast({ title: "Testmail ausgelöst", description: "Bitte Postfach prüfen." });
-    } catch (e: any) {
-      toast({ title: "Fehler beim Testmail", description: e?.message || "Unbekannter Fehler", variant: "destructive" });
+
+      setProjects(data || []);
+    } catch (error) {
+      console.error('Fehler beim Laden der Projekte:', error);
+      toast({
+        title: "Fehler",
+        description: "Projekte konnten nicht geladen werden.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchArchivedProjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('manufacturing_projects')
+        .select('*')
+        .eq('archived', true)
+        .order('archived_at', { ascending: false });
+
+      if (error) throw error;
+
+      setArchivedProjects(data || []);
+    } catch (error) {
+      console.error('Fehler beim Laden der archivierten Projekte:', error);
+      toast({
+        title: "Fehler",
+        description: "Archivierte Projekte konnten nicht geladen werden.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleProjectAction = async (project: any, action: string, reason?: string) => {
+    try {
+      let updateData: any = {};
+      
+      switch (action) {
+        case 'approve':
+          updateData = { status: PROJECT_STATUS.GENEHMIGT };
+          break;
+        case 'reject':
+          updateData = { status: PROJECT_STATUS.ABGELEHNT, rejection_reason: reason };
+          break;
+        case 'archive':
+          if (!canArchiveProject(project.status)) {
+            throw new Error('Projekt kann nur archiviert werden wenn es genehmigt, abgelehnt oder abgeschlossen ist.');
+          }
+          updateData = { archived: true, archived_at: new Date().toISOString() };
+          break;
+        case 'send_to_progress':
+          updateData = { status: PROJECT_STATUS.PRUEFUNG_PLANUNG };
+          break;
+        case 'send_to_vertrieb':
+          updateData = { status: PROJECT_STATUS.PRUEFUNG_VERTRIEB };
+          break;
+        case 'correct':
+          // Korrekturdaten werden separat verarbeitet
+          updateData = reason; // reason enthält hier die Korrekturdaten
+          break;
+        default:
+          throw new Error(`Unbekannte Aktion: ${action}`);
+      }
+
+      const { error } = await supabase
+        .from('manufacturing_projects')
+        .update(updateData)
+        .eq('id', project.id);
+
+      if (error) throw error;
+
+      // Status-spezifische Nachrichten
+      const messages = {
+        approve: "Projekt wurde genehmigt.",
+        reject: "Projekt wurde abgelehnt.",
+        archive: "Projekt wurde archiviert.",
+        send_to_progress: "Projekt wurde zur Bearbeitung weitergeleitet.",
+        send_to_vertrieb: "Projekt wurde an Vertrieb weitergeleitet.",
+        correct: "Projekt wurde korrigiert."
+      };
+
+      toast({
+        title: "Erfolg",
+        description: messages[action as keyof typeof messages],
+      });
+
+      // Projekte neu laden
+      fetchProjects();
+      if (activeTab === 'archive') {
+        fetchArchivedProjects();
+      }
+    } catch (error) {
+      console.error(`Fehler bei ${action}:`, error);
+      toast({
+        title: "Fehler",
+        description: `Aktion konnte nicht ausgeführt werden: ${error}`,
+        variant: "destructive",
+      });
     }
   };
 
@@ -161,79 +204,6 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const [showActivity, setShowActivity] = useState(false);
   const [previewInitialWeek, setPreviewInitialWeek] = useState<Date | null>(null);
   
-  // Load projects from database
-  const loadProjects = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('manufacturing_projects')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      
-      const formattedProjects: Project[] = data?.map(project => ({
-        id: project.id,
-        project_number: project.project_number as number,
-        customer: project.customer,
-        artikel_nummer: project.artikel_nummer,
-        artikel_bezeichnung: project.artikel_bezeichnung,
-        produktgruppe: project.produktgruppe,
-        gesamtmenge: project.gesamtmenge,
-        beschreibung: project.beschreibung,
-        erste_anlieferung: project.erste_anlieferung,
-        letzte_anlieferung: project.letzte_anlieferung,
-        status: project.status as Project['status'],
-        created_at: project.created_at,
-        created_by: project.created_by_name,
-        standort_verteilung: project.standort_verteilung as Record<string, number> | undefined,
-        menge_fix: project.menge_fix
-      })) || [];
-      
-      // Für Archivansicht: Vorherigen Status (vor Archivierung) laden
-      try {
-        const archivedIds = formattedProjects.filter(p => p.status === "archived").map(p => p.id);
-        if (archivedIds.length > 0) {
-          const { data: historyRows, error: histError } = await supabase
-            .from('project_history')
-            .select('project_id, previous_status, new_status, created_at')
-            .in('project_id', archivedIds)
-            .eq('new_status', 'archived')
-            .order('created_at', { ascending: false });
-          if (histError) throw histError;
-          const map: Record<string, Project['status']> = {};
-          const seen = new Set<string>();
-          (historyRows || []).forEach((row: any) => {
-            if (!seen.has(row.project_id)) {
-              map[row.project_id] = row.previous_status as Project['status'];
-              seen.add(row.project_id);
-            }
-          });
-          setArchivedPrevStatus(map);
-        } else {
-          setArchivedPrevStatus({});
-        }
-      } catch (e) {
-        console.error('Fehler beim Laden des Archiv-Statusverlaufs', e);
-        setArchivedPrevStatus({});
-      }
-      
-      setProjects(formattedProjects);
-    } catch (error) {
-      console.error('Error loading projects:', error);
-      toast({
-        title: "Fehler",
-        description: "Projekte konnten nicht geladen werden",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadProjects();
-  }, []);
-
   // Load saved view preference per user
   useEffect(() => {
     const key = `dashboardView_${user.id}`;
@@ -248,34 +218,38 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
     const key = `dashboardView_${user.id}`;
     localStorage.setItem(key, viewMode);
   }, [viewMode, user.id]);
-  const filteredProjects = projects.filter(project => {
+
+  const isArchiveView = statusFilter === "archived";
+  const displayProjects = isArchiveView ? archivedProjects : projects;
+
+  const filteredProjects = displayProjects.filter(project => {
     const matchesSearch = project.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.artikel_nummer.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.artikel_bezeichnung.toLowerCase().includes(searchTerm.toLowerCase());
-    const isArchiveView = statusFilter === "archived";
+    
     const matchesStatus = isArchiveView
-      ? project.status === "archived"
-      : (statusFilter === "all" ? project.status !== "archived" : project.status === statusFilter);
+      ? true
+      : (statusFilter === "all" || project.status.toString() === statusFilter);
     
     // Im Archiv zusätzlich nach vorherigem Status filtern (approved/rejected)
     const matchesArchivePrev = !isArchiveView 
       || archiveStatusFilter === 'all' 
-      || (archivedPrevStatus[project.id] && archivedPrevStatus[project.id] === archiveStatusFilter);
+      || (archivedPrevStatus[project.id] && archivedPrevStatus[project.id].toString() === archiveStatusFilter);
     
     // Rollenbasierte Filterung 
     const matchesRole = () => {
       switch (user.role) {
         case "supply_chain":
-          return isArchiveView || project.status === "pending"; // SupplyChain sieht nur Projekte zur ersten Prüfung + Archiv
+          return isArchiveView || project.status === PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN;
         case "planung":
         case "planung_storkow":
         case "planung_brenz":
         case "planung_gudensberg":
         case "planung_doebeln":
         case "planung_visbek":
-          return isArchiveView || project.status === "in_progress"; // Planung sieht nur von SupplyChain weitergeleitete Projekte + Archiv
+          return isArchiveView || project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG;
         case "vertrieb":
-          return true; // Vertrieb sieht alle Projekte (Überwachung) + Archiv
+          return true; // Vertrieb sieht alle Projekte
         default:
           return true;
       }
@@ -284,148 +258,38 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
     return matchesSearch && matchesStatus && matchesArchivePrev && matchesRole();
   });
 
-  const handleProjectAction = async (projectId: string, action: string) => {
-    try {
-      // Handle calendar preview action
-      if (action === "preview_calendar") {
-        const currentProject = projects.find(p => p.id === projectId);
-        if (currentProject) {
-          // Convert Project to CalendarProject format
-          const calendarProject: CalendarProject = {
-            id: currentProject.id,
-            customer: currentProject.customer,
-            artikel_nummer: currentProject.artikel_nummer,
-            artikel_bezeichnung: currentProject.artikel_bezeichnung,
-            produktgruppe: currentProject.produktgruppe,
-            gesamtmenge: currentProject.gesamtmenge,
-            beschreibung: currentProject.beschreibung,
-            erste_anlieferung: currentProject.erste_anlieferung,
-            letzte_anlieferung: currentProject.letzte_anlieferung,
-            status: currentProject.status,
-            created_at: currentProject.created_at,
-            updated_at: new Date().toISOString(),
-            created_by_id: currentProject.id, // Fallback
-            created_by_name: currentProject.created_by,
-            standort_verteilung: currentProject.standort_verteilung,
-            menge_fix: currentProject.menge_fix || false
-          };
-          
-          // Set preview project and initial week
-          setPreviewProject(calendarProject);
-          if (currentProject.erste_anlieferung) {
-            try {
-              const [y, m, d] = currentProject.erste_anlieferung.split('-').map(Number);
-              if (y && m && d) {
-                setPreviewInitialWeek(new Date(y, m - 1, d));
-              }
-            } catch (e) {
-              console.error('Error parsing date for preview:', e);
-            }
-          }
-          
-          // Show calendar
-          setShowCalendar(true);
-        }
-        return;
-      }
-      
-      // Aktionen (approve/reject/correct) werden in ProjectDetails bereits ausgeführt und protokolliert.
-      // Damit es keine doppelten Protokolle gibt, machen wir hier nur ein Refresh —
-      // außer bei Archivierung aus der Listenansicht.
-      if (action !== "archive") {
-        await loadProjects();
-        return;
-      }
-
-      // Archivierung (Vertrieb) aus der Listenansicht
-      const currentProject = projects.find(p => p.id === projectId);
-      if (user.role === "vertrieb" && currentProject && (currentProject.status === "approved" || currentProject.status === "rejected")) {
-        // Historie erfassen
-        try {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('display_name')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          const displayName = profile?.display_name || user.full_name || user.email;
-
-          await supabase
-            .from('project_history')
-            .insert({
-              project_id: projectId,
-              user_id: user.id,
-              user_name: displayName,
-              action: 'archive',
-              previous_status: currentProject.status,
-              new_status: 'archived',
-            });
-        } catch (e) {
-          console.error('Projekt-Historie Ausnahme:', e);
-        }
-
-        const { error } = await supabase
-          .from('manufacturing_projects')
-          .update({ status: 'archived' })
-          .eq('id', projectId);
-
-        if (error) throw error;
-
-        await loadProjects();
-        toast({
-          title: "Erfolgreich",
-          description: "Projektstatus wurde aktualisiert",
-        });
-      }
-    } catch (error) {
-      console.error('Error updating project:', error);
-      toast({
-        title: "Fehler",
-        description: "Projektstatus konnte nicht aktualisiert werden",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const getCurrentResponsibleRole = (status: Project['status']) => {
+  const getCurrentResponsibleRole = (status: number) => {
     switch (status) {
-      case "draft":
+      case PROJECT_STATUS.ERFASSUNG:
         return "Vertrieb";
-      case "pending":
+      case PROJECT_STATUS.PRUEFUNG_VERTRIEB:
+        return "Vertrieb";
+      case PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN:
         return "Supply Chain";
-      case "approved":
+      case PROJECT_STATUS.PRUEFUNG_PLANUNG:
         return "Planung (standortspezifisch)";
-      case "rejected":
-        return "Vertrieb";
-      case "in_progress":
-        return "Planung (standortspezifisch)";
-      case "completed":
-        return null;
+      case PROJECT_STATUS.GENEHMIGT:
+        return "Abgeschlossen";
+      case PROJECT_STATUS.ABGELEHNT:
+        return "Abgelehnt";
+      case PROJECT_STATUS.ABGESCHLOSSEN:
+        return "Abgeschlossen";
       default:
         return "Unbekannt";
     }
   };
 
-  const getActionsForRole = (project: Project) => {
-    return (
-      <div className="flex gap-2">
-        <Button size="sm" onClick={() => setSelectedProject(project)}>
-          Prüfen
-        </Button>
-      </div>
-    );
+  const roleLabel = {
+    vertrieb: "Vertrieb",
+    supply_chain: "Supply Chain",
+    planung: "Planung",
+    planung_storkow: "Planung Storkow",
+    planung_brenz: "Planung Brenz", 
+    planung_gudensberg: "Planung Gudensberg",
+    planung_doebeln: "Planung Döbeln",
+    planung_visbek: "Planung Visbek",
+    admin: "Admin"
   };
-
-const roleLabel = {
-  vertrieb: "Vertrieb",
-  supply_chain: "Supply Chain",
-  planung: "Planung",
-  planung_storkow: "Planung Storkow",
-  planung_brenz: "Planung Brenz", 
-  planung_gudensberg: "Planung Gudensberg",
-  planung_doebeln: "Planung Döbeln",
-  planung_visbek: "Planung Visbek",
-  admin: "Admin"
-};
 
   if (showProjectForm) {
     return (
@@ -434,7 +298,7 @@ const roleLabel = {
           user={user}
           onSuccess={() => {
             setShowProjectForm(false);
-            loadProjects(); // Reload projects after creating new one
+            fetchProjects();
           }}
           onCancel={() => setShowProjectForm(false)}
         />
@@ -442,7 +306,6 @@ const roleLabel = {
     );
   }
 
-  // Show calendar first (higher priority when both states are set)
   if (showCalendar) {
     return (
       <WeeklyCalendar
@@ -451,12 +314,9 @@ const roleLabel = {
           setShowCalendar(false);
           setPreviewProject(null);
           setPreviewInitialWeek(null);
-          // If we came from project details, return there
-          // Otherwise stay in dashboard (selectedProject stays null)
         }}
         previewProject={previewProject}
         onShowProjectDetails={(project) => {
-          // Convert CalendarProject to Project format
           const found = projects.find(p => p.id === project.id);
           const projectForDetails: Project = {
             id: project.id,
@@ -469,13 +329,12 @@ const roleLabel = {
             beschreibung: project.beschreibung,
             erste_anlieferung: project.erste_anlieferung || undefined,
             letzte_anlieferung: project.letzte_anlieferung || undefined,
-            status: project.status as Project['status'],
+            status: project.status,
             created_at: project.created_at,
-            created_by: project.created_by_name,
+            created_by: project.created_by_name || "",
             standort_verteilung: project.standort_verteilung,
             menge_fix: project.menge_fix
           };
-          // Mark that we came from calendar and save current week
           setCameFromCalendar(true);
           setSelectedProject(projectForDetails);
           setShowCalendar(false);
@@ -493,12 +352,10 @@ const roleLabel = {
         user={user}
         onBack={() => {
           if (cameFromCalendar) {
-            // Return to calendar with the saved week
             setCameFromCalendar(false);
             setSelectedProject(null);
             setShowCalendar(true);
           } else {
-            // Return to dashboard
             setSelectedProject(null);
           }
         }}
@@ -507,9 +364,16 @@ const roleLabel = {
     );
   }
 
+  // Load archived projects when archive tab is activated
+  useEffect(() => {
+    if (isArchiveView && archivedProjects.length === 0) {
+      fetchArchivedProjects();
+    }
+  }, [isArchiveView]);
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header - Mobile Optimized */}
+      {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 sm:px-6 py-4">
           <div className="flex justify-between items-center">
@@ -557,7 +421,7 @@ const roleLabel = {
 
       <div className="container mx-auto p-4 sm:p-6">
         <div className="space-y-4 sm:space-y-6">
-          {/* Action Bar - Mobile Optimized */}
+          {/* Action Bar */}
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
             <div className="flex flex-col gap-4 sm:flex-row sm:gap-4 sm:items-center">
               <div className="relative">
@@ -587,11 +451,12 @@ const roleLabel = {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Alle Status</SelectItem>
-                    <SelectItem value="pending">Ausstehend</SelectItem>
-                    <SelectItem value="approved">Genehmigt</SelectItem>
-                    <SelectItem value="rejected">Abgelehnt</SelectItem>
-                    <SelectItem value="in_progress">In Bearbeitung</SelectItem>
-                    <SelectItem value="completed">Abgeschlossen</SelectItem>
+                    <SelectItem value="2">Prüfung Vertrieb</SelectItem>
+                    <SelectItem value="3">Prüfung SupplyChain</SelectItem>
+                    <SelectItem value="4">Prüfung Planung</SelectItem>
+                    <SelectItem value="5">Genehmigt</SelectItem>
+                    <SelectItem value="6">Abgelehnt</SelectItem>
+                    <SelectItem value="7">Abgeschlossen</SelectItem>
                     <SelectItem value="archived">Archiviert</SelectItem>
                   </SelectContent>
                 </Select>
@@ -606,7 +471,6 @@ const roleLabel = {
                   size="sm"
                   onClick={() => setViewMode('matrix')}
                   className="w-1/2 sm:w-auto rounded-r-none"
-                  aria-pressed={viewMode === 'matrix'}
                 >
                   <LayoutGrid className="h-4 w-4 mr-2" />
                   Matrix
@@ -616,7 +480,6 @@ const roleLabel = {
                   size="sm"
                   onClick={() => setViewMode('list')}
                   className="w-1/2 sm:w-auto rounded-l-none -ml-px"
-                  aria-pressed={viewMode === 'list'}
                 >
                   <List className="h-4 w-4 mr-2" />
                   Liste
@@ -674,14 +537,8 @@ const roleLabel = {
             </div>
           </div>
 
-          {/* Projects - Matrix oder Liste */}
-          {loading ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <p className="text-muted-foreground">Lade Projekte...</p>
-              </CardContent>
-            </Card>
-          ) : filteredProjects.length === 0 ? (
+          {/* Projects Display */}
+          {filteredProjects.length === 0 ? (
             <Card>
               <CardContent className="text-center py-12">
                 <p className="text-muted-foreground">Keine Projekte gefunden</p>
@@ -707,59 +564,26 @@ const roleLabel = {
                           </div>
                         </div>
                       </div>
-                      {(() => {
-                        const displayStatus = statusFilter === "archived" && archivedPrevStatus[project.id]
-                          ? (archivedPrevStatus[project.id] as Project['status'])
-                          : project.status;
-                        return (
-                          <Badge className={`${statusColors[displayStatus]} shrink-0 ml-2`}>
-                            {statusLabels[displayStatus]}
-                          </Badge>
-                        );
-                      })()}
+                      <Badge className={getStatusColor(project.status)}>
+                        {getStatusLabel(project.status)}
+                      </Badge>
                     </div>
                   </CardHeader>
                   
                   <CardContent className="pt-0 space-y-3">
-                    {/* Artikel Info */}
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Package className="h-3.5 w-3.5 shrink-0" />
                       <span className="truncate">{project.artikel_bezeichnung}</span>
                     </div>
                     
-                    {/* Menge */}
                     <div className="flex items-center gap-2 text-sm">
                       <Scale className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <span className="font-medium">{project.gesamtmenge.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} kg</span>
+                      <span className="font-medium">{project.gesamtmenge.toLocaleString('de-DE')} kg</span>
                       {project.menge_fix && (
                         <Badge variant="outline" className="text-xs py-0">Fix</Badge>
                       )}
                     </div>
 
-                    {/* Standort Verteilung - Kompakte Anzeige */}
-                    {project.standort_verteilung && (
-                      <div className="space-y-1">
-                        <p className="text-xs text-muted-foreground font-medium">Standorte:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {Object.entries(project.standort_verteilung)
-                            .filter(([_, amount]) => amount > 0)
-                            .slice(0, 3)
-                            .map(([location, amount]) => (
-                              <Badge key={location} variant="outline" className="text-xs px-2 py-0">
-                                {location.charAt(0).toUpperCase() + location.slice(1)}: {amount.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} kg
-                              </Badge>
-                            ))
-                          }
-                          {Object.entries(project.standort_verteilung).filter(([_, amount]) => amount > 0).length > 3 && (
-                            <Badge variant="outline" className="text-xs px-2 py-0">
-                              +{Object.entries(project.standort_verteilung).filter(([_, amount]) => amount > 0).length - 3} mehr
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Footer */}
                     <div className="flex items-center justify-between pt-2 border-t">
                       <div className="text-xs text-muted-foreground">
                         <p>{new Date(project.created_at).toLocaleDateString("de-DE")}</p>
@@ -782,11 +606,11 @@ const roleLabel = {
                           >
                             Prüfen
                           </Button>
-                          {user.role === "vertrieb" && (project.status === "approved" || project.status === "rejected") && (
+                          {user.role === "vertrieb" && canArchiveProject(project.status) && (
                             <Button
                               size="sm"
                               variant="secondary"
-                              onClick={() => handleProjectAction(project.id, "archive")}
+                              onClick={() => handleProjectAction(project, "archive")}
                               className="h-7 px-3 text-xs"
                             >
                               Archivieren
@@ -823,60 +647,54 @@ const roleLabel = {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredProjects.map((project) => {
-                        const displayStatus = statusFilter === "archived" && archivedPrevStatus[project.id]
-                          ? (archivedPrevStatus[project.id] as Project['status'])
-                          : project.status;
-                        return (
-                          <TableRow key={project.id}>
-                            <TableCell className="whitespace-nowrap">{project.project_number}</TableCell>
-                            <TableCell className="font-medium">{project.customer}</TableCell>
-                            <TableCell className="truncate max-w-[280px]">{project.artikel_bezeichnung}</TableCell>
-                            <TableCell className="whitespace-nowrap">{project.artikel_nummer}</TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              {project.gesamtmenge.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} kg
-                            </TableCell>
+                      {filteredProjects.map((project) => (
+                        <TableRow key={project.id}>
+                          <TableCell className="whitespace-nowrap">{project.project_number}</TableCell>
+                          <TableCell className="font-medium">{project.customer}</TableCell>
+                          <TableCell className="truncate max-w-[280px]">{project.artikel_bezeichnung}</TableCell>
+                          <TableCell className="whitespace-nowrap">{project.artikel_nummer}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {project.gesamtmenge.toLocaleString('de-DE')} kg
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(project.status)}>
+                              {getStatusLabel(project.status)}
+                            </Badge>
+                          </TableCell>
+                          {statusFilter !== 'archived' && (
                             <TableCell>
-                              <Badge className={`${statusColors[displayStatus]}`}>
-                                {statusLabels[displayStatus]}
-                              </Badge>
+                              {getCurrentResponsibleRole(project.status) ?? "-"}
                             </TableCell>
-                            {statusFilter !== 'archived' && (
-                              <TableCell>
-                                {getCurrentResponsibleRole(project.status) ?? "-"}
-                              </TableCell>
-                            )}
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button 
-                                  size="sm" 
-                                  onClick={() => setSelectedProject(project)}
+                          )}
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                size="sm" 
+                                onClick={() => setSelectedProject(project)}
+                                className="h-7 px-3 text-xs"
+                              >
+                                Prüfen
+                              </Button>
+                              {user.role === "vertrieb" && canArchiveProject(project.status) && (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => handleProjectAction(project, "archive")}
                                   className="h-7 px-3 text-xs"
                                 >
-                                  Prüfen
+                                  Archivieren
                                 </Button>
-                                {user.role === "vertrieb" && (project.status === "approved" || project.status === "rejected") && (
-                                  <Button
-                                    size="sm"
-                                    variant="secondary"
-                                    onClick={() => handleProjectAction(project.id, "archive")}
-                                    className="h-7 px-3 text-xs"
-                                  >
-                                    Archivieren
-                                  </Button>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
                 </div>
               </CardContent>
             </Card>
-          )
-          }
+          )}
 
           {/* Aktivitäten-Dialog */}
           <Dialog open={showActivity} onOpenChange={setShowActivity}>
@@ -888,7 +706,6 @@ const roleLabel = {
               <ActivityLog userId={user.id} />
             </DialogContent>
           </Dialog>
-         
         </div>
       </div>
     </div>
