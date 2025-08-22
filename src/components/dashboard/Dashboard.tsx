@@ -605,42 +605,13 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                           </p>
                         )}
                         <div className="flex gap-2">
-                           <Button 
+                          <Button 
                             size="sm" 
                             onClick={() => setSelectedProject(project)}
                             className="h-7 px-3 text-xs"
                           >
                             Prüfen
                           </Button>
-                          {[2, 3, 4].includes(project.status) && (
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => {
-                                setPreviewProject({
-                                  id: project.id,
-                                  customer: project.customer,
-                                  artikel_nummer: project.artikel_nummer,
-                                  artikel_bezeichnung: project.artikel_bezeichnung,
-                                  produktgruppe: project.produktgruppe,
-                                  gesamtmenge: project.gesamtmenge,
-                                  erste_anlieferung: project.erste_anlieferung,
-                                  letzte_anlieferung: project.letzte_anlieferung,
-                                  status: project.status,
-                                  created_at: project.created_at,
-                                  updated_at: new Date().toISOString(),
-                                  created_by_id: project.created_by || "",
-                                  created_by_name: project.created_by,
-                                  standort_verteilung: project.standort_verteilung,
-                                  menge_fix: project.menge_fix
-                                });
-                                setShowCalendar(true);
-                              }}
-                              className="h-7 px-3 text-xs"
-                            >
-                              Vorschau
-                            </Button>
-                          )}
                           {user.role === "vertrieb" && canArchiveProject(project.status) && (
                             <Button
                               size="sm"
@@ -716,44 +687,15 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                              </Badge>
                            </TableCell>
                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button 
-                                  size="sm" 
-                                  onClick={() => setSelectedProject(project)}
-                                  className="h-7 px-3 text-xs"
-                               >
-                                 Prüfen
-                               </Button>
-                               {[2, 3, 4].includes(project.status) && (
-                                 <Button 
-                                   size="sm" 
-                                   variant="outline"
-                                   onClick={() => {
-                                     setPreviewProject({
-                                       id: project.id,
-                                       customer: project.customer,
-                                       artikel_nummer: project.artikel_nummer,
-                                       artikel_bezeichnung: project.artikel_bezeichnung,
-                                       produktgruppe: project.produktgruppe,
-                                       gesamtmenge: project.gesamtmenge,
-                                       erste_anlieferung: project.erste_anlieferung,
-                                       letzte_anlieferung: project.letzte_anlieferung,
-                                       status: project.status,
-                                       created_at: project.created_at,
-                                       updated_at: new Date().toISOString(),
-                                       created_by_id: project.created_by || "",
-                                       created_by_name: project.created_by,
-                                       standort_verteilung: project.standort_verteilung,
-                                       menge_fix: project.menge_fix
-                                     });
-                                     setShowCalendar(true);
-                                   }}
-                                   className="h-7 px-3 text-xs"
-                                 >
-                                   Vorschau
-                                 </Button>
-                               )}
-                               {user.role === "vertrieb" && canArchiveProject(project.status) && (
+                             <div className="flex justify-end gap-2">
+                               <Button 
+                                 size="sm" 
+                                 onClick={() => setSelectedProject(project)}
+                                 className="h-7 px-3 text-xs"
+                              >
+                                Prüfen
+                              </Button>
+                              {user.role === "vertrieb" && canArchiveProject(project.status) && (
                                 <Button
                                   size="sm"
                                   variant="secondary"
