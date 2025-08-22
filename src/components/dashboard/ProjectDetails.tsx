@@ -126,11 +126,9 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
       console.log('User role:', user.role);
       console.log('Current project status:', project.status);
 
-      // Log the action first (temporarily disabled for debugging)
+      // Log the action first
       try {
-        // Skip logging for now to isolate the issue
-        // await logProjectAction(action, { status: project.status }, updateData);
-        console.log('Skipping project action logging for debugging');
+        await logProjectAction(action, { status: project.status }, updateData);
       } catch (logError) {
         console.error('Error logging project action:', logError);
         // Continue with update even if logging fails
@@ -176,12 +174,11 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
 
   const handleCorrection = async (updateData: any) => {
     try {
-      // Skip logging for now
-      // await logProjectAction('correction', { 
-      //   status: project.status,
-      //   gesamtmenge: project.gesamtmenge,
-      //   standort_verteilung: project.standort_verteilung 
-      // }, updateData);
+      await logProjectAction('correction', { 
+        status: project.status,
+        gesamtmenge: project.gesamtmenge,
+        standort_verteilung: project.standort_verteilung 
+      }, updateData);
 
       const { error } = await supabase
         .from('manufacturing_projects')
