@@ -197,6 +197,20 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
         standort_verteilung: project.standort_verteilung 
       }, { ...updateData, correction_reason: correctionReason });
 
+      // If location-specific planning user is sending back to SupplyChain (status 3),
+      // we need to clear location approvals first to prevent trigger from resetting status
+      if (user.role.startsWith('planung_') && updateData.status === PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN) {
+        const { error: deleteError } = await supabase
+          .from('project_location_approvals')
+          .delete()
+          .eq('project_id', project.id);
+
+        if (deleteError) {
+          console.error('Error deleting location approvals:', deleteError);
+          throw deleteError;
+        }
+      }
+
       const { error } = await supabase
         .from('manufacturing_projects')
         .update(updateData)
