@@ -553,25 +553,28 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction }: Proje
                 // SupplyChain Korrektur-Logik:
                 // - Wenn Gesamtmenge geändert wurde → Status 2 (Vertrieb prüft)
                 // - Wenn nur Standortverteilung geändert wurde → Status 4 (Planung prüft)
-                const originalQuantity = project.gesamtmenge;
-                const newQuantity = parseInt(correctedQuantity);
-                const quantityChanged = originalQuantity !== newQuantity;
-                
-                let newStatus = project.status; // Default: Status bleibt gleich
-                
-                if (user.role === 'supply_chain') {
-                  if (quantityChanged) {
-                    newStatus = PROJECT_STATUS.PRUEFUNG_VERTRIEB; // Status 2
-                  } else {
-                    newStatus = PROJECT_STATUS.PRUEFUNG_PLANUNG; // Status 4
-                  }
-                }
-                
-                const updateData = {
-                  gesamtmenge: newQuantity,
-                  standort_verteilung: locationQuantities,
-                  ...(user.role === 'supply_chain' ? { status: newStatus } : {})
-                };
+                 const originalQuantity = project.gesamtmenge;
+                 const newQuantity = parseInt(correctedQuantity);
+                 const quantityChanged = originalQuantity !== newQuantity;
+                 
+                 let newStatus = project.status; // Default: Status bleibt gleich
+                 
+                 if (user.role === 'supply_chain') {
+                   if (quantityChanged) {
+                     newStatus = PROJECT_STATUS.PRUEFUNG_VERTRIEB; // Status 2
+                   } else {
+                     newStatus = PROJECT_STATUS.PRUEFUNG_PLANUNG; // Status 4
+                   }
+                 } else if (user.role.startsWith('planung_')) {
+                   // Standortspezifische Planungsrollen setzen Status zurück auf 3 (SupplyChain)
+                   newStatus = PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN; // Status 3
+                 }
+                 
+                 const updateData = {
+                   gesamtmenge: user.role === 'supply_chain' ? newQuantity : project.gesamtmenge,
+                   standort_verteilung: locationQuantities,
+                   ...(user.role === 'supply_chain' || user.role.startsWith('planung_') ? { status: newStatus } : {})
+                 };
                 
                 await handleCorrection(updateData);
               }}
