@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -188,13 +189,13 @@ serve(async (req: Request) => {
       finalRecipientEmails: recipientEmails
     });
 
-    const toRecipients = recipientEmails.map(email => ({
-      emailAddress: {
-        address: email
-      }
-    }));
-
-    console.log('Resolved recipients for supply_chain', { count: toRecipients.length });
+    // Deduplicate email addresses one more time for safety
+    const assignedTo = Array.from(new Set(recipientEmails));
+    
+    console.log('Final recipient list before webhook:', {
+      totalRecipients: assignedTo.length,
+      recipientEmails: assignedTo
+    });
 
     // Helper functions for professional formatting
     const formatDate = (dateStr: string | null) => {
@@ -218,22 +219,27 @@ serve(async (req: Request) => {
     // Clean HTML email content without line breaks in template
     const professionalEmailContent = `<h1>🏭 ProPlan System – Neues Projekt zur Bearbeitung</h1><p>Sehr geehrte Damen und Herren,</p><p>ein neues Fertigungsprojekt wurde im ProPlan System erfasst und wartet auf Ihre fachkundige Prüfung und Bearbeitung.</p><hr><h2>📋 Projektübersicht</h2><ul><li><strong>Projekt-Nr.:</strong> #${project_number}</li><li><strong>🏢 Kunde:</strong> ${customer}</li><li><strong>📦 Artikelnummer:</strong> ${artikel_nummer}</li><li><strong>📋 Artikelbezeichnung:</strong> ${artikel_bezeichnung}</li><li><strong>⚖️ Gesamtmenge:</strong> ${formatQuantity(gesamtmenge)}</li><li><strong>📅 Erste Anlieferung:</strong> ${formatDate(erste_anlieferung)}</li><li><strong>📅 Letzte Anlieferung:</strong> ${formatDate(letzte_anlieferung)}</li><li><strong>👤 Erstellt von:</strong> ${created_by_name}</li></ul><hr><h2>📍 Standortverteilung</h2><ul>${formatLocationDistribution(standort_verteilung)}</ul>${beschreibung ? `<hr><h2>📝 Projektbeschreibung</h2><p>${beschreibung}</p>` : ''}<hr><div style="border: 2px solid #ff6b35; border-radius: 8px; padding: 16px; background-color: #fff3f0; margin: 20px 0;"><h3 style="color: #ff6b35; margin-top: 0;">⚠️ Handlungserfordernis</h3><p>Dieses Projekt wurde zur Bearbeitung durch die Supply Chain freigegeben und benötigt Ihre fachliche Bewertung sowie entsprechende Maßnahmen.</p><p>Bitte loggen Sie sich in das ProPlan System ein und führen Sie die erforderlichen Prüfungen durch.</p></div><p>🔗 <a href="https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p><hr><p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>ProPlan Benachrichtigungssystem</p><p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em><br>Bei Rückfragen wenden Sie sich bitte an: <strong>${created_by_name}</strong></p>`;
 
-    // Send raw HTML content directly to Make
+    // Send payload with array of email addresses to Make
     const payload = {
       subject: `ProPlan - Neues Projekt #${project_number}: ${artikel_bezeichnung}`,
       body: professionalEmailContent,
-      toRecipients,
+      assigned_to: assignedTo, // Array of email addresses
       metadata: {
         type: "project",
         triggered_at: new Date().toISOString(),
         project_id: id,
         project_number,
         created_by_id,
-        standort_verteilung
+        standort_verteilung,
+        total_recipients: assignedTo.length
       }
     };
 
-    console.log("Forwarding project to Make", { id, recipients: toRecipients.length });
+    console.log("Forwarding project to Make with recipient array", { 
+      id, 
+      recipientCount: assignedTo.length,
+      recipients: assignedTo
+    });
 
     const res = await fetch(webhookUrl, {
       method: "POST",
@@ -247,9 +253,9 @@ serve(async (req: Request) => {
       throw new Error(`Make webhook error: ${res.status}`);
     }
 
-    console.log("Project dispatched to Make", { id, status: res.status });
+    console.log("Project dispatched to Make", { id, status: res.status, recipientsSent: assignedTo.length });
 
-    return new Response(JSON.stringify({ success: true, recipients: recipientEmails }), {
+    return new Response(JSON.stringify({ success: true, recipients: assignedTo }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
