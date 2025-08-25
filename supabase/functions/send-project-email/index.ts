@@ -192,7 +192,16 @@ serve(async (req: Request) => {
     // Deduplicate email addresses one more time for safety
     const assignedTo = Array.from(new Set(recipientEmails));
     
-    // Create toRecipients array in the format expected by Make webhook
+    // Ensure we have at least one recipient
+    if (assignedTo.length === 0) {
+      console.error('No valid recipients found for supply chain role');
+      return new Response(JSON.stringify({ error: 'No valid recipients found for supply chain role' }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+    
+    // Create toRecipients array in the format expected by Make Outlook webhook
     const toRecipients = assignedTo.map(email => ({
       emailAddress: {
         address: email
@@ -245,6 +254,14 @@ serve(async (req: Request) => {
         total_recipients: assignedTo.length
       }
     };
+
+    // Validate payload before sending
+    console.log("Final payload structure before webhook:", {
+      hasToRecipients: !!payload.toRecipients,
+      toRecipientsLength: payload.toRecipients?.length || 0,
+      toRecipientsType: Array.isArray(payload.toRecipients) ? 'array' : typeof payload.toRecipients,
+      fullPayload: JSON.stringify(payload, null, 2)
+    });
 
     console.log("Forwarding project to Make with recipient array", { 
       id, 
