@@ -79,7 +79,11 @@ serve(async (req: Request) => {
       });
     }
 
-    const supplyUserIds = (profiles || []).map((p: any) => p.user_id);
+    console.log('Supply chain profiles found:', profiles?.length || 0);
+
+    // Get unique user IDs from profiles (remove duplicates at source)
+    const uniqueUserIds = Array.from(new Set((profiles || []).map((p: any) => p.user_id)));
+    console.log('Unique supply chain user IDs:', uniqueUserIds.length);
 
     // Map user_id -> email using auth admin list - load ALL users
     const getAllUsers = async () => {
@@ -116,14 +120,24 @@ serve(async (req: Request) => {
       });
     }
 
+    console.log('Total auth users loaded:', allUsers.length);
+
+    // Create email mapping
     const emailById = new Map<string, string>();
     for (const u of allUsers) {
-      if (u.id && u.email) emailById.set(u.id, u.email);
+      if (u.id && u.email) {
+        emailById.set(u.id, u.email);
+      }
     }
 
-    const recipientEmails = Array.from(new Set(supplyUserIds
-      .map((uid: string) => emailById.get(uid))
-      .filter(Boolean))) as string[];
+    // Get emails for supply chain users and deduplicate
+    const recipientEmails = Array.from(new Set(
+      uniqueUserIds
+        .map((uid: string) => emailById.get(uid))
+        .filter((email): email is string => Boolean(email))
+    ));
+
+    console.log('Final deduplicated recipient emails:', recipientEmails);
 
     const toRecipients = recipientEmails.map(email => ({
       emailAddress: {

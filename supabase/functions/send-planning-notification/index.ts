@@ -114,11 +114,13 @@ serve(async (req: Request) => {
       return affectedLocations.includes(roleLocation);
     });
 
-    const planningUserIds = relevantProfiles.map((p: any) => p.user_id);
+    console.log('Found planning profiles for affected locations:', { count: relevantProfiles.length, roles: relevantProfiles.map(p => p.role) });
 
-    console.log('Found planning users for affected locations:', { count: relevantProfiles.length, roles: relevantProfiles.map(p => p.role) });
+    // Get unique user IDs from profiles (remove duplicates at source)
+    const uniqueUserIds = Array.from(new Set(relevantProfiles.map((p: any) => p.user_id)));
+    console.log('Unique planning user IDs:', uniqueUserIds.length);
 
-    if (planningUserIds.length === 0) {
+    if (uniqueUserIds.length === 0) {
       console.log('No planning users found for affected locations');
       return new Response(JSON.stringify({ success: true, message: "No planning users found" }), {
         status: 200,
@@ -161,14 +163,24 @@ serve(async (req: Request) => {
       });
     }
 
+    console.log('Total auth users loaded:', allUsers.length);
+
+    // Create email mapping
     const emailById = new Map<string, string>();
     for (const u of allUsers) {
-      if (u.id && u.email) emailById.set(u.id, u.email);
+      if (u.id && u.email) {
+        emailById.set(u.id, u.email);
+      }
     }
 
-    const recipientEmails = Array.from(new Set(planningUserIds
-      .map((uid: string) => emailById.get(uid))
-      .filter(Boolean))) as string[];
+    // Get emails for planning users and deduplicate
+    const recipientEmails = Array.from(new Set(
+      uniqueUserIds
+        .map((uid: string) => emailById.get(uid))
+        .filter((email): email is string => Boolean(email))
+    ));
+
+    console.log('Final deduplicated recipient emails:', recipientEmails);
 
     const toRecipients = recipientEmails.map(email => ({
       emailAddress: {
