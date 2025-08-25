@@ -248,6 +248,53 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       || archiveStatusFilter === 'all' 
       || (archivedPrevStatus[project.id] && archivedPrevStatus[project.id].toString() === archiveStatusFilter);
     
+    // Standortbasierte Filterung für Planning-Rollen
+    const matchesLocationFilter = () => {
+      // Nur für Projekte im Status "Prüfung Planung" relevant
+      if (project.status !== PROJECT_STATUS.PRUEFUNG_PLANUNG) {
+        return true;
+      }
+
+      // Standortspezifische Planungsrollen
+      if (user.role.startsWith('planung_')) {
+        const userLocationCode = user.role.replace('planung_', '');
+        
+        // Prüfe ob das Projekt eine standort_verteilung hat
+        if (!project.standort_verteilung) {
+          return false;
+        }
+        
+        // Mapping von Location-Codes zu möglichen Namen in standort_verteilung
+        const locationNameMapping: Record<string, string[]> = {
+          'brenz': ['Brenz', 'brenz'],
+          'doebeln': ['Döbeln', 'doebeln', 'Doebeln'],
+          'gudensberg': ['Gudensberg', 'gudensberg'],
+          'storkow': ['Storkow', 'storkow'],
+          'visbek': ['Visbek', 'visbek']
+        };
+        
+        const possibleNames = locationNameMapping[userLocationCode] || [userLocationCode];
+        
+        // Suche nach der Menge für diesen Standort
+        let locationQuantity = 0;
+        for (const possibleName of possibleNames) {
+          if (project.standort_verteilung[possibleName]) {
+            locationQuantity = project.standort_verteilung[possibleName];
+            break;
+          }
+        }
+        
+        return locationQuantity > 0;
+      }
+      
+      // Globale planung und admin Rollen sehen alle Projekte
+      if (user.role === 'planung' || user.role === 'admin') {
+        return true;
+      }
+      
+      return true;
+    };
+    
     // Rollenbasierte Filterung 
     const matchesRole = () => {
       switch (user.role) {
@@ -267,7 +314,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       }
     };
     
-    return matchesSearch && matchesStatus && matchesArchivePrev && matchesRole();
+    return matchesSearch && matchesStatus && matchesArchivePrev && matchesRole() && matchesLocationFilter();
   });
 
   const getCurrentResponsibleRole = (status: number) => {
