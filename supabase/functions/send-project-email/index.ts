@@ -80,10 +80,12 @@ serve(async (req: Request) => {
     }
 
     console.log('Supply chain profiles found:', profiles?.length || 0);
+    console.log('Raw profiles:', profiles?.map(p => ({ user_id: p.user_id, display_name: p.display_name })));
 
     // Get unique user IDs from profiles (remove duplicates at source)
-    const uniqueUserIds = Array.from(new Set((profiles || []).map((p: any) => p.user_id)));
+    const uniqueUserIds = Array.from(new Set((profiles || []).map((p: any) => p.user_id).filter(Boolean)));
     console.log('Unique supply chain user IDs:', uniqueUserIds.length);
+    console.log('User IDs to fetch emails for:', uniqueUserIds);
 
     // Map user_id -> email using auth admin list - load ALL users
     const getAllUsers = async () => {
@@ -122,22 +124,69 @@ serve(async (req: Request) => {
 
     console.log('Total auth users loaded:', allUsers.length);
 
-    // Create email mapping
+    // Create email mapping and track inconsistencies
     const emailById = new Map<string, string>();
+    const authUserIds = new Set<string>();
+    
     for (const u of allUsers) {
-      if (u.id && u.email) {
-        emailById.set(u.id, u.email);
+      if (u.id) {
+        authUserIds.add(u.id);
+        if (u.email) {
+          emailById.set(u.id, u.email);
+        } else {
+          console.warn(`Auth user ${u.id} has no email address`);
+        }
       }
     }
 
-    // Get emails for supply chain users and deduplicate
-    const recipientEmails = Array.from(new Set(
-      uniqueUserIds
-        .map((uid: string) => emailById.get(uid))
-        .filter((email): email is string => Boolean(email))
-    ));
+    // Check for inconsistencies between profiles and auth
+    const missingInAuth: string[] = [];
+    const missingEmails: string[] = [];
+    const foundEmails: Array<{userId: string, email: string}> = [];
 
-    console.log('Final deduplicated recipient emails:', recipientEmails);
+    for (const userId of uniqueUserIds) {
+      if (!authUserIds.has(userId)) {
+        missingInAuth.push(userId);
+        console.warn(`Profile user ${userId} not found in auth users`);
+      } else {
+        const email = emailById.get(userId);
+        if (!email) {
+          missingEmails.push(userId);
+          console.warn(`Auth user ${userId} has no valid email address`);
+        } else {
+          foundEmails.push({ userId, email });
+        }
+      }
+    }
+
+    // Log inconsistency summary
+    console.log('Inconsistency check summary:', {
+      totalProfileUsers: uniqueUserIds.length,
+      missingInAuth: missingInAuth.length,
+      missingEmails: missingEmails.length,
+      validEmailUsers: foundEmails.length,
+      missingInAuthIds: missingInAuth,
+      missingEmailIds: missingEmails
+    });
+
+    // Get emails for supply chain users and deduplicate by email address
+    const emailSet = new Set<string>();
+    const recipientEmails: string[] = [];
+    
+    for (const { email } of foundEmails) {
+      if (!emailSet.has(email)) {
+        emailSet.add(email);
+        recipientEmails.push(email);
+      } else {
+        console.log(`Duplicate email found and skipped: ${email}`);
+      }
+    }
+
+    console.log('Final email processing summary:', {
+      uniqueEmails: recipientEmails.length,
+      duplicatesRemoved: foundEmails.length - recipientEmails.length,
+      finalRecipientEmails: recipientEmails
+    });
 
     const toRecipients = recipientEmails.map(email => ({
       emailAddress: {
