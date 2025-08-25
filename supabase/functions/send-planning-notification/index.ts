@@ -126,18 +126,43 @@ serve(async (req: Request) => {
       });
     }
 
-    // Map user_id -> email using auth admin list
-    const { data: list, error: listErr } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    if (listErr) {
-      console.error('listUsers failed', listErr);
-      return new Response(JSON.stringify({ error: listErr.message }), {
+    // Map user_id -> email using auth admin list - load ALL users
+    const getAllUsers = async () => {
+      const allUsers: any[] = [];
+      let page = 1;
+      const perPage = 1000;
+      
+      while (true) {
+        const { data: list, error: listErr } = await admin.auth.admin.listUsers({ page, perPage });
+        if (listErr) {
+          console.error('listUsers failed', listErr);
+          throw new Error(listErr.message);
+        }
+        
+        if (!list.users || list.users.length === 0) break;
+        allUsers.push(...list.users);
+        
+        // If we got less than perPage users, we've reached the end
+        if (list.users.length < perPage) break;
+        page++;
+      }
+      
+      return allUsers;
+    };
+
+    let allUsers;
+    try {
+      allUsers = await getAllUsers();
+    } catch (err: any) {
+      console.error('Failed to load all users:', err);
+      return new Response(JSON.stringify({ error: `Failed to load users: ${err.message}` }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
     const emailById = new Map<string, string>();
-    for (const u of list.users || []) {
+    for (const u of allUsers) {
       if (u.id && u.email) emailById.set(u.id, u.email);
     }
 
