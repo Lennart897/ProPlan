@@ -18,6 +18,7 @@ import { de } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { PROJECT_STATUS } from "@/utils/statusUtils";
+import { useLocations } from "@/hooks/useLocations";
 
 // Hilfsfunktionen für Zahlenformatierung
 const formatNumberWithThousandSeparator = (value: number): string => {
@@ -33,13 +34,7 @@ const parseFormattedNumber = (value: string): number => {
   return Math.round(parseFloat(cleanedValue) || 0);
 };
 
-const locations = [
-  { value: "gudensberg", label: "Gudensberg" },
-  { value: "brenz", label: "Brenz" },
-  { value: "storkow", label: "Storkow" },
-  { value: "visbek", label: "Visbek" },
-  { value: "doebeln", label: "Döbeln" },
-];
+// Locations werden jetzt dynamisch über useLocations Hook geladen
 
 // Feste Auswahlmöglichkeiten für Produktgruppe
 export const PRODUCT_GROUPS = [
@@ -102,15 +97,21 @@ interface ProjectFormProps {
 
 export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [locationQuantities, setLocationQuantities] = useState<Record<string, number>>({
-    gudensberg: 0.0,
-    brenz: 0.0,
-    storkow: 0.0,
-    visbek: 0.0,
-    doebeln: 0.0,
-  });
+  const { locationOptions, isLoading: locationsLoading } = useLocations(true, false);
+  const [locationQuantities, setLocationQuantities] = useState<Record<string, number>>({});
   
   const { toast } = useToast();
+
+  // Initialize location quantities when locations are loaded
+  useEffect(() => {
+    if (locationOptions.length > 0 && Object.keys(locationQuantities).length === 0) {
+      const initialQuantities: Record<string, number> = {};
+      locationOptions.forEach(loc => {
+        initialQuantities[loc.value] = 0.0;
+      });
+      setLocationQuantities(initialQuantities);
+    }
+  }, [locationOptions, locationQuantities]);
 
   // Text-Eingaben für Datum (TT.MM.JJJJ)
   const [ersteInput, setErsteInput] = useState("");
@@ -496,21 +497,25 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {locations.map((location) => (
-                <div key={location.value} className="space-y-2">
-                  <Label htmlFor={location.value}>{location.label} (kg)</Label>
-                  <Input
-                    id={location.value}
-                    type="text"
-                    value={locationQuantities[location.value] > 0 ? formatNumberWithThousandSeparator(locationQuantities[location.value]) : ''}
-                    onChange={(e) => {
-                      const value = parseFormattedNumber(e.target.value);
-                      handleLocationQuantityChange(location.value, value);
-                    }}
-                    placeholder="0"
-                  />
-                </div>
-              ))}
+              {locationsLoading ? (
+                <p className="col-span-full text-center text-muted-foreground">Lade Standorte...</p>
+              ) : (
+                locationOptions.map((location) => (
+                  <div key={location.value} className="space-y-2">
+                    <Label htmlFor={location.value}>{location.label} (kg)</Label>
+                    <Input
+                      id={location.value}
+                      type="text"
+                      value={locationQuantities[location.value] > 0 ? formatNumberWithThousandSeparator(locationQuantities[location.value]) : ''}
+                      onChange={(e) => {
+                        const value = parseFormattedNumber(e.target.value);
+                        handleLocationQuantityChange(location.value, value);
+                      }}
+                      placeholder="0"
+                    />
+                  </div>
+                ))
+              )}
             </div>
             
             {totalDistributed > gesamtmenge && (

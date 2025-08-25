@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectHistory } from "./ProjectHistory";
 import { getStatusLabel, getStatusColor, canArchiveProject, PROJECT_STATUS } from "@/utils/statusUtils";
+import { useLocations } from "@/hooks/useLocations";
 
 interface Project {
   id: string;
@@ -46,13 +47,7 @@ interface ProjectDetailsProps {
   onShowPreview?: (project: any) => void;
 }
 
-const locationLabels = {
-  gudensberg: "Gudensberg",
-  brenz: "Brenz",
-  storkow: "Storkow",
-  visbek: "Visbek",
-  doebeln: "Döbeln"
-};
+// Location labels now loaded dynamically via useLocations hook
 
 export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowPreview }: ProjectDetailsProps) => {
   const [showCorrectionDialog, setShowCorrectionDialog] = useState(false);
@@ -64,6 +59,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
   const [rejectionReason, setRejectionReason] = useState("");
   const [correctionReason, setCorrectionReason] = useState("");
   const { toast } = useToast();
+  const { getLocationName } = useLocations(true, false);
 
   const logProjectAction = async (action: string, oldData?: any, newData?: any) => {
     try {
@@ -592,7 +588,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                   .map(([location, amount]) => (
                     <div key={location} className="flex justify-between items-center p-3 bg-muted rounded-lg">
                       <span className="font-medium">
-                        {locationLabels[location as keyof typeof locationLabels] || location}
+                        {getLocationName(location)}
                       </span>
                       <span className="font-semibold">{amount.toLocaleString('de-DE')} kg</span>
                     </div>
@@ -677,7 +673,8 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                  <div>
                    <Label>Standortverteilung</Label>
                    <div className="grid grid-cols-2 gap-3 mt-2">
-                     {Object.entries(locationLabels).map(([key, label]) => {
+                      {Object.keys(locationQuantities).map((key) => {
+                        const label = getLocationName(key);
                        // Prüfe ob User standortspezifische Planungsrolle hat
                        const isLocationSpecificPlanning = user.role.startsWith('planung_');
                        const userLocation = isLocationSpecificPlanning ? user.role.replace('planung_', '') : null;

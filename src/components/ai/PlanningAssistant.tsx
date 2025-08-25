@@ -5,6 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useLocations } from "@/hooks/useLocations";
+import { LocationSelector } from "@/components/locations/LocationSelector";
 import { Brain, TrendingUp, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
 
 interface PlanningRequest {
@@ -50,6 +52,7 @@ export const PlanningAssistant = () => {
   });
   const [aiResponse, setAiResponse] = useState<AIResponse | null>(null);
   const { toast } = useToast();
+  const { locationOptions } = useLocations(true, false);
 
   const handleAnalyze = async () => {
     if (!planningData.standort || !planningData.produktgruppe) {
@@ -69,7 +72,7 @@ export const PlanningAssistant = () => {
 
       // Mock AI response
       const mockResponse: AIResponse = {
-        prognose: `Standort ${standorte.find(s => s.value === planningData.standort)?.label}: +25% Kapazität erforderlich für die nächsten 4 Wochen`,
+        prognose: `Standort ${locationOptions.find(s => s.value === planningData.standort)?.label}: +25% Kapazität erforderlich für die nächsten 4 Wochen`,
         kapazitaetsAnalyse: {
           aktuelleKapazitaet: 1000,
           benoetigteKapazitaet: 1250,
@@ -132,24 +135,14 @@ export const PlanningAssistant = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="standort">Standort</Label>
-              <Select 
-                value={planningData.standort} 
-                onValueChange={(value) => setPlanningData(prev => ({ ...prev, standort: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Standort auswählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {standorte.map((standort) => (
-                    <SelectItem key={standort.value} value={standort.value}>
-                      {standort.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="standort">Standort</Label>
+                <LocationSelector 
+                  value={planningData.standort} 
+                  onValueChange={(value) => setPlanningData(prev => ({ ...prev, standort: value }))}
+                  placeholder="Standort auswählen"
+                />
+              </div>
 
             <div className="space-y-2">
               <Label htmlFor="produktgruppe">Produktgruppe</Label>

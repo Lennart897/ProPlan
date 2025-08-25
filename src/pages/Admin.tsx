@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { LocationManagement } from "@/components/admin/LocationManagement";
 
 const roles = [
   "vertrieb",
@@ -151,91 +153,116 @@ const Admin = () => {
 
   return (
     <main className="min-h-screen bg-background p-6">
-      <div className="container mx-auto max-w-5xl space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Adminbereich</CardTitle>
-            <CardDescription>Benutzerverwaltung (nur für Admins)</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <section className="space-y-4">
-              <h2 className="text-lg font-semibold">Neuen Benutzer anlegen</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">E-Mail</Label>
-                  <Input id="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@firma.de" />
-                </div>
-                <div>
-                  <Label htmlFor="password">Passwort</Label>
-                  <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
-                </div>
-                <div>
-                  <Label htmlFor="displayName">Anzeigename</Label>
-                  <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Max Mustermann" />
-                </div>
-                <div>
-                  <Label>Rolle</Label>
-                  <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Rolle wählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roles.map((r) => (
-                        <SelectItem key={r} value={r}>{r}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div>
-                <Button onClick={onCreate} disabled={loading || !email || !password}>Anlegen</Button>
-              </div>
-            </section>
+      <div className="container mx-auto max-w-7xl space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold tracking-tight">Administration</h1>
+          <Button variant="outline" onClick={() => navigate('/')}>
+            Zurück zur Übersicht
+          </Button>
+        </div>
 
-            <section className="space-y-4">
-              <h2 className="text-lg font-semibold">Benutzer</h2>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>E-Mail</TableHead>
-                      <TableHead>Anzeigename</TableHead>
-                      <TableHead>Rolle</TableHead>
-                      <TableHead>Aktionen</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((u) => (
-                      <TableRow key={u.id}>
-                        <TableCell className="font-medium">{u.email || "—"}</TableCell>
-                        <TableCell>{u.profile?.display_name || "—"}</TableCell>
-                        <TableCell>
-                          <Select value={(u.profile?.role as AppRole) || "vertrieb"} onValueChange={(v) => onUpdateRole(u.id, v as AppRole)}>
-                            <SelectTrigger className="w-48">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {roles.map((r) => (
-                                <SelectItem key={r} value={r}>{r}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="destructive" size="sm" onClick={() => onDelete(u.id)}>Löschen</Button>
-                        </TableCell>
+        <Tabs defaultValue="users" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="users">Benutzerverwaltung</TabsTrigger>
+            <TabsTrigger value="locations">Standortverwaltung</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="users" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Neuen Benutzer anlegen</CardTitle>
+                <CardDescription>E-Mail, Passwort, Anzeigename und Rolle für neuen Benutzer eingeben</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="email">E-Mail</Label>
+                    <Input id="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@firma.de" />
+                  </div>
+                  <div>
+                    <Label htmlFor="password">Passwort</Label>
+                    <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+                  </div>
+                  <div>
+                    <Label htmlFor="displayName">Anzeigename</Label>
+                    <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Max Mustermann" />
+                  </div>
+                  <div>
+                    <Label>Rolle</Label>
+                    <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Rolle wählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roles.map((r) => (
+                          <SelectItem key={r} value={r}>{r}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Button onClick={onCreate} disabled={loading || !email || !password}>
+                    {loading ? "Wird erstellt..." : "Benutzer anlegen"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Benutzer verwalten</CardTitle>
+                    <CardDescription>Alle Benutzer anzeigen, Rollen ändern und Benutzer löschen</CardDescription>
+                  </div>
+                  <Button variant="outline" onClick={loadUsers}>Aktualisieren</Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>E-Mail</TableHead>
+                        <TableHead>Anzeigename</TableHead>
+                        <TableHead>Rolle</TableHead>
+                        <TableHead>Aktionen</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={loadUsers}>Aktualisieren</Button>
-                <Button onClick={() => navigate("/")}>Zurück</Button>
-              </div>
-            </section>
-          </CardContent>
-        </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((u) => (
+                        <TableRow key={u.id}>
+                          <TableCell className="font-medium">{u.email || "—"}</TableCell>
+                          <TableCell>{u.profile?.display_name || "—"}</TableCell>
+                          <TableCell>
+                            <Select value={(u.profile?.role as AppRole) || "vertrieb"} onValueChange={(v) => onUpdateRole(u.id, v as AppRole)}>
+                              <SelectTrigger className="w-48">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {roles.map((r) => (
+                                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="destructive" size="sm" onClick={() => onDelete(u.id)}>Löschen</Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="locations">
+            <LocationManagement />
+          </TabsContent>
+        </Tabs>
       </div>
     </main>
   );

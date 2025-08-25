@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      location_roles: {
+        Row: {
+          created_at: string
+          id: string
+          location_code: string
+          role_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location_code: string
+          role_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location_code?: string
+          role_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_roles_location_code_fkey"
+            columns: ["location_code"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      locations: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       manufacturing_projects: {
         Row: {
           archived: boolean
@@ -403,6 +459,10 @@ export type Database = {
       get_affected_locations: {
         Args: { standort_verteilung: Json }
         Returns: string[]
+      }
+      get_user_location_code: {
+        Args: { user_uuid: string }
+        Returns: string
       }
       get_user_role: {
         Args: { user_uuid: string }
