@@ -245,10 +245,10 @@ serve(async (req: Request) => {
             subject: `📬 ProPlan - Neues Projekt #${project_number}: ${customer}`
           }
         ],
-        from: {
-          email: "noreply@proplan.de",
-          name: "ProPlan System"
-        },
+      from: {
+        email: "ProPlanPost@outlook.com",
+        name: "ProPlan System"
+      },
         content: [
           {
             type: "text/html",

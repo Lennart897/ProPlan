@@ -234,10 +234,10 @@ serve(async (req: Request) => {
             subject: `🗓️ ProPlan - Neue Planungsaufgabe: Projekt #${project_number}`
           }
         ],
-        from: {
-          email: "noreply@proplan.de",
-          name: "ProPlan System"
-        },
+      from: {
+        email: "ProPlanPost@outlook.com",
+        name: "ProPlan System"
+      },
         content: [
           {
             type: "text/html",

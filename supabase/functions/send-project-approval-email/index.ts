@@ -162,7 +162,7 @@ ${formatLocationDistribution(project.standort_verteilung)}
         }
       ],
       from: {
-        email: "noreply@proplan.de",
+        email: "ProPlanPost@outlook.com",
         name: "ProPlan System"
       },
       content: [
