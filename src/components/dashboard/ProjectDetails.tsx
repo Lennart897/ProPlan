@@ -338,15 +338,6 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
       );
     }
 
-    // Ersteller kann Projekt in Status 2,3,4,5 absagen (außer SupplyChain)
-    if (project.created_by_id === user.id && [2, 3, 4, 5].includes(project.status) && user.role !== 'supply_chain') {
-      buttons.push(
-        <Button key="cancel" variant="destructive" className="w-64" onClick={() => handleAction('cancel')}>
-          Projekt absagen
-        </Button>
-      );
-    }
-
     // Status-spezifische Aktionen basierend auf Benutzerrolle
     switch (user.role) {
       case 'supply_chain':
@@ -363,7 +354,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           );
           buttons.push(
              <Button key="reject" variant="destructive" size="default" className="w-64" onClick={() => setShowRejectionDialog(true)}>
-              Ablehnen
+              Projekt ablehnen
             </Button>
           );
         }
@@ -378,7 +369,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           );
           buttons.push(
              <Button key="reject" variant="destructive" size="default" className="w-64" onClick={() => setShowRejectionDialog(true)}>
-              Ablehnen
+              Projekt ablehnen
             </Button>
           );
         }
@@ -413,7 +404,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           if (user.role === 'planung') {
             buttons.push(
               <Button key="reject" variant="destructive" size="default" className="w-64" onClick={() => setShowRejectionDialog(true)}>
-                Ablehnen
+                Projekt ablehnen
               </Button>
             );
           }
@@ -460,14 +451,29 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
             </Button>
           );
         }
-        if (project.status !== PROJECT_STATUS.GENEHMIGT && project.status !== PROJECT_STATUS.ABGESCHLOSSEN) {
-          buttons.push(
-            <Button key="reject" variant="destructive" className="w-64" onClick={() => setShowRejectionDialog(true)}>
-              Ablehnen
-            </Button>
-          );
-        }
         break;
+    }
+
+    // Unified rejection button for creators and roles that can reject
+    const canReject = (
+      // Creator can reject their own project in certain statuses
+      (project.created_by_id === user.id && [2, 3, 4, 5].includes(project.status) && user.role !== 'supply_chain') ||
+      // Admin can reject in most statuses
+      (user.role === 'admin' && project.status !== PROJECT_STATUS.GENEHMIGT && project.status !== PROJECT_STATUS.ABGESCHLOSSEN)
+    );
+
+    if (canReject) {
+      buttons.push(
+        <Button key="reject" variant="destructive" className="w-64" onClick={() => {
+          // For creators, set default reason
+          if (project.created_by_id === user.id) {
+            setRejectionReason('Projekt vom Ersteller abgesagt');
+          }
+          setShowRejectionDialog(true);
+        }}>
+          Projekt ablehnen
+        </Button>
+      );
     }
 
     return buttons;
