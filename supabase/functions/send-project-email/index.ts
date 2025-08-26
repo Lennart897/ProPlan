@@ -22,6 +22,9 @@ interface ProjectPayload {
   created_by_name: string;
 }
 
+// Global cache to track processed requests
+const processedRequests = new Map<string, number>();
+
 serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -45,6 +48,35 @@ serve(async (req: Request) => {
     if (!SENDGRID_API_KEY) throw new Error("Missing SENDGRID_API_KEY secret");
 
     const body = (await req.json()) as ProjectPayload;
+    
+    // Create a unique key for this request to prevent duplicates
+    const requestKey = `project-${body.id}`;
+    const now = Date.now();
+    
+    // Check if we've processed this request recently (within 30 seconds)
+    if (processedRequests.has(requestKey)) {
+      const lastProcessed = processedRequests.get(requestKey)!;
+      if (now - lastProcessed < 30000) { // 30 seconds
+        console.log(`Duplicate request detected for project ${body.id}, skipping...`);
+        return new Response(JSON.stringify({ 
+          message: "Duplicate request skipped",
+          id: body.id 
+        }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+    }
+    
+    // Mark this request as processed
+    processedRequests.set(requestKey, now);
+    
+    // Clean up old entries (older than 5 minutes)
+    for (const [key, timestamp] of processedRequests.entries()) {
+      if (now - timestamp > 300000) { // 5 minutes
+        processedRequests.delete(key);
+      }
+    }
     const {
       id,
       project_number,
