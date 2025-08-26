@@ -38,11 +38,11 @@ serve(async (req: Request) => {
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SERVICE_ROLE_KEY");
-    const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
+    const SENDGRID_API_KEY = Deno.env.get("SENDGRID_API_KEY");
 
     if (!SUPABASE_URL) throw new Error("Missing SUPABASE_URL secret");
     if (!SERVICE_ROLE_KEY) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY secret");
-    if (!BREVO_API_KEY) throw new Error("Missing BREVO_API_KEY secret");
+    if (!SENDGRID_API_KEY) throw new Error("Missing SENDGRID_API_KEY secret");
 
     const body = (await req.json()) as ProjectPayload;
     const {
@@ -236,38 +236,47 @@ serve(async (req: Request) => {
     // Clean HTML email content without line breaks in template
     const professionalEmailContent = `<h1>🏭 ProPlan System – Neues Projekt zur Bearbeitung</h1><p>Sehr geehrte Damen und Herren,</p><p>ein neues Fertigungsprojekt wurde im ProPlan System erfasst und wartet auf Ihre fachkundige Prüfung und Bearbeitung.</p><hr><h2>📋 Projektübersicht</h2><ul><li><strong>Projekt-Nr.:</strong> #${project_number}</li><li><strong>🏢 Kunde:</strong> ${customer}</li><li><strong>📦 Artikelnummer:</strong> ${artikel_nummer}</li><li><strong>📋 Artikelbezeichnung:</strong> ${artikel_bezeichnung}</li><li><strong>⚖️ Gesamtmenge:</strong> ${formatQuantity(gesamtmenge)}</li><li><strong>📅 Erste Anlieferung:</strong> ${formatDate(erste_anlieferung)}</li><li><strong>📅 Letzte Anlieferung:</strong> ${formatDate(letzte_anlieferung)}</li><li><strong>👤 Erstellt von:</strong> ${created_by_name}</li></ul><hr><h2>📍 Standortverteilung</h2><ul>${formatLocationDistribution(standort_verteilung)}</ul>${beschreibung ? `<hr><h2>📝 Projektbeschreibung</h2><p>${beschreibung}</p>` : ''}<hr><div style="border: 2px solid #ff6b35; border-radius: 8px; padding: 16px; background-color: #fff3f0; margin: 20px 0;"><h3 style="color: #ff6b35; margin-top: 0;">⚠️ Handlungserfordernis</h3><p>Dieses Projekt wurde zur Bearbeitung durch die Supply Chain freigegeben und benötigt Ihre fachliche Bewertung sowie entsprechende Maßnahmen.</p><p>Bitte loggen Sie sich in das ProPlan System ein und führen Sie die erforderlichen Prüfungen durch.</p></div><p>🔗 <a href="https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p><hr><p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>ProPlan Benachrichtigungssystem</p><p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em><br>Bei Rückfragen wenden Sie sich bitte an: <strong>${created_by_name}</strong></p>`;
 
-    // Send emails via Brevo
+    // Send emails via SendGrid
     const emailPromises = assignedTo.map(async (email) => {
-      const brevoPayload = {
-        sender: {
-          name: "ProPlan System",
-          email: "noreply@proplan.de"
+      const sendgridPayload = {
+        personalizations: [
+          {
+            to: [{ email }],
+            subject: `📬 ProPlan - Neues Projekt #${project_number}: ${customer}`
+          }
+        ],
+        from: {
+          email: "noreply@proplan.de",
+          name: "ProPlan System"
         },
-        to: [{ email }],
-        subject: `ProPlan - Neues Projekt #${project_number}: ${artikel_bezeichnung}`,
-        htmlContent: professionalEmailContent
+        content: [
+          {
+            type: "text/html",
+            value: professionalEmailContent
+          }
+        ]
       };
 
-      const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "api-key": BREVO_API_KEY
+          "Authorization": `Bearer ${SENDGRID_API_KEY}`
         },
-        body: JSON.stringify(brevoPayload)
+        body: JSON.stringify(sendgridPayload)
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`Brevo API error for ${email}:`, response.status, errorText);
-        throw new Error(`Brevo API error: ${response.status}`);
+        console.error(`SendGrid API error for ${email}:`, response.status, errorText);
+        throw new Error(`SendGrid API error: ${response.status}`);
       }
 
-      return response.json();
+      console.log(`Project email sent via SendGrid to: ${email}, status:`, response.status);
     });
 
-    const results = await Promise.all(emailPromises);
-    console.log("Project emails sent via Brevo", { id, emailsSent: results.length, recipients: assignedTo });
+    await Promise.all(emailPromises);
+    console.log("Project emails sent via SendGrid", { id, emailsSent: assignedTo.length, recipients: assignedTo });
 
     return new Response(JSON.stringify({ success: true, recipients: assignedTo }), {
       status: 200,

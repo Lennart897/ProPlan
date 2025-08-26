@@ -37,9 +37,9 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const brevoApiKey = Deno.env.get('BREVO_API_KEY')!;
+    const sendgridApiKey = Deno.env.get('SENDGRID_API_KEY')!;
 
-    if (!supabaseUrl || !supabaseServiceKey || !brevoApiKey) {
+    if (!supabaseUrl || !supabaseServiceKey || !sendgridApiKey) {
       console.error('Missing required environment variables');
       return new Response('Server configuration error', { 
         status: 500, 
@@ -153,35 +153,44 @@ ${formatLocationDistribution(project.standort_verteilung)}
       }
     }));
 
-    // Send email via Brevo
-    const brevoPayload = {
-      sender: {
-        name: "ProPlan System",
-        email: "noreply@proplan.de"
+    // Send email via SendGrid
+    const sendgridPayload = {
+      personalizations: [
+        {
+          to: [{ email: authUser.user.email }],
+          subject: `✅ ProPlan - Projekt genehmigt: #${project.project_number}`
+        }
+      ],
+      from: {
+        email: "noreply@proplan.de",
+        name: "ProPlan System"
       },
-      to: [{ email: authUser.user.email }],
-      subject: `🎉 ProPlan - Ihr Projekt wurde genehmigt #${project.project_number}: ${project.artikel_bezeichnung}`,
-      htmlContent: htmlContent
+      content: [
+        {
+          type: "text/html",
+          value: htmlContent
+        }
+      ]
     };
 
-    console.log('Sending approval email via Brevo to:', authUser.user.email);
+    console.log('Sending approval email via SendGrid to:', authUser.user.email);
 
-    const brevoResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
+    const sendgridResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "api-key": brevoApiKey
+        "Authorization": `Bearer ${sendgridApiKey}`
       },
-      body: JSON.stringify(brevoPayload)
+      body: JSON.stringify(sendgridPayload)
     });
 
-    if (!brevoResponse.ok) {
-      const errorText = await brevoResponse.text();
-      console.error('Brevo API error:', errorText);
-      throw new Error(`Brevo API failed: ${brevoResponse.status} ${errorText}`);
+    if (!sendgridResponse.ok) {
+      const errorText = await sendgridResponse.text();
+      console.error('SendGrid API error:', errorText);
+      throw new Error(`SendGrid API failed: ${sendgridResponse.status} ${errorText}`);
     }
 
-    console.log('Project approval email sent successfully via Brevo');
+    console.log('Project approval email sent successfully via SendGrid');
     return new Response('Email sent successfully', { 
       status: 200, 
       headers: corsHeaders 

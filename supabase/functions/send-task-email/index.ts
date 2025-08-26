@@ -26,9 +26,9 @@ serve(async (req: Request) => {
       });
     }
 
-    const brevoApiKey = Deno.env.get("BREVO_API_KEY");
-    if (!brevoApiKey) {
-      throw new Error("Missing BREVO_API_KEY secret");
+    const sendgridApiKey = Deno.env.get("SENDGRID_API_KEY");
+    if (!sendgridApiKey) {
+      throw new Error("Missing SENDGRID_API_KEY secret");
     }
 
     const body = (await req.json()) as TaskPayload;
@@ -41,51 +41,62 @@ serve(async (req: Request) => {
       });
     }
 
-    // Send email via Brevo
-    const brevoPayload = {
-      sender: {
-        name: "ProPlan System",
-        email: "noreply@proplan.de"
+    // Send email via SendGrid
+    const htmlContent = `
+      <h1>📋 ProPlan System – Neue Aufgabe zugewiesen</h1>
+      <p>Hallo,</p>
+      <p>Ihnen wurde eine neue Aufgabe im ProPlan System zugewiesen.</p>
+      <hr>
+      <h2>📋 Aufgabendetails</h2>
+      <ul>
+        <li><strong>Titel:</strong> ${title}</li>
+        ${description ? `<li><strong>Beschreibung:</strong> ${description}</li>` : ''}
+        <li><strong>Zugewiesen an:</strong> ${assigned_to}</li>
+      </ul>
+      <hr>
+      <p>🔗 <a href="https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p>
+      <hr>
+      <p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>ProPlan Benachrichtigungssystem</p>
+      <p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em></p>
+    `;
+
+    const sendgridPayload = {
+      personalizations: [
+        {
+          to: [{ email: assigned_to }],
+          subject: `📋 ProPlan - Neue Aufgabe: ${title}`
+        }
+      ],
+      from: {
+        email: "noreply@proplan.de",
+        name: "ProPlan System"
       },
-      to: [{ email: assigned_to }],
-      subject: `📋 ProPlan - Neue Aufgabe: ${title}`,
-      htmlContent: `
-        <h1>📋 ProPlan System – Neue Aufgabe zugewiesen</h1>
-        <p>Hallo,</p>
-        <p>Ihnen wurde eine neue Aufgabe im ProPlan System zugewiesen.</p>
-        <hr>
-        <h2>📋 Aufgabendetails</h2>
-        <ul>
-          <li><strong>Titel:</strong> ${title}</li>
-          ${description ? `<li><strong>Beschreibung:</strong> ${description}</li>` : ''}
-          <li><strong>Zugewiesen an:</strong> ${assigned_to}</li>
-        </ul>
-        <hr>
-        <p>🔗 <a href="https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p>
-        <hr>
-        <p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>ProPlan Benachrichtigungssystem</p>
-        <p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em></p>
-      `
+      content: [
+        {
+          type: "text/html",
+          value: htmlContent
+        }
+      ]
     };
 
-    console.log("Sending task email via Brevo", { id, assigned_to, title });
+    console.log("Sending task email via SendGrid", { id, assigned_to, title });
 
-    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+    const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "api-key": brevoApiKey
+        "Authorization": `Bearer ${sendgridApiKey}`
       },
-      body: JSON.stringify(brevoPayload),
+      body: JSON.stringify(sendgridPayload),
     });
 
     if (!res.ok) {
       const txt = await res.text();
-      console.error("Brevo API failed", res.status, txt);
-      throw new Error(`Brevo API error: ${res.status}`);
+      console.error("SendGrid API failed", res.status, txt);
+      throw new Error(`SendGrid API error: ${res.status}`);
     }
 
-    console.log("Task email sent via Brevo", { id, assigned_to, status: res.status });
+    console.log("Task email sent via SendGrid", { id, assigned_to, status: res.status });
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
