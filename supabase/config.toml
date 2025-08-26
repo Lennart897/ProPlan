@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.send-project-correction-email]
 verify_jwt = false
+
+[functions.send-project-planning-correction-email]
+verify_jwt = false
