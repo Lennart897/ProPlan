@@ -108,7 +108,7 @@ serve(async (req) => {
           subject: `Projektkorrektur - ${payload.project_number}: ${payload.customer}`,
         }],
         from: {
-          email: Deno.env.get('SENDER_EMAIL') || 'noreply@manufacturing.com',
+          email: 'vertrieb@demo.com',
           name: 'Manufacturing System'
         },
         content: [{
