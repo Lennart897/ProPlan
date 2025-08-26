@@ -457,9 +457,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
     // Unified rejection button for creators and roles that can reject
     const canReject = (
       // Creator can reject their own project in certain statuses
-      (project.created_by_id === user.id && [2, 3, 4, 5].includes(project.status) && user.role !== 'supply_chain') ||
-      // Admin can reject in most statuses
-      (user.role === 'admin' && project.status !== PROJECT_STATUS.GENEHMIGT && project.status !== PROJECT_STATUS.ABGESCHLOSSEN)
+      (project.created_by_id === user.id && [2, 3, 4, 5].includes(project.status) && user.role !== 'supply_chain')
     );
 
     if (canReject) {
