@@ -221,7 +221,7 @@ serve(async (req: Request) => {
       finalRecipientEmails: recipientEmails
     });
 
-    // Deduplicate email addresses one more time for safety
+    // Final deduplicated list - this ensures no email is sent twice even if there are multiple user accounts with same email
     const assignedTo = Array.from(new Set(recipientEmails));
     
     // Ensure we have at least one recipient
