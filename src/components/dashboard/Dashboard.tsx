@@ -699,13 +699,14 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                          <TableHead>Artikel</TableHead>
                          <TableHead>Artikel-Nr.</TableHead>
                          <TableHead>Menge</TableHead>
-                         {statusFilter !== 'archived' && (
-                           <>
-                             <TableHead>Erste Anlieferung</TableHead>
-                             <TableHead>Letzte Anlieferung</TableHead>
-                           </>
-                         )}
-                         <TableHead>Status</TableHead>
+                          {statusFilter !== 'archived' && (
+                            <>
+                              <TableHead>Erste Anlieferung</TableHead>
+                              <TableHead>Letzte Anlieferung</TableHead>
+                            </>
+                          )}
+                          <TableHead>Ersteller</TableHead>
+                          <TableHead>Status</TableHead>
                          <TableHead className="text-right">Aktionen</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -719,23 +720,26 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                            <TableCell className="whitespace-nowrap">
                              {project.gesamtmenge.toLocaleString('de-DE')} kg
                            </TableCell>
-                           {statusFilter !== 'archived' && (
-                             <>
-                               <TableCell>
-                                 {project.erste_anlieferung 
-                                   ? new Date(project.erste_anlieferung).toLocaleDateString("de-DE")
-                                   : "-"
-                                 }
-                               </TableCell>
-                               <TableCell>
-                                 {project.letzte_anlieferung 
-                                   ? new Date(project.letzte_anlieferung).toLocaleDateString("de-DE")
-                                   : "-"
-                                 }
-                               </TableCell>
-                             </>
-                           )}
-                           <TableCell>
+                            {statusFilter !== 'archived' && (
+                              <>
+                                <TableCell>
+                                  {project.erste_anlieferung 
+                                    ? new Date(project.erste_anlieferung).toLocaleDateString("de-DE")
+                                    : "-"
+                                  }
+                                </TableCell>
+                                <TableCell>
+                                  {project.letzte_anlieferung 
+                                    ? new Date(project.letzte_anlieferung).toLocaleDateString("de-DE")
+                                    : "-"
+                                  }
+                                </TableCell>
+                              </>
+                            )}
+                            <TableCell className="whitespace-nowrap">
+                              {project.created_by || "-"}
+                            </TableCell>
+                            <TableCell>
                              <Badge className={project.status_color || getStatusColor(project.status)}>
                                {project.status_label || getStatusLabel(project.status)}
                              </Badge>
