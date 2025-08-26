@@ -20,7 +20,9 @@ interface ProjectPayload {
 }
 
 serve(async (req) => {
-  console.log('Project planning correction email function called');
+  console.log('=== PROJECT PLANNING CORRECTION EMAIL FUNCTION CALLED ===');
+  console.log('Request method:', req.method);
+  console.log('Request headers:', Object.fromEntries(req.headers.entries()));
   
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
