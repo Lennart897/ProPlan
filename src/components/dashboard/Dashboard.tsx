@@ -53,6 +53,7 @@ interface Project {
   status_color?: string;
   created_at: string;
   created_by: string;
+  created_by_name?: string;
   standort_verteilung?: Record<string, number>;
   menge_fix?: boolean;
   archived?: boolean;
@@ -737,7 +738,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                               </>
                             )}
                             <TableCell className="whitespace-nowrap">
-                              {project.created_by || "-"}
+                              {project.created_by_name || "-"}
                             </TableCell>
                             <TableCell>
                              <Badge className={project.status_color || getStatusColor(project.status)}>
