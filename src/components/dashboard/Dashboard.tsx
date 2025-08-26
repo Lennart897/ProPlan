@@ -706,7 +706,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                               <TableHead>Letzte Anlieferung</TableHead>
                             </>
                           )}
-                          <TableHead>Ersteller</TableHead>
+                          <TableHead>Erstellt von</TableHead>
                           <TableHead>Status</TableHead>
                          <TableHead className="text-right">Aktionen</TableHead>
                       </TableRow>
