@@ -15,6 +15,7 @@ import { useLocations } from "@/hooks/useLocations";
 
 interface Project {
   id: string;
+  project_number?: number;
   customer: string;
   artikel_nummer: string;
   artikel_bezeichnung: string;
@@ -133,6 +134,26 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         case 'reject':
           updateData = { status: PROJECT_STATUS.ABGELEHNT, rejection_reason: rejectionReason };
           actionType = 'Ablehnung';
+          
+          // Send rejection email notification
+          try {
+            await supabase.functions.invoke('send-project-rejection-email', {
+              body: {
+                id: project.id,
+                project_number: project.project_number,
+                customer: project.customer,
+                artikel_nummer: project.artikel_nummer,
+                artikel_bezeichnung: project.artikel_bezeichnung,
+                created_by_id: project.created_by,
+                created_by_name: project.created_by_name,
+                rejection_reason: rejectionReason
+              }
+            });
+            console.log('Rejection email sent successfully');
+          } catch (emailError) {
+            console.error('Error sending rejection email:', emailError);
+            // Continue with the rejection even if email fails
+          }
           break;
         case 'archive':
           if (!canArchiveProject(project.status)) {
