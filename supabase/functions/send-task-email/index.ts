@@ -26,9 +26,9 @@ serve(async (req: Request) => {
       });
     }
 
-    const webhookUrl = Deno.env.get("MAKE_TASK_WEBHOOK_URL");
-    if (!webhookUrl) {
-      throw new Error("Missing MAKE_TASK_WEBHOOK_URL secret");
+    const brevoApiKey = Deno.env.get("BREVO_API_KEY");
+    if (!brevoApiKey) {
+      throw new Error("Missing BREVO_API_KEY secret");
     }
 
     const body = (await req.json()) as TaskPayload;
@@ -41,28 +41,51 @@ serve(async (req: Request) => {
       });
     }
 
-    const payload = {
-      type: "task",
-      triggered_at: new Date().toISOString(),
-      payload: { id, title, description: description ?? null, assigned_to },
+    // Send email via Brevo
+    const brevoPayload = {
+      sender: {
+        name: "ProPlan System",
+        email: "noreply@proplan.de"
+      },
+      to: [{ email: assigned_to }],
+      subject: `📋 ProPlan - Neue Aufgabe: ${title}`,
+      htmlContent: `
+        <h1>📋 ProPlan System – Neue Aufgabe zugewiesen</h1>
+        <p>Hallo,</p>
+        <p>Ihnen wurde eine neue Aufgabe im ProPlan System zugewiesen.</p>
+        <hr>
+        <h2>📋 Aufgabendetails</h2>
+        <ul>
+          <li><strong>Titel:</strong> ${title}</li>
+          ${description ? `<li><strong>Beschreibung:</strong> ${description}</li>` : ''}
+          <li><strong>Zugewiesen an:</strong> ${assigned_to}</li>
+        </ul>
+        <hr>
+        <p>🔗 <a href="https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p>
+        <hr>
+        <p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>ProPlan Benachrichtigungssystem</p>
+        <p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em></p>
+      `
     };
 
-    console.log("Forwarding task to Make", { id, assigned_to, title });
+    console.log("Sending task email via Brevo", { id, assigned_to, title });
 
-    const res = await fetch(webhookUrl, {
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": brevoApiKey
+      },
+      body: JSON.stringify(brevoPayload),
     });
 
-    // Make webhooks often return 200/202, but can also be no-cors in some setups
     if (!res.ok) {
       const txt = await res.text();
-      console.error("Make webhook failed", res.status, txt);
-      throw new Error(`Make webhook error: ${res.status}`);
+      console.error("Brevo API failed", res.status, txt);
+      throw new Error(`Brevo API error: ${res.status}`);
     }
 
-    console.log("Task dispatched to Make", { id, assigned_to, status: res.status });
+    console.log("Task email sent via Brevo", { id, assigned_to, status: res.status });
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

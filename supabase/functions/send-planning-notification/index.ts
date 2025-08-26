@@ -37,11 +37,11 @@ serve(async (req: Request) => {
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SERVICE_ROLE_KEY");
-    const webhookUrl = Deno.env.get("MAKE_PLANNING_WEBHOOK_URL");
+    const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 
     if (!SUPABASE_URL) throw new Error("Missing SUPABASE_URL secret");
     if (!SERVICE_ROLE_KEY) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY secret");
-    if (!webhookUrl) throw new Error("Missing MAKE_PLANNING_WEBHOOK_URL secret");
+    if (!BREVO_API_KEY) throw new Error("Missing BREVO_API_KEY secret");
 
     const body = (await req.json()) as ProjectPayload;
     const {
@@ -225,40 +225,38 @@ serve(async (req: Request) => {
     // Clean HTML email content for planning notification
     const professionalEmailContent = `<h1>📋 ProPlan System – Projekt zur Planung zugewiesen</h1><p>Sehr geehrte Damen und Herren der Planung,</p><p>ein Fertigungsprojekt wurde von der Supply Chain freigegeben und Ihrem Standort zur Planung und Bearbeitung zugewiesen.</p><hr><h2>📊 Projektübersicht</h2><ul><li><strong>Projekt-Nr.:</strong> #${project_number}</li><li><strong>🏢 Kunde:</strong> ${customer}</li><li><strong>📦 Artikelnummer:</strong> ${artikel_nummer}</li><li><strong>📋 Artikelbezeichnung:</strong> ${artikel_bezeichnung}</li><li><strong>⚖️ Gesamtmenge:</strong> ${formatQuantity(gesamtmenge)}</li><li><strong>📅 Erste Anlieferung:</strong> ${formatDate(erste_anlieferung)}</li><li><strong>📅 Letzte Anlieferung:</strong> ${formatDate(letzte_anlieferung)}</li><li><strong>👤 Erstellt von:</strong> ${created_by_name}</li></ul><hr><h2>📍 Standortverteilung</h2><ul>${formatLocationDistribution(standort_verteilung)}</ul>${beschreibung ? `<hr><h2>📝 Projektbeschreibung</h2><p>${beschreibung}</p>` : ''}<hr><div style="border: 2px solid #2196f3; border-radius: 8px; padding: 16px; background-color: #e3f2fd; margin: 20px 0;"><h3 style="color: #1976d2; margin-top: 0;">📋 Handlungserfordernis - Planung</h3><p>Dieses Projekt wurde von der Supply Chain genehmigt und benötigt nun Ihre Prüfung und Freigabe für die betroffenen Standorte.</p><p><strong>Bitte prüfen Sie das Projekt und geben Sie es für Ihren Standort frei.</strong></p></div><p>🔗 <a href="https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p><hr><p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>ProPlan Benachrichtigungssystem</p><p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em><br>Bei Rückfragen wenden Sie sich bitte an: <strong>${created_by_name}</strong></p>`;
 
-    // Send payload in correct format for Make Outlook module
-    const payload = {
-      toRecipients,
-      subject: `📋 ProPlan - Projekt zur Planung #${project_number}: ${artikel_bezeichnung}`,
-      body: {
-        contentType: "HTML",
-        content: professionalEmailContent
-      },
-      metadata: {
-        type: "planning_notification",
-        triggered_at: new Date().toISOString(),
-        project_id: id,
-        project_number,
-        created_by_id,
-        affected_locations: affectedLocations,
-        standort_verteilung
+    // Send emails via Brevo
+    const emailPromises = recipientEmails.map(async (email) => {
+      const brevoPayload = {
+        sender: {
+          name: "ProPlan System",
+          email: "noreply@proplan.de"
+        },
+        to: [{ email }],
+        subject: `📋 ProPlan - Projekt zur Planung #${project_number}: ${artikel_bezeichnung}`,
+        htmlContent: professionalEmailContent
+      };
+
+      const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "api-key": BREVO_API_KEY
+        },
+        body: JSON.stringify(brevoPayload)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Brevo API error for ${email}:`, response.status, errorText);
+        throw new Error(`Brevo API error: ${response.status}`);
       }
-    };
 
-    console.log("Forwarding planning notification to Make", { id, recipients: toRecipients.length });
-
-    const res = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      return response.json();
     });
 
-    if (!res.ok) {
-      const txt = await res.text();
-      console.error("Make webhook failed", res.status, txt);
-      throw new Error(`Make webhook error: ${res.status}`);
-    }
-
-    console.log("Planning notification dispatched to Make", { id, status: res.status });
+    const results = await Promise.all(emailPromises);
+    console.log("Planning notification emails sent via Brevo", { id, emailsSent: results.length, recipients: recipientEmails });
 
     return new Response(JSON.stringify({ success: true, recipients: recipientEmails, affected_locations: affectedLocations }), {
       status: 200,

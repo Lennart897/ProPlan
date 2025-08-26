@@ -37,9 +37,9 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const webhookUrl = Deno.env.get('MAKE_PROJECT_WEBHOOK_URL')!;
+    const brevoApiKey = Deno.env.get('BREVO_API_KEY')!;
 
-    if (!supabaseUrl || !supabaseServiceKey || !webhookUrl) {
+    if (!supabaseUrl || !supabaseServiceKey || !brevoApiKey) {
       console.error('Missing required environment variables');
       return new Response('Server configuration error', { 
         status: 500, 
@@ -153,44 +153,35 @@ ${formatLocationDistribution(project.standort_verteilung)}
       }
     }));
 
-    // Prepare webhook payload in the correct format for Make Outlook module
-    const webhookPayload = {
-      toRecipients,
-      subject: `🎉 ProPlan - Ihr Projekt wurde genehmigt #${project.project_number}: ${project.artikel_bezeichnung}`,
-      body: {
-        contentType: "HTML",
-        content: htmlContent
+    // Send email via Brevo
+    const brevoPayload = {
+      sender: {
+        name: "ProPlan System",
+        email: "noreply@proplan.de"
       },
-      metadata: {
-        type: "project_approval",
-        triggered_at: new Date().toISOString(),
-        project_id: project.id,
-        project_number: project.project_number,
-        created_by_id: project.created_by_id,
-        recipient_email: authUser.user.email,
-        standort_verteilung: project.standort_verteilung
-      }
+      to: [{ email: authUser.user.email }],
+      subject: `🎉 ProPlan - Ihr Projekt wurde genehmigt #${project.project_number}: ${project.artikel_bezeichnung}`,
+      htmlContent: htmlContent
     };
 
-    console.log('Sending webhook to:', webhookUrl);
-    console.log('Recipients:', recipientEmails);
+    console.log('Sending approval email via Brevo to:', authUser.user.email);
 
-    // Send to webhook
-    const webhookResponse = await fetch(webhookUrl, {
-      method: 'POST',
+    const brevoResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
+        "api-key": brevoApiKey
       },
-      body: JSON.stringify(webhookPayload),
+      body: JSON.stringify(brevoPayload)
     });
 
-    if (!webhookResponse.ok) {
-      const errorText = await webhookResponse.text();
-      console.error('Webhook error:', errorText);
-      throw new Error(`Webhook failed: ${webhookResponse.status} ${errorText}`);
+    if (!brevoResponse.ok) {
+      const errorText = await brevoResponse.text();
+      console.error('Brevo API error:', errorText);
+      throw new Error(`Brevo API failed: ${brevoResponse.status} ${errorText}`);
     }
 
-    console.log('Project approval email sent successfully');
+    console.log('Project approval email sent successfully via Brevo');
     return new Response('Email sent successfully', { 
       status: 200, 
       headers: corsHeaders 
