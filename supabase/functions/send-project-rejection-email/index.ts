@@ -34,9 +34,8 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const sendGridApiKey = Deno.env.get('SENDGRID_API_KEY')!;
-    const senderEmail = Deno.env.get('SENDER_EMAIL')!;
 
-    if (!supabaseUrl || !supabaseServiceKey || !sendGridApiKey || !senderEmail) {
+    if (!supabaseUrl || !supabaseServiceKey || !sendGridApiKey) {
       console.error('Missing required environment variables');
       return new Response('Server configuration error', { 
         status: 500, 
@@ -49,21 +48,112 @@ serve(async (req) => {
     const payload: ProjectPayload = await req.json();
     console.log('Processing project rejection notification for project:', payload.id);
 
-    // Get the creator's email from auth.users
-    const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(payload.created_by_id);
-    
-    if (authError || !authUser.user?.email) {
-      console.error('Error fetching creator email:', authError);
-      return new Response('Could not find project creator email', { 
-        status: 400, 
-        headers: corsHeaders 
+    // Get supply chain users (same schema as project creation)
+    const { data: profiles, error: profErr } = await supabase
+      .from('profiles')
+      .select('user_id, role, display_name')
+      .eq('role', 'supply_chain');
+
+    if (profErr) {
+      console.error('profiles query failed', profErr);
+      return new Response(JSON.stringify({ error: profErr.message }), {
+        status: 500,
+        headers: corsHeaders
       });
     }
 
-    const creatorEmail = authUser.user.email;
-    const creatorName = payload.created_by_name;
+    console.log('Supply chain profiles found:', profiles?.length || 0);
+    console.log('Raw profiles:', profiles?.map(p => ({ user_id: p.user_id, display_name: p.display_name })));
+
+    // Get unique user IDs from profiles
+    const uniqueUserIds = Array.from(new Set((profiles || []).map((p: any) => p.user_id).filter(Boolean)));
+    console.log('Unique supply chain user IDs:', uniqueUserIds.length);
+    console.log('User IDs to fetch emails for:', uniqueUserIds);
+
+    // Get all users to map emails
+    const getAllUsers = async () => {
+      const allUsers: any[] = [];
+      let page = 1;
+      const perPage = 1000;
+      
+      while (true) {
+        const { data: list, error: listErr } = await supabase.auth.admin.listUsers({ page, perPage });
+        if (listErr) {
+          console.error('listUsers failed', listErr);
+          throw new Error(listErr.message);
+        }
+        
+        if (!list.users || list.users.length === 0) break;
+        allUsers.push(...list.users);
+        
+        if (list.users.length < perPage) break;
+        page++;
+      }
+      
+      return allUsers;
+    };
+
+    let allUsers;
+    try {
+      allUsers = await getAllUsers();
+    } catch (err: any) {
+      console.error('Failed to load all users:', err);
+      return new Response(JSON.stringify({ error: `Failed to load users: ${err.message}` }), {
+        status: 500,
+        headers: corsHeaders
+      });
+    }
+
+    console.log('Total auth users loaded:', allUsers.length);
+
+    // Create email mapping
+    const emailById = new Map<string, string>();
+    const authUserIds = new Set<string>();
     
-    console.log(`Sending rejection notification to creator: ${creatorEmail}`);
+    for (const u of allUsers) {
+      if (u.id) {
+        authUserIds.add(u.id);
+        if (u.email) {
+          emailById.set(u.id, u.email);
+        }
+      }
+    }
+
+    // Get emails for supply chain users
+    const foundEmails: Array<{userId: string, email: string}> = [];
+    for (const userId of uniqueUserIds) {
+      if (authUserIds.has(userId)) {
+        const email = emailById.get(userId);
+        if (email) {
+          foundEmails.push({ userId, email });
+        }
+      }
+    }
+
+    // Deduplicate emails
+    const emailSet = new Set<string>();
+    const recipientEmails: string[] = [];
+    
+    for (const { email } of foundEmails) {
+      if (!emailSet.has(email)) {
+        emailSet.add(email);
+        recipientEmails.push(email);
+      }
+    }
+
+    console.log('Final email processing summary:', {
+      uniqueEmails: recipientEmails.length,
+      duplicatesRemoved: foundEmails.length - recipientEmails.length,
+      finalRecipientEmails: recipientEmails
+    });
+
+    if (recipientEmails.length === 0) {
+      console.error('No valid recipients found for supply chain role');
+      return new Response(JSON.stringify({ error: 'No valid recipients found for supply chain role' }), {
+        status: 400,
+        headers: corsHeaders
+      });
+    }
 
     // Format the current date
     const currentDate = new Date().toLocaleDateString('de-DE', {
@@ -72,73 +162,62 @@ serve(async (req) => {
       day: 'numeric'
     });
 
-    // Prepare email content
-    const emailBody = {
-      personalizations: [
-        {
-          to: [{ 
-            email: creatorEmail, 
-            name: creatorName 
-          }],
-          subject: `Ihr Projekt ${payload.project_number} wurde durch SupplyChain abgesagt`
-        }
-      ],
-      from: { 
-        email: senderEmail, 
-        name: "Systembenachrichtigung" 
-      },
-      content: [
-        {
-          type: "text/html",
-          value: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #d32f2f;">Projekt abgesagt</h2>
-              <p>Guten Tag <strong>${creatorName}</strong>,</p>
-              <p>Ihr Projekt <strong>${payload.project_number}</strong> wurde von der SupplyChain-Abteilung am <strong>${currentDate}</strong> abgesagt und in den Status 6 verschoben.</p>
-              
-              <div style="background-color: #f5f5f5; padding: 15px; margin: 20px 0; border-radius: 5px;">
-                <h3 style="margin-top: 0; color: #333;">Projektdetails:</h3>
-                <p><strong>Projektnummer:</strong> ${payload.project_number}</p>
-                <p><strong>Kunde:</strong> ${payload.customer}</p>
-                <p><strong>Artikel:</strong> ${payload.artikel_nummer} - ${payload.artikel_bezeichnung}</p>
-                ${payload.rejection_reason ? `<p><strong>Ablehnungsgrund:</strong> ${payload.rejection_reason}</p>` : ''}
-              </div>
-              
-              <p>Bei Fragen wenden Sie sich bitte an die SupplyChain-Abteilung.</p>
-              
-              <p>Mit freundlichen Grüßen,<br>Ihr Projektmanagement-System</p>
-            </div>
-          `
-        }
-      ]
-    };
+    // Professional email content for rejection notification
+    const professionalEmailContent = `<h1>❌ ProPlan System – Projekt abgesagt</h1><p>Sehr geehrte Damen und Herren,</p><p>ein Fertigungsprojekt wurde im ProPlan System von der SupplyChain-Abteilung abgesagt und benötigt Ihre Kenntnisnahme.</p><hr><h2>📋 Projektübersicht</h2><ul><li><strong>Projekt-Nr.:</strong> #${payload.project_number}</li><li><strong>🏢 Kunde:</strong> ${payload.customer}</li><li><strong>📦 Artikelnummer:</strong> ${payload.artikel_nummer}</li><li><strong>📋 Artikelbezeichnung:</strong> ${payload.artikel_bezeichnung}</li><li><strong>👤 Erstellt von:</strong> ${payload.created_by_name}</li><li><strong>📅 Absage am:</strong> ${currentDate}</li></ul>${payload.rejection_reason ? `<hr><h2>📝 Ablehnungsgrund</h2><p><strong>${payload.rejection_reason}</strong></p>` : ''}<hr><div style="border: 2px solid #d32f2f; border-radius: 8px; padding: 16px; background-color: #ffebee; margin: 20px 0;"><h3 style="color: #d32f2f; margin-top: 0;">⚠️ Status-Update</h3><p>Dieses Projekt wurde in den Status <strong>"Abgelehnt"</strong> verschoben und ist nicht weiter zu bearbeiten.</p><p>Der Projektersteller wurde automatisch über die Absage informiert.</p></div><p>🔗 <a href="https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p><hr><p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>ProPlan Benachrichtigungssystem</p><p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em></p>`;
 
-    // Send email via SendGrid
-    const emailResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${sendGridApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(emailBody),
+    // Send emails via SendGrid to supply chain users
+    const emailPromises = recipientEmails.map(async (email) => {
+      const emailBody = {
+        personalizations: [
+          {
+            to: [{ email }],
+            subject: `❌ ProPlan - Projekt #${payload.project_number} abgesagt: ${payload.customer}`
+          }
+        ],
+        from: { 
+          email: "ProPlanPost@outlook.com", 
+          name: "ProPlan System" 
+        },
+        content: [
+          {
+            type: "text/html",
+            value: professionalEmailContent
+          }
+        ]
+      };
+
+      const emailResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sendGridApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emailBody),
+      });
+
+      if (!emailResponse.ok) {
+        const errorText = await emailResponse.text();
+        console.error('SendGrid error:', emailResponse.status, errorText);
+        throw new Error(`SendGrid API error: ${emailResponse.status}`);
+      }
+
+      console.log('Project rejection email sent successfully to:', email);
     });
 
-    if (!emailResponse.ok) {
-      const errorText = await emailResponse.text();
-      console.error('SendGrid error:', emailResponse.status, errorText);
-      return new Response('Failed to send email', { 
-        status: 500, 
-        headers: corsHeaders 
-      });
-    }
+    await Promise.all(emailPromises);
 
-    console.log('Project rejection email sent successfully to:', creatorEmail);
+    console.log('Project rejection emails sent via SendGrid', { 
+      id: payload.id, 
+      emailsSent: recipientEmails.length, 
+      recipients: recipientEmails 
+    });
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Project rejection notification sent successfully',
-        recipient: creatorEmail
+        recipients: recipientEmails,
+        emailsSent: recipientEmails.length
       }), 
       { 
         status: 200, 
