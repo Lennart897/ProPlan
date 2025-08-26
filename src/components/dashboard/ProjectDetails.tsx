@@ -258,7 +258,8 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           p_project_id: project.id,
           p_gesamtmenge: updateData.gesamtmenge,
           p_standort_verteilung: updateData.standort_verteilung,
-          p_status: updateData.status
+          p_status: updateData.status,
+          p_rejection_reason: correctionReason
         });
 
         if (error) {

@@ -473,20 +473,13 @@ export type Database = {
         Returns: string
       }
       handle_planning_correction: {
-        Args:
-          | {
-              p_gesamtmenge: number
-              p_project_id: string
-              p_rejection_reason?: string
-              p_standort_verteilung: Json
-              p_status: number
-            }
-          | {
-              p_gesamtmenge: number
-              p_project_id: string
-              p_standort_verteilung: Json
-              p_status: number
-            }
+        Args: {
+          p_gesamtmenge: number
+          p_project_id: string
+          p_rejection_reason?: string
+          p_standort_verteilung: Json
+          p_status: number
+        }
         Returns: undefined
       }
       http: {
