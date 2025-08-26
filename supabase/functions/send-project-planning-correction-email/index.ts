@@ -117,6 +117,17 @@ serve(async (req) => {
 
     console.log(`Found ${recipients.length} supply chain recipients`);
 
+    // Deduplicate recipients to prevent sending multiple emails to the same user
+    const uniqueRecipients = recipients.reduce((acc, current) => {
+      const exists = acc.find(recipient => recipient.email === current.email);
+      if (!exists) {
+        acc.push(current);
+      }
+      return acc;
+    }, [] as typeof recipients);
+
+    console.log(`Deduplicated to ${uniqueRecipients.length} unique recipients`);
+
     // Format the current date
     const currentDate = new Date().toLocaleDateString('de-DE', {
       year: 'numeric',
@@ -161,8 +172,8 @@ serve(async (req) => {
     // Professional email content for supply chain team
     const professionalEmailContent = `<h1>🔄 ProPlan System – Projekt wurde von Planung korrigiert</h1><p>Sehr geehrtes SupplyChain-Team,</p><p>Ein Fertigungsprojekt wurde von der Planung geprüft und korrigiert. Das Projekt wurde zur erneuten Prüfung an SupplyChain zurückgesendet.</p><hr><h2>📋 Projektübersicht</h2><ul><li><strong>Projekt-Nr.:</strong> #${payload.project_number}</li><li><strong>🏢 Kunde:</strong> ${payload.customer}</li><li><strong>📦 Artikelnummer:</strong> ${payload.artikel_nummer}</li><li><strong>📋 Artikelbezeichnung:</strong> ${payload.artikel_bezeichnung}</li><li><strong>👤 Projektersteller:</strong> ${payload.created_by_name}</li><li><strong>⚙️ Bearbeitet von:</strong> ${payload.corrected_by_name}</li><li><strong>📅 Korrektur am:</strong> ${currentDate}</li></ul>${quantityComparisonHtml}${payload.correction_reason ? `<hr><h2>📝 Korrekturgrund</h2><div style="border: 2px solid #ff9800; border-radius: 8px; padding: 16px; background-color: #fff8e1; margin: 20px 0;"><p><strong>${payload.correction_reason}</strong></p></div>` : ''}<hr><div style="border: 2px solid #2196f3; border-radius: 8px; padding: 16px; background-color: #e3f2fd; margin: 20px 0;"><h3 style="color: #2196f3; margin-top: 0;">💡 Nächste Schritte</h3><p>Das Projekt wurde mit Korrekturen an der Gesamtmenge oder Standortverteilung von der Planung an SupplyChain zurückgesendet.</p><p>Bitte prüfen Sie das korrigierte Projekt erneut und leiten gegebenenfalls weitere Schritte ein.</p></div><p>🔗 <a href="https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p><hr><p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>Ihr ProPlan Team</p><p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em><br>Bei Rückfragen wenden Sie sich bitte an die Planungsabteilung.</p>`;
 
-    // Send emails to all supply chain users
-    const emailPromises = recipients.map(async (recipient) => {
+    // Send emails to unique supply chain users only
+    const emailPromises = uniqueRecipients.map(async (recipient) => {
       const emailBody = {
         personalizations: [
           {
