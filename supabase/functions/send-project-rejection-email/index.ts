@@ -34,8 +34,9 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const sendGridApiKey = Deno.env.get('SENDGRID_API_KEY')!;
+    const senderEmail = Deno.env.get('SENDER_EMAIL')!;
 
-    if (!supabaseUrl || !supabaseServiceKey || !sendGridApiKey) {
+    if (!supabaseUrl || !supabaseServiceKey || !sendGridApiKey || !senderEmail) {
       console.error('Missing required environment variables');
       return new Response('Server configuration error', { 
         status: 500, 
@@ -83,7 +84,7 @@ serve(async (req) => {
         }
       ],
       from: { 
-        email: "noreply@example.com", 
+        email: senderEmail, 
         name: "Systembenachrichtigung" 
       },
       content: [
