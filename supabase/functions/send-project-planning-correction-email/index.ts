@@ -17,6 +17,10 @@ interface ProjectPayload {
   correction_reason?: string;
   corrected_by_id: string;
   corrected_by_name: string;
+  old_gesamtmenge: number;
+  new_gesamtmenge: number;
+  old_standort_verteilung: any;
+  new_standort_verteilung: any;
 }
 
 serve(async (req) => {
@@ -120,8 +124,42 @@ serve(async (req) => {
       day: 'numeric'
     });
 
+    // Helper function to format location distribution
+    const formatLocationDistribution = (locations: any) => {
+      if (!locations || typeof locations !== 'object') return 'Keine Standortverteilung';
+      
+      const entries = Object.entries(locations);
+      if (entries.length === 0) return 'Keine Standortverteilung';
+      
+      return entries
+        .filter(([_, quantity]) => Number(quantity) > 0)
+        .map(([location, quantity]) => `${location}: ${quantity} Stück`)
+        .join(', ');
+    };
+
+    // Generate quantity comparison section
+    const quantityComparisonHtml = `
+      <hr>
+      <h2>📊 Mengenänderungen</h2>
+      <div style="border: 2px solid #4caf50; border-radius: 8px; padding: 16px; background-color: #f1f8e9; margin: 20px 0;">
+        <h3 style="color: #4caf50; margin-top: 0;">Gesamtmenge</h3>
+        <p><strong>Vorher:</strong> ${payload.old_gesamtmenge?.toLocaleString() || 0} Stück</p>
+        <p><strong>Nachher:</strong> ${payload.new_gesamtmenge?.toLocaleString() || 0} Stück</p>
+        ${payload.old_gesamtmenge !== payload.new_gesamtmenge ? 
+          `<p style="color: #f57c00;"><strong>Änderung:</strong> ${((payload.new_gesamtmenge || 0) - (payload.old_gesamtmenge || 0)) > 0 ? '+' : ''}${((payload.new_gesamtmenge || 0) - (payload.old_gesamtmenge || 0)).toLocaleString()} Stück</p>` : 
+          '<p style="color: #4caf50;"><strong>Keine Änderung der Gesamtmenge</strong></p>'
+        }
+      </div>
+      
+      <div style="border: 2px solid #9c27b0; border-radius: 8px; padding: 16px; background-color: #f3e5f5; margin: 20px 0;">
+        <h3 style="color: #9c27b0; margin-top: 0;">Standortverteilung</h3>
+        <p><strong>Vorher:</strong><br>${formatLocationDistribution(payload.old_standort_verteilung)}</p>
+        <p><strong>Nachher:</strong><br>${formatLocationDistribution(payload.new_standort_verteilung)}</p>
+      </div>
+    `;
+
     // Professional email content for supply chain team
-    const professionalEmailContent = `<h1>🔄 ProPlan System – Projekt wurde von Planung korrigiert</h1><p>Sehr geehrtes SupplyChain-Team,</p><p>Ein Fertigungsprojekt wurde von der Planung geprüft und korrigiert. Das Projekt wurde zur erneuten Prüfung an SupplyChain zurückgesendet.</p><hr><h2>📋 Projektübersicht</h2><ul><li><strong>Projekt-Nr.:</strong> #${payload.project_number}</li><li><strong>🏢 Kunde:</strong> ${payload.customer}</li><li><strong>📦 Artikelnummer:</strong> ${payload.artikel_nummer}</li><li><strong>📋 Artikelbezeichnung:</strong> ${payload.artikel_bezeichnung}</li><li><strong>👤 Projektersteller:</strong> ${payload.created_by_name}</li><li><strong>⚙️ Bearbeitet von:</strong> ${payload.corrected_by_name}</li><li><strong>📅 Korrektur am:</strong> ${currentDate}</li></ul>${payload.correction_reason ? `<hr><h2>📝 Korrekturgrund</h2><div style="border: 2px solid #ff9800; border-radius: 8px; padding: 16px; background-color: #fff8e1; margin: 20px 0;"><p><strong>${payload.correction_reason}</strong></p></div>` : ''}<hr><div style="border: 2px solid #2196f3; border-radius: 8px; padding: 16px; background-color: #e3f2fd; margin: 20px 0;"><h3 style="color: #2196f3; margin-top: 0;">💡 Nächste Schritte</h3><p>Das Projekt wurde mit Korrekturen an der Gesamtmenge oder Standortverteilung von der Planung an SupplyChain zurückgesendet.</p><p>Bitte prüfen Sie das korrigierte Projekt erneut und leiten gegebenenfalls weitere Schritte ein.</p></div><p>🔗 <a href="https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p><hr><p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>Ihr ProPlan Team</p><p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em><br>Bei Rückfragen wenden Sie sich bitte an die Planungsabteilung.</p>`;
+    const professionalEmailContent = `<h1>🔄 ProPlan System – Projekt wurde von Planung korrigiert</h1><p>Sehr geehrtes SupplyChain-Team,</p><p>Ein Fertigungsprojekt wurde von der Planung geprüft und korrigiert. Das Projekt wurde zur erneuten Prüfung an SupplyChain zurückgesendet.</p><hr><h2>📋 Projektübersicht</h2><ul><li><strong>Projekt-Nr.:</strong> #${payload.project_number}</li><li><strong>🏢 Kunde:</strong> ${payload.customer}</li><li><strong>📦 Artikelnummer:</strong> ${payload.artikel_nummer}</li><li><strong>📋 Artikelbezeichnung:</strong> ${payload.artikel_bezeichnung}</li><li><strong>👤 Projektersteller:</strong> ${payload.created_by_name}</li><li><strong>⚙️ Bearbeitet von:</strong> ${payload.corrected_by_name}</li><li><strong>📅 Korrektur am:</strong> ${currentDate}</li></ul>${quantityComparisonHtml}${payload.correction_reason ? `<hr><h2>📝 Korrekturgrund</h2><div style="border: 2px solid #ff9800; border-radius: 8px; padding: 16px; background-color: #fff8e1; margin: 20px 0;"><p><strong>${payload.correction_reason}</strong></p></div>` : ''}<hr><div style="border: 2px solid #2196f3; border-radius: 8px; padding: 16px; background-color: #e3f2fd; margin: 20px 0;"><h3 style="color: #2196f3; margin-top: 0;">💡 Nächste Schritte</h3><p>Das Projekt wurde mit Korrekturen an der Gesamtmenge oder Standortverteilung von der Planung an SupplyChain zurückgesendet.</p><p>Bitte prüfen Sie das korrigierte Projekt erneut und leiten gegebenenfalls weitere Schritte ein.</p></div><p>🔗 <a href="https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p><hr><p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>Ihr ProPlan Team</p><p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em><br>Bei Rückfragen wenden Sie sich bitte an die Planungsabteilung.</p>`;
 
     // Send emails to all supply chain users
     const emailPromises = recipients.map(async (recipient) => {
