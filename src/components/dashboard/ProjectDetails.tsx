@@ -539,6 +539,10 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Projekt-Nummer</Label>
+                  <p className="text-lg font-semibold text-primary">#{project.project_number}</p>
+                </div>
+                <div>
                   <Label className="text-sm font-medium text-muted-foreground">Kunde</Label>
                   <p className="text-lg font-semibold">{project.customer}</p>
                 </div>
