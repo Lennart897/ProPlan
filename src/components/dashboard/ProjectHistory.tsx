@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Clock, User, FileText, CheckCircle, XCircle, Edit, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getStatusLabel } from "@/utils/statusUtils";
 
 interface HistoryEntry {
   id: string;
@@ -73,14 +74,6 @@ const roleColors = {
   planung_visbek: "bg-orange-100 text-orange-800 border-orange-200",
 };
 
-const statusLabels = {
-  draft: "Entwurf",
-  pending: "Ausstehend",
-  approved: "Genehmigt",
-  rejected: "Abgelehnt",
-  in_progress: "In Bearbeitung",
-  completed: "Abgeschlossen"
-};
 
 export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -243,9 +236,15 @@ export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
                       {entry.previous_status && entry.new_status && (
                         <div className="text-sm text-muted-foreground mb-2">
                           Status geändert: <span className="font-medium">
-                            {statusLabels[entry.previous_status as keyof typeof statusLabels] || entry.previous_status}
+                            {(() => {
+                              const prevStatus = parseInt(entry.previous_status);
+                              return !isNaN(prevStatus) ? getStatusLabel(prevStatus) : entry.previous_status;
+                            })()}
                           </span> → <span className="font-medium">
-                            {statusLabels[entry.new_status as keyof typeof statusLabels] || entry.new_status}
+                            {(() => {
+                              const newStatus = parseInt(entry.new_status);
+                              return !isNaN(newStatus) ? getStatusLabel(newStatus) : entry.new_status;
+                            })()}
                           </span>
                         </div>
                       )}
