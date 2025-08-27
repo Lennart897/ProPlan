@@ -330,11 +330,11 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       case PROJECT_STATUS.PRUEFUNG_PLANUNG:
         return "Planung (standortspezifisch)";
       case PROJECT_STATUS.GENEHMIGT:
-        return "Abgeschlossen";
+        return null; // Keine Anzeige bei genehmigten Projekten
       case PROJECT_STATUS.ABGELEHNT:
-        return "Abgelehnt";
+        return null; // Keine Anzeige bei abgelehnten Projekten  
       case PROJECT_STATUS.ABGESCHLOSSEN:
-        return "Abgeschlossen";
+        return null; // Keine Anzeige bei abgeschlossenen Projekten
       default:
         return "Unbekannt";
     }
