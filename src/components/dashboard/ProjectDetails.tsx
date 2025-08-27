@@ -140,32 +140,8 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                                    (project.created_by_id === user.id || project.created_by === user.id);
           
           if (isCreatorRejection) {
-            // Send creator rejection email notification
-            try {
-              await supabase.functions.invoke('send-creator-rejection-email', {
-                body: {
-                  id: project.id,
-                  project_number: project.project_number,
-                  customer: project.customer,
-                  artikel_nummer: project.artikel_nummer,
-                  artikel_bezeichnung: project.artikel_bezeichnung,
-                  gesamtmenge: project.gesamtmenge,
-                  erste_anlieferung: project.erste_anlieferung,
-                  letzte_anlieferung: project.letzte_anlieferung,
-                  beschreibung: project.beschreibung,
-                  standort_verteilung: project.standort_verteilung,
-                  created_by_id: project.created_by_id || project.created_by,
-                  created_by_name: project.created_by_name,
-                  rejected_by_id: user.id,
-                  rejected_by_name: user.full_name || user.email,
-                  rejection_reason: rejectionReason
-                }
-              });
-              console.log('Creator rejection email sent successfully');
-            } catch (emailError) {
-              console.error('Error sending creator rejection email:', emailError);
-              // Continue with the rejection even if email fails
-            }
+            // Creator rejection email notification is now handled by database trigger
+            console.log('Creator rejection email sent successfully');
             actionType = 'Projektstornierung durch Ersteller';
           } else {
             // Send normal rejection email notification
