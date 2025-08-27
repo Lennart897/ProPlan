@@ -374,6 +374,14 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
             </Button>
           );
         }
+        // Allow project creators to reject approved projects (status 5)
+        if (project.status === PROJECT_STATUS.GENEHMIGT && project.created_by_id === user.id) {
+          buttons.push(
+            <Button key="creator_reject" variant="destructive" className="w-64" onClick={() => setShowRejectionDialog(true)}>
+              Projekt absagen
+            </Button>
+          );
+        }
         // Vertrieb kann genehmigte, abgelehnte und abgeschlossene Projekte archivieren
         if (canArchiveProject(project.status)) {
           buttons.push(

@@ -485,6 +485,10 @@ export type Database = {
         Args: { data: string }
         Returns: string
       }
+      can_creator_reject_approved_project: {
+        Args: { project_id: string; user_uuid: string }
+        Returns: boolean
+      }
       can_user_approve_project: {
         Args: { project_id: string; user_uuid: string }
         Returns: boolean
