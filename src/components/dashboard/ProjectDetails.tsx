@@ -135,24 +135,58 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           updateData = { status: PROJECT_STATUS.ABGELEHNT, rejection_reason: rejectionReason };
           actionType = 'Ablehnung';
           
-          // Send rejection email notification
-          try {
-            await supabase.functions.invoke('send-project-rejection-email', {
-              body: {
-                id: project.id,
-                project_number: project.project_number,
-                customer: project.customer,
-                artikel_nummer: project.artikel_nummer,
-                artikel_bezeichnung: project.artikel_bezeichnung,
-                created_by_id: project.created_by,
-                created_by_name: project.created_by_name,
-                rejection_reason: rejectionReason
-              }
-            });
-            console.log('Rejection email sent successfully');
-          } catch (emailError) {
-            console.error('Error sending rejection email:', emailError);
-            // Continue with the rejection even if email fails
+          // Check if this is a creator rejection (approved project being rejected by creator)
+          const isCreatorRejection = project.status === PROJECT_STATUS.GENEHMIGT && 
+                                   (project.created_by_id === user.id || project.created_by === user.id);
+          
+          if (isCreatorRejection) {
+            // Send creator rejection email notification
+            try {
+              await supabase.functions.invoke('send-creator-rejection-email', {
+                body: {
+                  id: project.id,
+                  project_number: project.project_number,
+                  customer: project.customer,
+                  artikel_nummer: project.artikel_nummer,
+                  artikel_bezeichnung: project.artikel_bezeichnung,
+                  gesamtmenge: project.gesamtmenge,
+                  erste_anlieferung: project.erste_anlieferung,
+                  letzte_anlieferung: project.letzte_anlieferung,
+                  beschreibung: project.beschreibung,
+                  standort_verteilung: project.standort_verteilung,
+                  created_by_id: project.created_by_id || project.created_by,
+                  created_by_name: project.created_by_name,
+                  rejected_by_id: user.id,
+                  rejected_by_name: user.full_name || user.email,
+                  rejection_reason: rejectionReason
+                }
+              });
+              console.log('Creator rejection email sent successfully');
+            } catch (emailError) {
+              console.error('Error sending creator rejection email:', emailError);
+              // Continue with the rejection even if email fails
+            }
+            actionType = 'Projektstornierung durch Ersteller';
+          } else {
+            // Send normal rejection email notification
+            try {
+              await supabase.functions.invoke('send-project-rejection-email', {
+                body: {
+                  id: project.id,
+                  project_number: project.project_number,
+                  customer: project.customer,
+                  artikel_nummer: project.artikel_nummer,
+                  artikel_bezeichnung: project.artikel_bezeichnung,
+                  created_by_id: project.created_by_id || project.created_by,
+                  created_by_name: project.created_by_name,
+                  rejection_reason: rejectionReason
+                }
+              });
+              console.log('Rejection email sent successfully');
+            } catch (emailError) {
+              console.error('Error sending rejection email:', emailError);
+              // Continue with the rejection even if email fails
+            }
           }
           break;
         case 'archive':
@@ -375,9 +409,20 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           );
         }
         // Allow project creators to reject approved projects (status 5)
-        if (project.status === PROJECT_STATUS.GENEHMIGT && project.created_by_id === user.id) {
+        if (project.status === PROJECT_STATUS.GENEHMIGT && (project.created_by_id === user.id || project.created_by === user.id)) {
+          console.log('Creator rejection button should show:', {
+            projectStatus: project.status,
+            expectedStatus: PROJECT_STATUS.GENEHMIGT,
+            projectCreatorId: project.created_by_id,
+            projectCreatedBy: project.created_by,
+            currentUserId: user.id,
+            matches: project.created_by_id === user.id || project.created_by === user.id
+          });
           buttons.push(
-            <Button key="creator_reject" variant="destructive" className="w-64" onClick={() => setShowRejectionDialog(true)}>
+            <Button key="creator_reject" variant="destructive" className="w-64" onClick={() => {
+              console.log('Creator rejection button clicked');
+              setShowRejectionDialog(true);
+            }}>
               Projekt absagen
             </Button>
           );
