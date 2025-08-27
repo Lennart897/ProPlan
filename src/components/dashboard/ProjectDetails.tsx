@@ -408,25 +408,6 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
             </Button>
           );
         }
-        // Allow project creators to reject approved projects (status 5)
-        if (project.status === PROJECT_STATUS.GENEHMIGT && (project.created_by_id === user.id || project.created_by === user.id)) {
-          console.log('Creator rejection button should show:', {
-            projectStatus: project.status,
-            expectedStatus: PROJECT_STATUS.GENEHMIGT,
-            projectCreatorId: project.created_by_id,
-            projectCreatedBy: project.created_by,
-            currentUserId: user.id,
-            matches: project.created_by_id === user.id || project.created_by === user.id
-          });
-          buttons.push(
-            <Button key="creator_reject" variant="destructive" className="w-64" onClick={() => {
-              console.log('Creator rejection button clicked');
-              setShowRejectionDialog(true);
-            }}>
-              Projekt absagen
-            </Button>
-          );
-        }
         // Vertrieb kann genehmigte, abgelehnte und abgeschlossene Projekte archivieren
         if (canArchiveProject(project.status)) {
           buttons.push(
@@ -508,6 +489,26 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         break;
     }
 
+    // Allow project creators to reject approved projects (status 5) - regardless of role
+    if (project.status === PROJECT_STATUS.GENEHMIGT && (project.created_by_id === user.id || project.created_by === user.id)) {
+      console.log('Creator rejection button should show:', {
+        projectStatus: project.status,
+        expectedStatus: PROJECT_STATUS.GENEHMIGT,
+        projectCreatorId: project.created_by_id,
+        projectCreatedBy: project.created_by,
+        currentUserId: user.id,
+        userRole: user.role,
+        matches: project.created_by_id === user.id || project.created_by === user.id
+      });
+      buttons.push(
+        <Button key="creator_reject" variant="destructive" className="w-64" onClick={() => {
+          console.log('Creator rejection button clicked');
+          setShowRejectionDialog(true);
+        }}>
+          Projekt absagen
+        </Button>
+      );
+    }
 
     return buttons;
   };
