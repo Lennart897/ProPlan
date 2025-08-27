@@ -15,6 +15,12 @@ interface HistoryEntry {
   created_at: string;
 }
 
+interface UserProfile {
+  user_id: string;
+  display_name: string;
+  role: string;
+}
+
 interface ProjectHistoryProps {
   projectId: string;
 }
@@ -43,6 +49,30 @@ const actionColors = {
   corrected: "bg-orange-500",
 };
 
+const roleLabels = {
+  admin: "Administrator",
+  supply_chain: "SupplyChain", 
+  vertrieb: "Vertrieb",
+  planung: "Planung",
+  planung_storkow: "Planung Storkow",
+  planung_brenz: "Planung Brenz",
+  planung_gudensberg: "Planung Gudensberg", 
+  planung_doebeln: "Planung Döbeln",
+  planung_visbek: "Planung Visbek",
+};
+
+const roleColors = {
+  admin: "bg-purple-100 text-purple-800 border-purple-200",
+  supply_chain: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  vertrieb: "bg-blue-100 text-blue-800 border-blue-200", 
+  planung: "bg-orange-100 text-orange-800 border-orange-200",
+  planung_storkow: "bg-orange-100 text-orange-800 border-orange-200",
+  planung_brenz: "bg-orange-100 text-orange-800 border-orange-200",
+  planung_gudensberg: "bg-orange-100 text-orange-800 border-orange-200",
+  planung_doebeln: "bg-orange-100 text-orange-800 border-orange-200", 
+  planung_visbek: "bg-orange-100 text-orange-800 border-orange-200",
+};
+
 const statusLabels = {
   draft: "Entwurf",
   pending: "Ausstehend",
@@ -56,6 +86,7 @@ export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
+  const [userRoles, setUserRoles] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -75,15 +106,18 @@ export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
         if (userIds.length > 0) {
           const { data: profilesData, error: profilesError } = await supabase
             .from('profiles')
-            .select('user_id, display_name')
+            .select('user_id, display_name, role')
             .in('user_id', userIds);
 
           if (!profilesError && profilesData) {
-            const map: Record<string, string> = {};
-            profilesData.forEach((p: any) => {
-              if (p.user_id && p.display_name) map[p.user_id] = p.display_name;
+            const nameMap: Record<string, string> = {};
+            const roleMap: Record<string, string> = {};
+            profilesData.forEach((p: UserProfile) => {
+              if (p.user_id && p.display_name) nameMap[p.user_id] = p.display_name;
+              if (p.user_id && p.role) roleMap[p.user_id] = p.role;
             });
-            setDisplayNames(map);
+            setDisplayNames(nameMap);
+            setUserRoles(roleMap);
           }
         }
       } catch (error) {
@@ -168,10 +202,18 @@ export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
                     
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <Badge variant="outline">
                           {actionLabels[entry.action as keyof typeof actionLabels] || entry.action}
                         </Badge>
+                        {userRoles[entry.user_id] && (
+                          <Badge 
+                            variant="outline" 
+                            className={roleColors[userRoles[entry.user_id] as keyof typeof roleColors] || "bg-gray-100 text-gray-800 border-gray-200"}
+                          >
+                            {roleLabels[userRoles[entry.user_id] as keyof typeof roleLabels] || userRoles[entry.user_id]}
+                          </Badge>
+                        )}
                         <span className="text-sm text-muted-foreground">
                           {new Date(entry.created_at).toLocaleString("de-DE", {
                             day: "2-digit",
