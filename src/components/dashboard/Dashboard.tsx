@@ -53,6 +53,7 @@ interface Project {
   status_color?: string;
   created_at: string;
   created_by: string;
+  created_by_id?: string;
   created_by_name?: string;
   standort_verteilung?: Record<string, number>;
   menge_fix?: boolean;
@@ -392,6 +393,8 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
             status: Number(project.status),
             created_at: project.created_at,
             created_by: project.created_by_name || "",
+            created_by_id: project.created_by_id,
+            created_by_name: project.created_by_name,
             standort_verteilung: project.standort_verteilung,
             menge_fix: project.menge_fix
           };
