@@ -81,11 +81,11 @@ serve(async (req) => {
 
     console.log('Affected locations:', affectedLocations);
 
-    // Get supply chain users for affected locations
+    // Get supply chain users for affected locations - including admin users as fallback
     const { data: supplyChainUsers, error: usersError } = await supabase
       .from('profiles')
       .select('user_id, display_name, role')
-      .eq('role', 'supply_chain');
+      .in('role', ['supply_chain', 'admin']); // Include admin users as fallback
 
     if (usersError) {
       console.error('Error fetching supply chain users:', usersError);
@@ -96,8 +96,8 @@ serve(async (req) => {
     }
 
     if (!supplyChainUsers || supplyChainUsers.length === 0) {
-      console.log('No supply chain users found');
-      return new Response(JSON.stringify({ message: 'No supply chain users found' }), {
+      console.log('No supply chain or admin users found');
+      return new Response(JSON.stringify({ message: 'No supply chain or admin users found' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
@@ -127,7 +127,7 @@ serve(async (req) => {
       if (email) {
         recipients.push({
           email,
-          name: user.display_name || 'SupplyChain Mitarbeiter'
+          name: user.display_name || (user.role === 'admin' ? 'Administrator' : 'SupplyChain Mitarbeiter')
         });
       }
     }
@@ -140,7 +140,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Sending notifications to ${recipients.length} supply chain users`);
+    console.log(`Sending notifications to ${recipients.length} supply chain/admin users`);
 
     // Format the current date
     const currentDate = new Date().toLocaleDateString('de-DE', {
