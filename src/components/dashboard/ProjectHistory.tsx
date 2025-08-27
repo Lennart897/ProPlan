@@ -51,7 +51,7 @@ const actionColors = {
 
 const roleLabels = {
   admin: "Administrator",
-  supply_chain: "SupplyChain", 
+  supply_chain: "Lieferkette", 
   vertrieb: "Vertrieb",
   planung: "Planung",
   planung_storkow: "Planung Storkow",
