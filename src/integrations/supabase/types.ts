@@ -501,6 +501,13 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string
       }
+      get_user_profile_info: {
+        Args: { user_uuid: string }
+        Returns: {
+          display_name: string
+          role: string
+        }[]
+      }
       get_user_role: {
         Args: { user_uuid: string }
         Returns: string
