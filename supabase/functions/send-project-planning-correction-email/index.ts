@@ -58,6 +58,35 @@ serve(async (req) => {
     const payload: ProjectPayload = await req.json();
     console.log('Processing planning correction notification for project:', payload.id);
 
+    // First, check if we already processed this exact notification recently
+    const { data: recentNotifications, error: notificationError } = await supabase
+      .from('email_notifications')
+      .select('id')
+      .eq('project_id', payload.id)
+      .eq('notification_type', 'planning_correction')
+      .eq('correction_reason', payload.correction_reason || '')
+      .gte('created_at', new Date(Date.now() - 2 * 60 * 1000).toISOString()); // Last 2 minutes
+
+    if (notificationError) {
+      console.error('Error checking for recent notifications:', notificationError);
+    } else if (recentNotifications && recentNotifications.length > 0) {
+      console.log('Recent notification found for this project and reason - skipping duplicate email');
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Duplicate notification - email already sent recently',
+          skipped: true
+        }), 
+        { 
+          status: 200, 
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders 
+          } 
+        }
+      );
+    }
+
     // Get all users with supply_chain role
     const { data: supplyChainProfiles, error: profilesError } = await supabase
       .from('profiles')
@@ -217,6 +246,29 @@ serve(async (req) => {
 
     // Wait for all emails to be sent
     const sentEmails = await Promise.all(emailPromises);
+
+    // Record successful email notifications in the database
+    const notificationPromises = sentEmails.map(email => 
+      supabase
+        .from('email_notifications')
+        .insert({
+          project_id: payload.id,
+          notification_type: 'planning_correction',
+          user_id: payload.corrected_by_id,
+          email_address: email,
+          project_status: 3, // Status when correction is sent to supply chain
+          correction_reason: payload.correction_reason || ''
+        })
+        .select()
+    );
+
+    try {
+      await Promise.all(notificationPromises);
+      console.log('Email notifications recorded in database');
+    } catch (dbError) {
+      console.error('Error recording email notifications:', dbError);
+      // Don't fail the request if we can't record notifications
+    }
 
     console.log(`All planning correction emails sent successfully to: ${sentEmails.join(', ')}`);
 
