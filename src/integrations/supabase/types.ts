@@ -14,39 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      email_notifications: {
-        Row: {
-          correction_reason: string | null
-          created_at: string | null
-          email_address: string
-          id: string
-          notification_type: string
-          project_id: string
-          project_status: number
-          user_id: string
-        }
-        Insert: {
-          correction_reason?: string | null
-          created_at?: string | null
-          email_address: string
-          id?: string
-          notification_type: string
-          project_id: string
-          project_status: number
-          user_id: string
-        }
-        Update: {
-          correction_reason?: string | null
-          created_at?: string | null
-          email_address?: string
-          id?: string
-          notification_type?: string
-          project_id?: string
-          project_status?: number
-          user_id?: string
-        }
-        Relationships: []
-      }
       location_roles: {
         Row: {
           created_at: string
