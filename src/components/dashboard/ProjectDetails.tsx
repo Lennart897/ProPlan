@@ -580,7 +580,10 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         {/* Article Details */}
         <Card>
           <CardHeader>
-            <CardTitle>Artikeldetails</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Artikeldetails
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
