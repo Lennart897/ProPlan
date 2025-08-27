@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, User, Calendar, Package, Building2, Truck, Clock } from "lucide-react";
+import { ArrowLeft, User, Calendar, Package, Building2, Truck, Clock, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectHistory } from "./ProjectHistory";
@@ -647,7 +647,10 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         {project.standort_verteilung && (
           <Card>
             <CardHeader>
-              <CardTitle>Standortverteilung</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Standortverteilung
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
