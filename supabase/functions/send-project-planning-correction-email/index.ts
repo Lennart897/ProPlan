@@ -58,21 +58,20 @@ serve(async (req) => {
     const payload: ProjectPayload = await req.json();
     console.log('Processing planning correction notification for project:', payload.id);
 
-    // Check for recent duplicate notifications to prevent multiple emails
+    // Check for recent duplicate notifications within the last 10 seconds only
     const { data: recentNotification, error: notificationError } = await supabase
       .from('email_notifications')
       .select('id')
       .eq('project_id', payload.id)
       .eq('notification_type', 'planning_correction')
       .eq('project_status', 3)
-      .eq('correction_reason', payload.correction_reason || '')
-      .gte('created_at', new Date(Date.now() - 60000).toISOString()) // Last minute
+      .gte('created_at', new Date(Date.now() - 10000).toISOString()) // Last 10 seconds only
       .maybeSingle();
 
     if (notificationError) {
       console.error('Error checking for duplicate notifications:', notificationError);
     } else if (recentNotification) {
-      console.log('Duplicate notification detected - email already sent recently for this project');
+      console.log('Duplicate notification detected - email already sent recently (within 10 seconds) for this project');
       return new Response('Duplicate notification prevented', { 
         status: 200, 
         headers: corsHeaders 
