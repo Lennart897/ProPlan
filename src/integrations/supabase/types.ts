@@ -481,6 +481,10 @@ export type Database = {
       }
     }
     Functions: {
+      auto_complete_expired_projects: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       bytea_to_text: {
         Args: { data: string }
         Returns: string
