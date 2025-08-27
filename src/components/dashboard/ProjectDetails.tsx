@@ -141,7 +141,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           
           if (isCreatorRejection) {
             // Creator rejection email notification is now handled by database trigger
-            console.log('Creator rejection email sent successfully');
+            console.log('Creator rejection detected - email will be sent by database trigger');
             actionType = 'Projektstornierung durch Ersteller';
           } else {
             // Send normal rejection email notification
