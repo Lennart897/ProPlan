@@ -546,14 +546,6 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                   <Label className="text-sm font-medium text-muted-foreground">Kunde</Label>
                   <p className="text-lg font-semibold">{project.customer}</p>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Artikel-Nummer</Label>
-                  <p className="font-medium">{project.artikel_nummer}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Produktgruppe</Label>
-                  <p className="font-medium">{project.produktgruppe || "Nicht angegeben"}</p>
-                </div>
               </div>
               <div className="space-y-4">
                 <div>
@@ -592,6 +584,14 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Artikel-Nummer</Label>
+                <p className="font-medium">{project.artikel_nummer}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Produktgruppe</Label>
+                <p className="font-medium">{project.produktgruppe || "Nicht angegeben"}</p>
+              </div>
               <div>
                 <Label className="text-sm font-medium text-muted-foreground">Artikelbezeichnung</Label>
                 <p className="text-lg">{project.artikel_bezeichnung}</p>
