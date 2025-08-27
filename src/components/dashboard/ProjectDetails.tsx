@@ -819,7 +819,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                 Abbrechen
               </Button>
               <Button variant="destructive" onClick={handleRejection}>
-                Projekt ablehnen
+                  Projekt absagen
               </Button>
             </DialogFooter>
           </DialogContent>
