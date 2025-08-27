@@ -114,10 +114,14 @@ export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
             const roleMap: Record<string, string> = {};
             profilesData.forEach((p: UserProfile) => {
               if (p.user_id && p.display_name) nameMap[p.user_id] = p.display_name;
-              if (p.user_id && p.role) roleMap[p.user_id] = p.role;
+              if (p.user_id && p.role) {
+                roleMap[p.user_id] = p.role;
+                console.log('Role mapping:', p.user_id, '→', p.role); // Debug log
+              }
             });
             setDisplayNames(nameMap);
             setUserRoles(roleMap);
+            console.log('Final role map:', roleMap); // Debug log
           }
         }
       } catch (error) {
@@ -214,10 +218,14 @@ export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
                               : "bg-gray-100 text-gray-800 border-gray-200"
                           }
                         >
-                          {userRoles[entry.user_id] 
-                            ? (roleLabels[userRoles[entry.user_id] as keyof typeof roleLabels] || userRoles[entry.user_id])
-                            : "Unbekannte Rolle"
-                          }
+                          {(() => {
+                            const role = userRoles[entry.user_id];
+                            console.log('Rendering role for user:', entry.user_id, 'role:', role); // Debug log
+                            if (role) {
+                              return roleLabels[role as keyof typeof roleLabels] || role;
+                            }
+                            return "Unbekannte Rolle";
+                          })()}
                         </Badge>
                         <span className="text-sm text-muted-foreground">
                           {new Date(entry.created_at).toLocaleString("de-DE", {
