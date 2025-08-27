@@ -18,8 +18,14 @@ verify_jwt = false
 [functions.send-project-rejection-email]
 verify_jwt = false
 
+[functions.send-project-rejection-supply-chain-email]
+verify_jwt = false
+
 [functions.send-project-correction-email]
 verify_jwt = false
 
 [functions.send-project-planning-correction-email]
+verify_jwt = false
+
+[functions.send-creator-rejection-email]
 verify_jwt = false
