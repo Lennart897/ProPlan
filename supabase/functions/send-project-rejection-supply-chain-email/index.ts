@@ -36,19 +36,15 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const sendGridApiKey = Deno.env.get('SENDGRID_API_KEY')!;
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SERVICE_ROLE_KEY");
+    const SENDGRID_API_KEY = Deno.env.get("SENDGRID_API_KEY");
 
-    if (!supabaseUrl || !supabaseServiceKey || !sendGridApiKey) {
-      console.error('Missing required environment variables');
-      return new Response('Server configuration error', { 
-        status: 500, 
-        headers: corsHeaders 
-      });
-    }
+    if (!SUPABASE_URL) throw new Error("Missing SUPABASE_URL secret");
+    if (!SERVICE_ROLE_KEY) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY secret");
+    if (!SENDGRID_API_KEY) throw new Error("Missing SENDGRID_API_KEY secret");
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
     
     const payload: ProjectPayload = await req.json();
     console.log('Processing supply chain rejection notification for project:', payload.id);
@@ -239,7 +235,7 @@ serve(async (req) => {
       const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${sendGridApiKey}`,
+          'Authorization': `Bearer ${SENDGRID_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(emailBody),
