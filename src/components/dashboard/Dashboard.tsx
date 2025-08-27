@@ -651,7 +651,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                     <div className="flex items-center justify-between pt-2 border-t">
                       <div className="text-xs text-muted-foreground">
                         <p>{new Date(project.created_at).toLocaleDateString("de-DE")}</p>
-                        <p>von {project.created_by}</p>
+                        <p>von {project.created_by_name || project.created_by || 'Unbekannt'}</p>
                       </div>
                       
                       <div className="flex flex-col items-end gap-1">
