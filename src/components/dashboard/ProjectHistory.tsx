@@ -206,14 +206,19 @@ export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
                         <Badge variant="outline">
                           {actionLabels[entry.action as keyof typeof actionLabels] || entry.action}
                         </Badge>
-                        {userRoles[entry.user_id] && (
-                          <Badge 
-                            variant="outline" 
-                            className={roleColors[userRoles[entry.user_id] as keyof typeof roleColors] || "bg-gray-100 text-gray-800 border-gray-200"}
-                          >
-                            {roleLabels[userRoles[entry.user_id] as keyof typeof roleLabels] || userRoles[entry.user_id]}
-                          </Badge>
-                        )}
+                        <Badge 
+                          variant="outline" 
+                          className={
+                            userRoles[entry.user_id] 
+                              ? (roleColors[userRoles[entry.user_id] as keyof typeof roleColors] || "bg-gray-100 text-gray-800 border-gray-200")
+                              : "bg-gray-100 text-gray-800 border-gray-200"
+                          }
+                        >
+                          {userRoles[entry.user_id] 
+                            ? (roleLabels[userRoles[entry.user_id] as keyof typeof roleLabels] || userRoles[entry.user_id])
+                            : "Unbekannte Rolle"
+                          }
+                        </Badge>
                         <span className="text-sm text-muted-foreground">
                           {new Date(entry.created_at).toLocaleString("de-DE", {
                             day: "2-digit",
