@@ -58,6 +58,27 @@ serve(async (req) => {
     const payload: ProjectPayload = await req.json();
     console.log('Processing planning correction notification for project:', payload.id);
 
+    // Check for recent duplicate notifications to prevent multiple emails
+    const { data: recentNotification, error: notificationError } = await supabase
+      .from('email_notifications')
+      .select('id')
+      .eq('project_id', payload.id)
+      .eq('notification_type', 'planning_correction')
+      .eq('project_status', 3)
+      .eq('correction_reason', payload.correction_reason || '')
+      .gte('created_at', new Date(Date.now() - 60000).toISOString()) // Last minute
+      .maybeSingle();
+
+    if (notificationError) {
+      console.error('Error checking for duplicate notifications:', notificationError);
+    } else if (recentNotification) {
+      console.log('Duplicate notification detected - email already sent recently for this project');
+      return new Response('Duplicate notification prevented', { 
+        status: 200, 
+        headers: corsHeaders 
+      });
+    }
+
     // Get all users with supply_chain role
     const { data: supplyChainProfiles, error: profilesError } = await supabase
       .from('profiles')
@@ -219,6 +240,26 @@ serve(async (req) => {
     const sentEmails = await Promise.all(emailPromises);
 
     console.log(`All planning correction emails sent successfully to: ${sentEmails.join(', ')}`);
+
+    // Record successful email sending for each recipient
+    try {
+      await supabase
+        .from('email_notifications')
+        .insert(
+          sentEmails.map(email => ({
+            project_id: payload.id,
+            notification_type: 'planning_correction',
+            user_id: payload.corrected_by_id,
+            email_address: email,
+            project_status: 3,
+            correction_reason: payload.correction_reason || ''
+          }))
+        );
+      console.log('Email notifications recorded successfully');
+    } catch (recordError) {
+      console.error('Error recording email notifications:', recordError);
+      // Don't fail the request if recording fails
+    }
 
     return new Response(
       JSON.stringify({ 
