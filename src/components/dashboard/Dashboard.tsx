@@ -623,8 +623,8 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                           <CardDescription className="text-sm truncate">
                             {project.artikel_nummer}
                           </CardDescription>
-                          <div className="text-xs text-muted-foreground truncate">
-                            Nr.: {project.project_number}
+                          <div className="text-sm font-medium text-primary">
+                            Projekt-Nr.: {project.project_number}
                           </div>
                         </div>
                       </div>
