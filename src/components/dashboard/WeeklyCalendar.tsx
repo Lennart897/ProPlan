@@ -3,11 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Calendar, ArrowLeft } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { ChevronLeft, ChevronRight, Calendar, ArrowLeft, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, getWeek, isWithinInterval, differenceInCalendarDays } from "date-fns";
 import { de } from "date-fns/locale";
+import { PROJECT_STATUS, getStatusLabel } from "@/utils/statusUtils";
 
 type ProjectStatus = number;
 
@@ -82,6 +85,9 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
   const [selectedProductGroup, setSelectedProductGroup] = useState<string>("all");
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [showCancellationDialog, setShowCancellationDialog] = useState(false);
+  const [cancellationProject, setCancellationProject] = useState<Project | null>(null);
+  const [cancellationReason, setCancellationReason] = useState("");
   const { toast } = useToast();
 
   // Parse a date-only string (YYYY-MM-DD) as a local Date without timezone shifts
@@ -325,6 +331,73 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
     onWeekChange?.(newWeek);
   };
 
+  // Handle project cancellation by creator
+  const handleProjectCancellation = async () => {
+    if (!cancellationProject || !cancellationReason.trim()) {
+      toast({
+        title: "Fehler",
+        description: "Bitte geben Sie einen Grund für die Absage an.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('manufacturing_projects')
+        .update({
+          status: PROJECT_STATUS.ABGELEHNT,
+          rejection_reason: cancellationReason.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', cancellationProject.id);
+
+      if (error) throw error;
+
+      // Log the action in project history
+      const { error: historyError } = await supabase
+        .from('project_history')
+        .insert({
+          project_id: cancellationProject.id,
+          user_id: user.id,
+          user_name: user.full_name || user.email,
+          action: 'Projekt vom Ersteller abgesagt',
+          previous_status: getStatusLabel(cancellationProject.status),
+          new_status: getStatusLabel(PROJECT_STATUS.ABGELEHNT),
+          reason: cancellationReason.trim()
+        });
+
+      if (historyError) {
+        console.error('Error logging project history:', historyError);
+      }
+
+      toast({
+        title: "Projekt abgesagt",
+        description: `Das Projekt ${cancellationProject.customer} wurde erfolgreich abgesagt.`,
+      });
+
+      // Update local state
+      setProjects(prev => prev.map(p => 
+        p.id === cancellationProject.id 
+          ? { ...p, status: PROJECT_STATUS.ABGELEHNT, rejection_reason: cancellationReason.trim() }
+          : p
+      ));
+
+      // Close dialog and reset state
+      setShowCancellationDialog(false);
+      setCancellationProject(null);
+      setCancellationReason("");
+
+    } catch (error) {
+      console.error('Error cancelling project:', error);
+      toast({
+        title: "Fehler",
+        description: "Das Projekt konnte nicht abgesagt werden. Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile-Optimized Header */}
@@ -560,27 +633,44 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                             </div>
                           </div>
                          
-                          <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                            {isPreview && (
-                              <Badge variant="outline" className="text-xs bg-warning/20 text-warning-foreground border-warning/40">
-                                VORSCHAU
-                              </Badge>
-                            )}
-                            {project.standort_verteilung && Object.keys(project.standort_verteilung).length > 0 && (
-                              <div className="mt-1 flex gap-1 max-w-full overflow-x-auto whitespace-nowrap pr-1">
-                                {Object.entries(project.standort_verteilung)
-                                  .filter(([_, qty]) => Number(qty) > 0)
-                                  .map(([location, qty]) => (
-                                    <span
-                                      key={location}
-                                      className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded bg-secondary/20 text-muted-foreground"
-                                    >
-                                      {(locationLabels[location as keyof typeof locationLabels] || location)}: {Number(qty).toLocaleString('de-DE', { maximumFractionDigits: 0 })} kg
-                                    </span>
-                                  ))}
-                              </div>
-                            )}
-                          </div>
+                           <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                             {isPreview && (
+                               <Badge variant="outline" className="text-xs bg-warning/20 text-warning-foreground border-warning/40">
+                                 VORSCHAU
+                               </Badge>
+                             )}
+                             {/* Show cancellation button for project creators on approved projects */}
+                             {!isPreview && project.status === PROJECT_STATUS.GENEHMIGT && 
+                              (project.created_by_id === user.id) && (
+                               <Button
+                                 variant="destructive"
+                                 size="sm"
+                                 className="cancel-button h-6 w-6 p-0 rounded-full"
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   setCancellationProject(project);
+                                   setShowCancellationDialog(true);
+                                 }}
+                                 title="Projekt absagen"
+                               >
+                                 <X className="h-3 w-3" />
+                               </Button>
+                             )}
+                             {project.standort_verteilung && Object.keys(project.standort_verteilung).length > 0 && (
+                               <div className="mt-1 flex gap-1 max-w-full overflow-x-auto whitespace-nowrap pr-1">
+                                 {Object.entries(project.standort_verteilung)
+                                   .filter(([_, qty]) => Number(qty) > 0)
+                                   .map(([location, qty]) => (
+                                     <span
+                                       key={location}
+                                       className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded bg-secondary/20 text-muted-foreground"
+                                     >
+                                       {(locationLabels[location as keyof typeof locationLabels] || location)}: {Number(qty).toLocaleString('de-DE', { maximumFractionDigits: 0 })} kg
+                                     </span>
+                                   ))}
+                               </div>
+                             )}
+                           </div>
                         </div>
                       </div>
                     </div>
@@ -717,6 +807,53 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
               </CardContent>
             </Card>
           )}
+
+          {/* Project Cancellation Dialog */}
+          <Dialog open={showCancellationDialog} onOpenChange={setShowCancellationDialog}>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Projekt absagen</DialogTitle>
+                <DialogDescription>
+                  Sie sind dabei, das genehmigte Projekt "{cancellationProject?.customer} - {cancellationProject?.artikel_bezeichnung}" abzusagen.
+                  Bitte geben Sie einen Grund für die Absage an.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="cancellation-reason" className="text-sm font-medium">
+                    Grund für die Absage *
+                  </label>
+                  <Textarea
+                    id="cancellation-reason"
+                    placeholder="Bitte beschreiben Sie den Grund für die Projektabsage..."
+                    value={cancellationReason}
+                    onChange={(e) => setCancellationReason(e.target.value)}
+                    className="mt-1"
+                    rows={4}
+                  />
+                </div>
+                <div className="flex justify-end gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowCancellationDialog(false);
+                      setCancellationProject(null);
+                      setCancellationReason("");
+                    }}
+                  >
+                    Abbrechen
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleProjectCancellation}
+                    disabled={!cancellationReason.trim()}
+                  >
+                    Projekt absagen
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>
