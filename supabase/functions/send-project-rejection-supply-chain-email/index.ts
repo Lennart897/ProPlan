@@ -120,14 +120,15 @@ serve(async (req) => {
     );
 
     // Build recipient list
-    const recipients: Array<{ email: string, name: string }> = [];
+    const recipients: Array<{ email: string, name: string, user_id: string }> = [];
     
     for (const user of supplyChainUsers) {
       const email = userEmailMap.get(user.user_id);
       if (email) {
         recipients.push({
           email,
-          name: user.display_name || (user.role === 'admin' ? 'Administrator' : 'SupplyChain Mitarbeiter')
+          name: user.display_name || (user.role === 'admin' ? 'Administrator' : 'SupplyChain Mitarbeiter'),
+          user_id: user.user_id
         });
       }
     }
@@ -247,17 +248,19 @@ serve(async (req) => {
         throw new Error(`Failed to send email to ${recipient.email}`);
       }
 
-      // Record the email notification
-      await supabase
-        .from('email_notifications')
-        .insert({
-          project_id: payload.id,
-          notification_type: 'supply_chain_rejection',
-          user_id: null, // System notification
-          email_address: recipient.email,
-          project_status: 6,
-          correction_reason: payload.rejection_reason
-        });
+      // Record the email notification - use recipient's user_id if available, otherwise skip
+      if (recipient.user_id) {
+        await supabase
+          .from('email_notifications')
+          .insert({
+            project_id: payload.id,
+            notification_type: 'supply_chain_rejection',
+            user_id: recipient.user_id,
+            email_address: recipient.email,
+            project_status: 6,
+            correction_reason: payload.rejection_reason
+          });
+      }
 
       return recipient.email;
     });
