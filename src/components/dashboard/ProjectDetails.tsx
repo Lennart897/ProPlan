@@ -234,9 +234,10 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
       onBack();
     } catch (error) {
       console.error(`Fehler bei ${action}:`, error);
+      const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
       toast({
         title: "Fehler",
-        description: `${action} konnte nicht durchgeführt werden: ${error}`,
+        description: `${action} konnte nicht durchgeführt werden: ${errorMessage}`,
         variant: "destructive",
       });
     }
