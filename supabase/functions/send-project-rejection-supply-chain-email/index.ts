@@ -81,11 +81,12 @@ serve(async (req) => {
 
     console.log('Affected locations:', affectedLocations);
 
-    // Get supply chain users for affected locations - including admin users as fallback
+    // Get planning users for affected locations and admin users as fallback
+    const affectedPlanningRoles = affectedLocations.map(location => `planung_${location}`);
     const { data: supplyChainUsers, error: usersError } = await supabase
       .from('profiles')
       .select('user_id, display_name, role')
-      .in('role', ['supply_chain', 'admin']); // Include admin users as fallback
+      .or(`role.in.(${affectedPlanningRoles.join(',')}),role.eq.admin,role.eq.supply_chain`); // Include planning users for affected locations, admin and supply_chain as fallback
 
     if (usersError) {
       console.error('Error fetching supply chain users:', usersError);
@@ -96,8 +97,8 @@ serve(async (req) => {
     }
 
     if (!supplyChainUsers || supplyChainUsers.length === 0) {
-      console.log('No supply chain or admin users found');
-      return new Response(JSON.stringify({ message: 'No supply chain or admin users found' }), {
+      console.log('No planning, supply chain or admin users found');
+      return new Response(JSON.stringify({ message: 'No planning, supply chain or admin users found' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
@@ -125,9 +126,13 @@ serve(async (req) => {
     for (const user of supplyChainUsers) {
       const email = userEmailMap.get(user.user_id);
       if (email) {
+        const userName = user.display_name || 
+          (user.role === 'admin' ? 'Administrator' : 
+           user.role === 'supply_chain' ? 'SupplyChain Mitarbeiter' : 
+           'Planungsmitarbeiter');
         recipients.push({
           email,
-          name: user.display_name || (user.role === 'admin' ? 'Administrator' : 'SupplyChain Mitarbeiter'),
+          name: userName,
           user_id: user.user_id
         });
       }
@@ -141,7 +146,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Sending notifications to ${recipients.length} supply chain/admin users`);
+    console.log(`Sending notifications to ${recipients.length} planning/supply chain/admin users for affected locations:`, affectedLocations);
 
     // Format the current date
     const currentDate = new Date().toLocaleDateString('de-DE', {
@@ -158,8 +163,8 @@ serve(async (req) => {
     // Professional email content for supply chain users
     const emailContent = `
       <h1>🚨 ProPlan System – Projekt abgesagt (Standortbetroffenheit)</h1>
-      <p>Sehr geehrtes SupplyChain-Team,</p>
-      <p>Ein genehmigtes Fertigungsprojekt wurde abgesagt. Ihre Standorte sind von dieser Absage betroffen.</p>
+      <p>Sehr geehrtes Team,</p>
+      <p>Ein genehmigtes Fertigungsprojekt wurde abgesagt. Ihr Standort ist von dieser Absage betroffen.</p>
       
       <hr>
       <h2>📋 Projektübersicht</h2>
@@ -218,7 +223,7 @@ serve(async (req) => {
               email: recipient.email, 
               name: recipient.name 
             }],
-            subject: `🚨 ProPlan - Projekt #${payload.project_number} abgesagt (Standortbetroffenheit)`
+            subject: `🚨 ProPlan - Projekt #${payload.project_number} abgesagt (Standort betroffen)`
           }
         ],
         from: { 
@@ -274,7 +279,7 @@ serve(async (req) => {
       .filter(result => result.status === 'rejected')
       .map(result => (result as PromiseRejectedResult).reason);
 
-    console.log(`Supply chain rejection emails sent successfully to: ${successfulEmails.join(', ')}`);
+    console.log(`Project rejection emails sent successfully to affected locations: ${successfulEmails.join(', ')}`);
     if (failedEmails.length > 0) {
       console.error('Some emails failed:', failedEmails);
     }
@@ -282,7 +287,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Supply chain rejection notifications sent',
+        message: 'Project rejection notifications sent to affected locations',
         recipients: successfulEmails,
         affectedLocations,
         totalSent: successfulEmails.length,
