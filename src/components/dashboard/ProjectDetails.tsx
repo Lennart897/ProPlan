@@ -132,7 +132,32 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           }
           break;
         case 'reject':
-          updateData = { status: PROJECT_STATUS.ABGELEHNT, rejection_reason: rejectionReason };
+          // Test if basic update works first
+          console.log('Testing basic project update first...');
+          const { error: testError } = await supabase
+            .from('manufacturing_projects')
+            .update({ status: PROJECT_STATUS.ABGELEHNT })
+            .eq('id', project.id);
+          
+          if (testError) {
+            console.error('Basic status update failed:', testError);
+            throw testError;
+          }
+          
+          // Now try updating rejection_reason separately
+          console.log('Basic update succeeded, now updating rejection reason...');
+          const { error: reasonError } = await supabase
+            .from('manufacturing_projects')
+            .update({ rejection_reason: rejectionReason })
+            .eq('id', project.id);
+          
+          if (reasonError) {
+            console.error('Rejection reason update failed:', reasonError);
+            throw reasonError;
+          }
+          
+          console.log('Both updates succeeded, skipping normal update path');
+          updateData = null; // Skip the normal update since we already did it
           actionType = 'Ablehnung';
           
           // Check if this is a creator rejection (approved project being rejected by creator)
