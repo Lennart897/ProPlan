@@ -203,6 +203,9 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
       // Update the project only if there's data to update
       if (updateData && Object.keys(updateData).length > 0) {
         console.log('Attempting to update project...');
+        console.log('Update data to be sent:', JSON.stringify(updateData, null, 2));
+        console.log('Project ID:', project.id);
+        
         const { error } = await supabase
           .from('manufacturing_projects')
           .update(updateData)
@@ -210,6 +213,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
 
         if (error) {
           console.error('Database update error:', error);
+          console.error('Error details:', JSON.stringify(error, null, 2));
           throw error;
         }
 
