@@ -402,9 +402,9 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
       case 'planung_visbek':
         if (project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
           buttons.push(
-             <Button key="approve" className="w-64" onClick={() => handleAction('approve')}>
-              Genehmigen
-            </Button>
+             <Button key="approve" className="bg-green-600 hover:bg-green-700 text-white w-64" onClick={() => handleAction('approve')}>
+               Genehmigen
+             </Button>
           );
           buttons.push(
             <Button key="correct" className="bg-orange-600 hover:bg-orange-700 text-white w-64" onClick={() => setShowCorrectionDialog(true)}>
@@ -445,9 +445,9 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         }
         if (project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
           buttons.push(
-            <Button key="approve" className="w-64" onClick={() => handleAction('approve')}>
-              Genehmigen
-            </Button>
+            <Button key="approve" className="bg-green-600 hover:bg-green-700 text-white w-64" onClick={() => handleAction('approve')}>
+               Genehmigen
+             </Button>
           );
           buttons.push(
             <Button key="correct" variant="secondary" className="w-64" onClick={() => setShowCorrectionDialog(true)}>
