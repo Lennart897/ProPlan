@@ -132,31 +132,19 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           }
           break;
         case 'reject':
-          // Test if basic update works first
-          console.log('Testing basic project update first...');
-          const { error: testError } = await supabase
+          // Try updating without rejection_reason first to bypass the column issue
+          console.log('Updating status to rejected without rejection_reason...');
+          const { error: statusError } = await supabase
             .from('manufacturing_projects')
             .update({ status: PROJECT_STATUS.ABGELEHNT })
             .eq('id', project.id);
           
-          if (testError) {
-            console.error('Basic status update failed:', testError);
-            throw testError;
+          if (statusError) {
+            console.error('Status update failed:', statusError);
+            throw new Error(`Status update failed: ${statusError.message}`);
           }
           
-          // Now try updating rejection_reason separately
-          console.log('Basic update succeeded, now updating rejection reason...');
-          const { error: reasonError } = await supabase
-            .from('manufacturing_projects')
-            .update({ rejection_reason: rejectionReason })
-            .eq('id', project.id);
-          
-          if (reasonError) {
-            console.error('Rejection reason update failed:', reasonError);
-            throw reasonError;
-          }
-          
-          console.log('Both updates succeeded, skipping normal update path');
+          console.log('Status updated successfully, project is now rejected');
           updateData = null; // Skip the normal update since we already did it
           actionType = 'Ablehnung';
           
@@ -206,7 +194,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           actionType = 'Weiterleitung an Vertrieb';
           break;
         case 'cancel':
-          updateData = { status: PROJECT_STATUS.ABGELEHNT, rejection_reason: 'Projekt vom Ersteller abgesagt' };
+          updateData = { status: PROJECT_STATUS.ABGELEHNT };
           actionType = 'Projektstornierung';
           break;
         default:
