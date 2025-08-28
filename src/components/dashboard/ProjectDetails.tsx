@@ -132,7 +132,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           }
           break;
         case 'reject':
-          updateData = { status: PROJECT_STATUS.ABGELEHNT, rejection_reason: rejectionReason };
+          updateData = { status: PROJECT_STATUS.ABGELEHNT };
           actionType = 'Ablehnung';
           
           // Check if this is a creator rejection (approved project being rejected by creator)
@@ -181,7 +181,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           actionType = 'Weiterleitung an Vertrieb';
           break;
         case 'cancel':
-          updateData = { status: PROJECT_STATUS.ABGELEHNT, rejection_reason: 'Projekt vom Ersteller abgesagt' };
+          updateData = { status: PROJECT_STATUS.ABGELEHNT };
           actionType = 'Projektstornierung';
           break;
         default:
