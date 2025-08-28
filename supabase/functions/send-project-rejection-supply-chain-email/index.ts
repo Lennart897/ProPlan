@@ -49,18 +49,18 @@ serve(async (req) => {
     const payload: ProjectPayload = await req.json();
     console.log('Processing supply chain rejection notification for project:', payload.id);
 
-    // Check for recent duplicate notifications to prevent spam
+    // Check for recent duplicate notifications to prevent spam - check if ANY notification was sent for this project status change
     const { data: existingNotifications } = await supabase
       .from('email_notifications')
       .select('id')
       .eq('project_id', payload.id)
       .eq('notification_type', 'supply_chain_rejection')
       .eq('project_status', 6)
-      .gte('created_at', new Date(Date.now() - 60000).toISOString()); // Last minute
+      .gte('created_at', new Date(Date.now() - 30000).toISOString()); // Last 30 seconds
 
     if (existingNotifications && existingNotifications.length > 0) {
-      console.log('Recent duplicate notification found for project', payload.id, '- skipping');
-      return new Response(JSON.stringify({ message: 'Duplicate notification prevented' }), {
+      console.log('Recent duplicate notification found for project', payload.id, '- skipping to prevent spam');
+      return new Response(JSON.stringify({ message: 'Duplicate notification prevented - already sent within last 30 seconds' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
