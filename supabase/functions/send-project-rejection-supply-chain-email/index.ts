@@ -157,7 +157,7 @@ serve(async (req) => {
 
     // Format location distribution for email
     const locationDistributionHtml = affectedLocations.map(location => 
-      `<li><strong>${location}:</strong> ${payload.standort_verteilung[location]} Stück</li>`
+      `<li><strong>${location}:</strong> ${payload.standort_verteilung[location]} kg</li>`
     ).join('');
 
     // Professional email content for supply chain users
@@ -173,7 +173,7 @@ serve(async (req) => {
         <li><strong>🏢 Kunde:</strong> ${payload.customer}</li>
         <li><strong>📦 Artikelnummer:</strong> ${payload.artikel_nummer}</li>
         <li><strong>📋 Artikelbezeichnung:</strong> ${payload.artikel_bezeichnung}</li>
-        <li><strong>📊 Gesamtmenge:</strong> ${payload.gesamtmenge} Stück</li>
+        <li><strong>📊 Gesamtmenge:</strong> ${payload.gesamtmenge} kg</li>
         <li><strong>📅 Absage am:</strong> ${currentDate}</li>
         <li><strong>👤 Projektersteller:</strong> ${payload.created_by_name}</li>
       </ul>
