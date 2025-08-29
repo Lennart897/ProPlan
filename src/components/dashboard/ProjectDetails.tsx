@@ -92,6 +92,17 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
     try {
       console.log('Starting action:', action, 'for project:', project.id);
       
+      // === DEBUG LOGS FÜR PROJEKTABSAGE ===
+      console.log("=== DEBUG PROJEKTABSAGE ===");
+      console.log("User-ID:", user.id);
+      console.log("Project Created By ID:", project.created_by_id);
+      console.log("Project Created By:", project.created_by);
+      console.log("Project Status:", project.status);
+      console.log("Expected Status (Genehmigt):", PROJECT_STATUS.GENEHMIGT);
+      console.log("Ist Creator:", project.created_by_id === user.id || project.created_by === user.id);
+      console.log("User Role:", user.role);
+      console.log("Action:", action);
+      
       let updateData: any = {};
       let actionType = '';
 
@@ -202,18 +213,36 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
 
       // Update the project only if there's data to update
       if (updateData && Object.keys(updateData).length > 0) {
+        console.log('=== DATEN AN BACKEND ===');
+        console.log('Update Data JSON:', JSON.stringify(updateData, null, 2));
         console.log('Attempting to update project...');
-        const { error } = await supabase
-          .from('manufacturing_projects')
-          .update(updateData)
-          .eq('id', project.id);
+        
+        try {
+          const { error, data } = await supabase
+            .from('manufacturing_projects')
+            .update(updateData)
+            .eq('id', project.id)
+            .select();
 
-        if (error) {
-          console.error('Database update error:', error);
-          throw error;
+          if (error) {
+            console.error('=== SUPABASE FEHLER ===');
+            console.error('Error Code:', error.code);
+            console.error('Error Message:', error.message);
+            console.error('Error Details:', error.details);
+            console.error('Error Hint:', error.hint);
+            console.error('Vollständiger Fehler:', JSON.stringify(error, null, 2));
+            throw error;
+          }
+          
+          console.log('=== UPDATE ERFOLGREICH ===');
+          console.log('Updated project data:', data);
+        } catch (updateError: any) {
+          console.error('=== CATCH BLOCK ===');
+          console.error('Update error caught:', updateError);
+          console.error('Error type:', typeof updateError);
+          console.error('Error toString:', updateError.toString());
+          throw updateError;
         }
-
-        console.log('Project updated successfully');
       } else {
         console.log('No project update needed - location approval updated instead');
       }
