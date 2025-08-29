@@ -153,7 +153,10 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           
           // Check if this is a creator rejection (approved project being rejected by creator)
           const isCreatorRejection = project.status === PROJECT_STATUS.GENEHMIGT && 
-                                   project.created_by_id === user.id;
+                                   project.created_by_id && 
+                                   user.id &&
+                                   (project.created_by_id === user.id || 
+                                    String(project.created_by_id) === String(user.id));
           
           console.log('=== CREATOR REJECTION CHECK ===');
           console.log('Is creator rejection:', isCreatorRejection);
@@ -527,7 +530,12 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
     
     // The primary check should be created_by_id since that's the UUID in the database
     // created_by appears to be the name, not the ID
-    const isProjectCreator = project.created_by_id === user.id;
+    // We also need to handle cases where created_by_id might be undefined
+    // Additional safety: convert both to string and compare, handle potential type mismatches
+    const isProjectCreator = project.created_by_id && 
+                             user.id && 
+                             (project.created_by_id === user.id || 
+                              String(project.created_by_id) === String(user.id));
     const isApproved = project.status === PROJECT_STATUS.GENEHMIGT;
     
     console.log('Is project creator (primary check):', isProjectCreator);
@@ -554,6 +562,12 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         console.log('Reason: User is not the project creator');
         console.log('Project creator ID:', project.created_by_id);
         console.log('Current user ID:', user.id);
+        if (!project.created_by_id) {
+          console.log('WARNING: project.created_by_id is undefined/null');
+        }
+        if (!user.id) {
+          console.log('WARNING: user.id is undefined/null');
+        }
       }
     }
 
