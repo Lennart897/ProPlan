@@ -218,9 +218,13 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         console.log('Attempting to update project...');
         
         try {
+          // For creator rejection, explicitly only update status to avoid type issues
+          const cleanUpdateData = { status: updateData.status };
+          console.log('Clean update data (status only):', cleanUpdateData);
+          
           const { error, data } = await supabase
             .from('manufacturing_projects')
-            .update(updateData)
+            .update(cleanUpdateData)
             .eq('id', project.id)
             .select();
 
