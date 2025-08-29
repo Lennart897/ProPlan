@@ -143,7 +143,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           }
           break;
         case 'reject':
-          updateData = { status: PROJECT_STATUS.ABGELEHNT };
+          updateData = { status: PROJECT_STATUS.ABGELEHNT, rejection_reason: rejectionReason };
           actionType = 'Ablehnung';
           
           // Check if this is a creator rejection (approved project being rejected by creator)
@@ -218,9 +218,12 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         console.log('Attempting to update project...');
         
         try {
-          // For creator rejection, explicitly only update status to avoid type issues
-          const cleanUpdateData = { status: updateData.status };
-          console.log('Clean update data (status only):', cleanUpdateData);
+          // For creator rejection, include rejection_reason in the update
+          const cleanUpdateData = { 
+            status: updateData.status,
+            ...(updateData.rejection_reason && { rejection_reason: updateData.rejection_reason })
+          };
+          console.log('Clean update data:', cleanUpdateData);
           
           const { error, data } = await supabase
             .from('manufacturing_projects')
@@ -517,6 +520,20 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           Projekt absagen
         </Button>
       );
+    } else {
+      // Log why the creator rejection button is not showing
+      console.log('Creator rejection button NOT showing:', {
+        projectStatus: project.status,
+        expectedStatus: PROJECT_STATUS.GENEHMIGT,
+        statusMatches: project.status === PROJECT_STATUS.GENEHMIGT,
+        projectCreatorId: project.created_by_id,
+        projectCreatedBy: project.created_by,
+        currentUserId: user.id,
+        userRole: user.role,
+        creatorIdMatches: project.created_by_id === user.id,
+        createdByMatches: project.created_by === user.id,
+        anyCreatorMatches: project.created_by_id === user.id || project.created_by === user.id
+      });
     }
 
     return buttons;
