@@ -143,7 +143,10 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           }
           break;
         case 'reject':
-          updateData = { status: PROJECT_STATUS.ABGELEHNT };
+          updateData = { 
+            status: PROJECT_STATUS.ABGELEHNT,
+            rejection_reason: rejectionReason
+          };
           actionType = 'Ablehnung';
           
           // Check if this is a creator rejection (approved project being rejected by creator)
@@ -218,9 +221,11 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         console.log('Attempting to update project...');
         
         try {
-          // For creator rejection, explicitly only update status to avoid type issues
-          const cleanUpdateData = { status: updateData.status };
-          console.log('Clean update data (status only):', cleanUpdateData);
+          // Include rejection_reason if it's present in updateData
+          const cleanUpdateData = updateData.rejection_reason 
+            ? { status: updateData.status, rejection_reason: updateData.rejection_reason }
+            : { status: updateData.status };
+          console.log('Clean update data:', cleanUpdateData);
           
           const { error, data } = await supabase
             .from('manufacturing_projects')
