@@ -143,17 +143,35 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           }
           break;
         case 'reject':
+          console.log('=== REJECT ACTION STARTED ===');
+          console.log('Project current status:', project.status);
+          console.log('Target status (ABGELEHNT):', PROJECT_STATUS.ABGELEHNT);
+          console.log('Rejection reason:', rejectionReason);
+          
           updateData = { status: PROJECT_STATUS.ABGELEHNT };
           actionType = 'Ablehnung';
           
           // Check if this is a creator rejection (approved project being rejected by creator)
           const isCreatorRejection = project.status === PROJECT_STATUS.GENEHMIGT && 
-                                   (project.created_by_id === user.id || project.created_by === user.id);
+                                   project.created_by_id && 
+                                   user.id &&
+                                   (project.created_by_id === user.id || 
+                                    String(project.created_by_id) === String(user.id));
+          
+          console.log('=== CREATOR REJECTION CHECK ===');
+          console.log('Is creator rejection:', isCreatorRejection);
+          console.log('Project status === GENEHMIGT:', project.status === PROJECT_STATUS.GENEHMIGT);
+          console.log('Creator ID match:', project.created_by_id === user.id);
+          console.log('Created by match:', project.created_by === user.id);
           
           if (isCreatorRejection) {
             // Creator rejection email notification is now handled by database trigger
             console.log('Creator rejection detected - email will be sent by database trigger');
             actionType = 'Projektstornierung durch Ersteller';
+            // Add rejection reason to update data for trigger
+            if (rejectionReason) {
+              updateData.rejection_reason = rejectionReason;
+            }
           } else {
             // Send normal rejection email notification
             try {
@@ -218,9 +236,11 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         console.log('Attempting to update project...');
         
         try {
-          // For creator rejection, explicitly only update status to avoid type issues
-          const cleanUpdateData = { status: updateData.status };
-          console.log('Clean update data (status only):', cleanUpdateData);
+          // For creator rejection, send both status and rejection_reason
+          const cleanUpdateData = action === 'reject' && updateData.rejection_reason 
+            ? { status: updateData.status, rejection_reason: updateData.rejection_reason }
+            : { status: updateData.status };
+          console.log('Clean update data:', cleanUpdateData);
           
           const { error, data } = await supabase
             .from('manufacturing_projects')
@@ -499,24 +519,56 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
     }
 
     // Allow project creators to reject approved projects (status 5) - regardless of role
-    if (project.status === PROJECT_STATUS.GENEHMIGT && (project.created_by_id === user.id || project.created_by === user.id)) {
-      console.log('Creator rejection button should show:', {
-        projectStatus: project.status,
-        expectedStatus: PROJECT_STATUS.GENEHMIGT,
-        projectCreatorId: project.created_by_id,
-        projectCreatedBy: project.created_by,
-        currentUserId: user.id,
-        userRole: user.role,
-        matches: project.created_by_id === user.id || project.created_by === user.id
-      });
+    console.log('=== CREATOR REJECTION BUTTON CHECK ===');
+    console.log('Project status:', project.status, 'Expected (GENEHMIGT):', PROJECT_STATUS.GENEHMIGT);
+    console.log('Project creator ID:', project.created_by_id, 'Type:', typeof project.created_by_id);
+    console.log('Project created by:', project.created_by, 'Type:', typeof project.created_by);
+    console.log('Current user ID:', user.id, 'Type:', typeof user.id);
+    console.log('Status match:', project.status === PROJECT_STATUS.GENEHMIGT);
+    console.log('Creator ID match:', project.created_by_id === user.id);
+    console.log('Created by match:', project.created_by === user.id);
+    
+    // The primary check should be created_by_id since that's the UUID in the database
+    // created_by appears to be the name, not the ID
+    // We also need to handle cases where created_by_id might be undefined
+    // Additional safety: convert both to string and compare, handle potential type mismatches
+    const isProjectCreator = project.created_by_id && 
+                             user.id && 
+                             (project.created_by_id === user.id || 
+                              String(project.created_by_id) === String(user.id));
+    const isApproved = project.status === PROJECT_STATUS.GENEHMIGT;
+    
+    console.log('Is project creator (primary check):', isProjectCreator);
+    console.log('Is project approved:', isApproved);
+    console.log('Overall condition:', isApproved && isProjectCreator);
+    
+    if (isApproved && isProjectCreator) {
+      console.log('=== CREATOR REJECTION BUTTON WILL SHOW ===');
       buttons.push(
         <Button key="creator_reject" variant="destructive" className="w-64" onClick={() => {
-          console.log('Creator rejection button clicked');
+          console.log('=== CREATOR REJECTION BUTTON CLICKED ===');
+          console.log('About to show rejection dialog');
           setShowRejectionDialog(true);
         }}>
           Projekt absagen
         </Button>
       );
+    } else {
+      console.log('=== CREATOR REJECTION BUTTON WILL NOT SHOW ===');
+      if (!isApproved) {
+        console.log('Reason: Project status is not approved (', project.status, ')');
+      }
+      if (!isProjectCreator) {
+        console.log('Reason: User is not the project creator');
+        console.log('Project creator ID:', project.created_by_id);
+        console.log('Current user ID:', user.id);
+        if (!project.created_by_id) {
+          console.log('WARNING: project.created_by_id is undefined/null');
+        }
+        if (!user.id) {
+          console.log('WARNING: user.id is undefined/null');
+        }
+      }
     }
 
     return buttons;
