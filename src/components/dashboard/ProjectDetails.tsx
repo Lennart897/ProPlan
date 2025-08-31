@@ -499,24 +499,27 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
     }
 
     // Allow project creators to reject approved projects (status 5) - regardless of role
+    console.log('=== CREATOR REJECTION CHECK ===');
+    console.log('Project Status:', project.status, 'Expected (GENEHMIGT):', PROJECT_STATUS.GENEHMIGT);
+    console.log('Project created_by_id:', project.created_by_id);
+    console.log('Project created_by:', project.created_by);
+    console.log('Current user.id:', user.id);
+    console.log('Match check 1 (created_by_id):', project.created_by_id === user.id);
+    console.log('Match check 2 (created_by):', project.created_by === user.id);
+    console.log('Status check:', project.status === PROJECT_STATUS.GENEHMIGT);
+    
     if (project.status === PROJECT_STATUS.GENEHMIGT && (project.created_by_id === user.id || project.created_by === user.id)) {
-      console.log('Creator rejection button should show:', {
-        projectStatus: project.status,
-        expectedStatus: PROJECT_STATUS.GENEHMIGT,
-        projectCreatorId: project.created_by_id,
-        projectCreatedBy: project.created_by,
-        currentUserId: user.id,
-        userRole: user.role,
-        matches: project.created_by_id === user.id || project.created_by === user.id
-      });
+      console.log('✅ CREATOR REJECTION BUTTON WIRD ANGEZEIGT');
       buttons.push(
         <Button key="creator_reject" variant="destructive" className="w-64" onClick={() => {
-          console.log('Creator rejection button clicked');
+          console.log('🔴 Creator rejection button clicked - opening dialog');
           setShowRejectionDialog(true);
         }}>
           Projekt absagen
         </Button>
       );
+    } else {
+      console.log('❌ CREATOR REJECTION BUTTON WIRD NICHT ANGEZEIGT');
     }
 
     return buttons;
