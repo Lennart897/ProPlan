@@ -17,7 +17,7 @@ interface Project {
   id: string;
   project_number?: number;
   customer: string;
-  artikel_nummer: string;
+  artikel_nummer: number;
   artikel_bezeichnung: string;
   produktgruppe?: string;
   gesamtmenge: number;
