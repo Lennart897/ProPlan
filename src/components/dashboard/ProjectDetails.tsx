@@ -502,18 +502,18 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
 
     // Allow project creators to reject their projects in any status (except already cancelled or completed)
     console.log('=== CREATOR REJECTION CHECK ===');
-    console.log('Project Status:', project.status, 'Expected (NOT 6 or 7):', project.status !== 6 && project.status !== 7);
+    console.log('Project Status:', project.status, 'Expected (4 or 5):', project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG || project.status === PROJECT_STATUS.GENEHMIGT);
     console.log('Project created_by_id:', project.created_by_id);
     console.log('Project created_by_name:', project.created_by_name);
     console.log('Current user.id:', user.id);
     console.log('Match check 1 (created_by_id):', project.created_by_id === user.id);
     console.log('Match check 2 (created_by_name as UUID):', project.created_by_name === user.id);
-    console.log('Status check (not cancelled/completed):', project.status !== 6 && project.status !== 7);
+    console.log('Status check (status 4 or 5):', project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG || project.status === PROJECT_STATUS.GENEHMIGT);
     
-    // Allow creators to cancel projects in any status except already cancelled (6) or completed (7)
+    // Allow creators to cancel projects ONLY in status 4 (Prüfung Planung) or 5 (Genehmigt)
     if ((project.created_by_id === user.id || project.created_by_name === user.id) && 
-        project.status !== 6 && project.status !== 7) {
-      console.log('✅ CREATOR REJECTION BUTTON WIRD ANGEZEIGT (JEDERZEIT)');
+        (project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG || project.status === PROJECT_STATUS.GENEHMIGT)) {
+      console.log('✅ CREATOR REJECTION BUTTON WIRD ANGEZEIGT (STATUS 4 ODER 5)');
       buttons.push(
         <Button key="creator_reject" variant="destructive" className="w-64" onClick={() => {
           console.log('🔴 Creator rejection button clicked - opening dialog');
