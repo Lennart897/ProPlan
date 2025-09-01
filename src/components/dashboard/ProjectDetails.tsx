@@ -17,7 +17,7 @@ interface Project {
   id: string;
   project_number?: number;
   customer: string;
-  artikel_nummer: string;
+  artikel_nummer: number;
   artikel_bezeichnung: string;
   produktgruppe?: string;
   gesamtmenge: number;
@@ -92,6 +92,17 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
     try {
       console.log('Starting action:', action, 'for project:', project.id);
       
+      // === DEBUG LOGS FÜR PROJEKTABSAGE ===
+      console.log("=== DEBUG PROJEKTABSAGE ===");
+      console.log("User-ID:", user.id);
+      console.log("Project Created By ID:", project.created_by_id);
+      console.log("Project Created By:", project.created_by);
+      console.log("Project Status:", project.status);
+      console.log("Expected Status (Genehmigt):", PROJECT_STATUS.GENEHMIGT);
+      console.log("Ist Creator:", project.created_by_id === user.id || project.created_by === user.id);
+      console.log("User Role:", user.role);
+      console.log("Action:", action);
+      
       let updateData: any = {};
       let actionType = '';
 
@@ -132,18 +143,23 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           }
           break;
         case 'reject':
-          updateData = { status: PROJECT_STATUS.ABGELEHNT, rejection_reason: rejectionReason };
-          actionType = 'Ablehnung';
-          
-          // Check if this is a creator rejection (approved project being rejected by creator)
-          const isCreatorRejection = project.status === PROJECT_STATUS.GENEHMIGT && 
-                                   (project.created_by_id === user.id || project.created_by === user.id);
+          // Check if this is a creator rejection (project being rejected by creator in any status)
+          const isCreatorRejection = (project.created_by_id === user.id || project.created_by_name === user.id);
           
           if (isCreatorRejection) {
-            // Creator rejection email notification is now handled by database trigger
-            console.log('Creator rejection detected - email will be sent by database trigger');
+            // For creator rejections, include rejection_reason in the update
+            updateData = { 
+              status: PROJECT_STATUS.ABGELEHNT,
+              rejection_reason: rejectionReason || 'Abgesagt durch Projektersteller'
+            };
             actionType = 'Projektstornierung durch Ersteller';
+            console.log('Creator rejection detected - email will be sent by database trigger');
           } else {
+            updateData = { 
+              status: PROJECT_STATUS.ABGELEHNT,
+              rejection_reason: rejectionReason
+            };
+            actionType = 'Ablehnung';
             // Send normal rejection email notification
             try {
               await supabase.functions.invoke('send-project-rejection-email', {
@@ -181,7 +197,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           actionType = 'Weiterleitung an Vertrieb';
           break;
         case 'cancel':
-          updateData = { status: PROJECT_STATUS.ABGELEHNT, rejection_reason: 'Projekt vom Ersteller abgesagt' };
+          updateData = { status: PROJECT_STATUS.ABGELEHNT };
           actionType = 'Projektstornierung';
           break;
         default:
@@ -202,18 +218,37 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
 
       // Update the project only if there's data to update
       if (updateData && Object.keys(updateData).length > 0) {
+        console.log('=== DATEN AN BACKEND ===');
+        console.log('Update Data JSON:', JSON.stringify(updateData, null, 2));
         console.log('Attempting to update project...');
-        const { error } = await supabase
-          .from('manufacturing_projects')
-          .update(updateData)
-          .eq('id', project.id);
+        
+        try {
+          // For creator rejections, use complete updateData including rejection_reason
+          const { error, data } = await supabase
+            .from('manufacturing_projects')
+            .update(updateData)
+            .eq('id', project.id)
+            .select();
 
-        if (error) {
-          console.error('Database update error:', error);
-          throw error;
+          if (error) {
+            console.error('=== SUPABASE FEHLER ===');
+            console.error('Error Code:', error.code);
+            console.error('Error Message:', error.message);
+            console.error('Error Details:', error.details);
+            console.error('Error Hint:', error.hint);
+            console.error('Vollständiger Fehler:', JSON.stringify(error, null, 2));
+            throw error;
+          }
+          
+          console.log('=== UPDATE ERFOLGREICH ===');
+          console.log('Updated project data:', data);
+        } catch (updateError: any) {
+          console.error('=== CATCH BLOCK ===');
+          console.error('Update error caught:', updateError);
+          console.error('Error type:', typeof updateError);
+          console.error('Error toString:', updateError.toString());
+          throw updateError;
         }
-
-        console.log('Project updated successfully');
       } else {
         console.log('No project update needed - location approval updated instead');
       }
@@ -269,7 +304,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           p_gesamtmenge: updateData.gesamtmenge,
           p_standort_verteilung: updateData.standort_verteilung,
           p_status: updateData.status,
-          p_rejection_reason: correctionReason
+          p_rejection_reason: correctionReason || null
         });
 
         if (error) {
@@ -402,9 +437,9 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
       case 'planung_visbek':
         if (project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
           buttons.push(
-             <Button key="approve" className="w-64" onClick={() => handleAction('approve')}>
-              Genehmigen
-            </Button>
+             <Button key="approve" className="bg-green-600 hover:bg-green-700 text-white w-64" onClick={() => handleAction('approve')}>
+               Genehmigen
+             </Button>
           );
           buttons.push(
             <Button key="correct" className="bg-orange-600 hover:bg-orange-700 text-white w-64" onClick={() => setShowCorrectionDialog(true)}>
@@ -445,9 +480,9 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         }
         if (project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
           buttons.push(
-            <Button key="approve" className="w-64" onClick={() => handleAction('approve')}>
-              Genehmigen
-            </Button>
+            <Button key="approve" className="bg-green-600 hover:bg-green-700 text-white w-64" onClick={() => handleAction('approve')}>
+               Genehmigen
+             </Button>
           );
           buttons.push(
             <Button key="correct" variant="secondary" className="w-64" onClick={() => setShowCorrectionDialog(true)}>
@@ -465,25 +500,30 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         break;
     }
 
-    // Allow project creators to reject approved projects (status 5) - regardless of role
-    if (project.status === PROJECT_STATUS.GENEHMIGT && (project.created_by_id === user.id || project.created_by === user.id)) {
-      console.log('Creator rejection button should show:', {
-        projectStatus: project.status,
-        expectedStatus: PROJECT_STATUS.GENEHMIGT,
-        projectCreatorId: project.created_by_id,
-        projectCreatedBy: project.created_by,
-        currentUserId: user.id,
-        userRole: user.role,
-        matches: project.created_by_id === user.id || project.created_by === user.id
-      });
+    // Allow project creators to reject their projects in any status (except already cancelled or completed)
+    console.log('=== CREATOR REJECTION CHECK ===');
+    console.log('Project Status:', project.status, 'Expected (NOT 6 or 7):', project.status !== 6 && project.status !== 7);
+    console.log('Project created_by_id:', project.created_by_id);
+    console.log('Project created_by_name:', project.created_by_name);
+    console.log('Current user.id:', user.id);
+    console.log('Match check 1 (created_by_id):', project.created_by_id === user.id);
+    console.log('Match check 2 (created_by_name as UUID):', project.created_by_name === user.id);
+    console.log('Status check (not cancelled/completed):', project.status !== 6 && project.status !== 7);
+    
+    // Allow creators to cancel projects in any status except already cancelled (6) or completed (7)
+    if ((project.created_by_id === user.id || project.created_by_name === user.id) && 
+        project.status !== 6 && project.status !== 7) {
+      console.log('✅ CREATOR REJECTION BUTTON WIRD ANGEZEIGT (JEDERZEIT)');
       buttons.push(
         <Button key="creator_reject" variant="destructive" className="w-64" onClick={() => {
-          console.log('Creator rejection button clicked');
+          console.log('🔴 Creator rejection button clicked - opening dialog');
           setShowRejectionDialog(true);
         }}>
           Projekt absagen
         </Button>
       );
+    } else {
+      console.log('❌ CREATOR REJECTION BUTTON WIRD NICHT ANGEZEIGT');
     }
 
     return buttons;
