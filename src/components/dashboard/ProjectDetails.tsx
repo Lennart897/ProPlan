@@ -143,9 +143,8 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           }
           break;
         case 'reject':
-          // Check if this is a creator rejection (approved project being rejected by creator)
-          const isCreatorRejection = project.status === PROJECT_STATUS.GENEHMIGT && 
-                                   (project.created_by_id === user.id || project.created_by === user.id);
+          // Check if this is a creator rejection (project being rejected by creator in any status)
+          const isCreatorRejection = (project.created_by_id === user.id || project.created_by_name === user.id);
           
           if (isCreatorRejection) {
             // For creator rejections, include rejection_reason in the update
@@ -501,18 +500,20 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         break;
     }
 
-    // Allow project creators to reject approved projects (status 5) - regardless of role
+    // Allow project creators to reject their projects in any status (except already cancelled or completed)
     console.log('=== CREATOR REJECTION CHECK ===');
-    console.log('Project Status:', project.status, 'Expected (GENEHMIGT):', PROJECT_STATUS.GENEHMIGT);
+    console.log('Project Status:', project.status, 'Expected (NOT 6 or 7):', project.status !== 6 && project.status !== 7);
     console.log('Project created_by_id:', project.created_by_id);
-    console.log('Project created_by:', project.created_by);
+    console.log('Project created_by_name:', project.created_by_name);
     console.log('Current user.id:', user.id);
     console.log('Match check 1 (created_by_id):', project.created_by_id === user.id);
-    console.log('Match check 2 (created_by):', project.created_by === user.id);
-    console.log('Status check:', project.status === PROJECT_STATUS.GENEHMIGT);
+    console.log('Match check 2 (created_by_name as UUID):', project.created_by_name === user.id);
+    console.log('Status check (not cancelled/completed):', project.status !== 6 && project.status !== 7);
     
-    if (project.status === PROJECT_STATUS.GENEHMIGT && (project.created_by_id === user.id || project.created_by === user.id)) {
-      console.log('✅ CREATOR REJECTION BUTTON WIRD ANGEZEIGT');
+    // Allow creators to cancel projects in any status except already cancelled (6) or completed (7)
+    if ((project.created_by_id === user.id || project.created_by_name === user.id) && 
+        project.status !== 6 && project.status !== 7) {
+      console.log('✅ CREATOR REJECTION BUTTON WIRD ANGEZEIGT (JEDERZEIT)');
       buttons.push(
         <Button key="creator_reject" variant="destructive" className="w-64" onClick={() => {
           console.log('🔴 Creator rejection button clicked - opening dialog');
