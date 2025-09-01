@@ -49,18 +49,18 @@ serve(async (req) => {
     const payload: ProjectPayload = await req.json();
     console.log('Processing supply chain rejection notification for project:', payload.id);
 
-    // Check for recent duplicate notifications to prevent spam - check if ANY notification was sent for this project status change
+    // Check for recent duplicate notifications to prevent spam
     const { data: existingNotifications } = await supabase
       .from('email_notifications')
       .select('id')
       .eq('project_id', payload.id)
       .eq('notification_type', 'supply_chain_rejection')
       .eq('project_status', 6)
-      .gte('created_at', new Date(Date.now() - 30000).toISOString()); // Last 30 seconds
+      .gte('created_at', new Date(Date.now() - 60000).toISOString()); // Last minute
 
     if (existingNotifications && existingNotifications.length > 0) {
-      console.log('Recent duplicate notification found for project', payload.id, '- skipping to prevent spam');
-      return new Response(JSON.stringify({ message: 'Duplicate notification prevented - already sent within last 30 seconds' }), {
+      console.log('Recent duplicate notification found for project', payload.id, '- skipping');
+      return new Response(JSON.stringify({ message: 'Duplicate notification prevented' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
@@ -157,7 +157,7 @@ serve(async (req) => {
 
     // Format location distribution for email
     const locationDistributionHtml = affectedLocations.map(location => 
-      `<li><strong>${location}:</strong> ${payload.standort_verteilung[location]} kg</li>`
+      `<li><strong>${location}:</strong> ${payload.standort_verteilung[location]} Stück</li>`
     ).join('');
 
     // Professional email content for supply chain users
@@ -173,7 +173,7 @@ serve(async (req) => {
         <li><strong>🏢 Kunde:</strong> ${payload.customer}</li>
         <li><strong>📦 Artikelnummer:</strong> ${payload.artikel_nummer}</li>
         <li><strong>📋 Artikelbezeichnung:</strong> ${payload.artikel_bezeichnung}</li>
-        <li><strong>📊 Gesamtmenge:</strong> ${payload.gesamtmenge} kg</li>
+        <li><strong>📊 Gesamtmenge:</strong> ${payload.gesamtmenge} Stück</li>
         <li><strong>📅 Absage am:</strong> ${currentDate}</li>
         <li><strong>👤 Projektersteller:</strong> ${payload.created_by_name}</li>
       </ul>

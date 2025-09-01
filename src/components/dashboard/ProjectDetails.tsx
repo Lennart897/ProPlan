@@ -132,20 +132,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           }
           break;
         case 'reject':
-          // Try updating without rejection_reason first to bypass the column issue
-          console.log('Updating status to rejected without rejection_reason...');
-          const { error: statusError } = await supabase
-            .from('manufacturing_projects')
-            .update({ status: PROJECT_STATUS.ABGELEHNT })
-            .eq('id', project.id);
-          
-          if (statusError) {
-            console.error('Status update failed:', statusError);
-            throw new Error(`Status update failed: ${statusError.message}`);
-          }
-          
-          console.log('Status updated successfully, project is now rejected');
-          updateData = null; // Skip the normal update since we already did it
+          updateData = { status: PROJECT_STATUS.ABGELEHNT, rejection_reason: rejectionReason };
           actionType = 'Ablehnung';
           
           // Check if this is a creator rejection (approved project being rejected by creator)
@@ -194,7 +181,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           actionType = 'Weiterleitung an Vertrieb';
           break;
         case 'cancel':
-          updateData = { status: PROJECT_STATUS.ABGELEHNT };
+          updateData = { status: PROJECT_STATUS.ABGELEHNT, rejection_reason: 'Projekt vom Ersteller abgesagt' };
           actionType = 'Projektstornierung';
           break;
         default:
@@ -216,9 +203,6 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
       // Update the project only if there's data to update
       if (updateData && Object.keys(updateData).length > 0) {
         console.log('Attempting to update project...');
-        console.log('Update data to be sent:', JSON.stringify(updateData, null, 2));
-        console.log('Project ID:', project.id);
-        
         const { error } = await supabase
           .from('manufacturing_projects')
           .update(updateData)
@@ -226,7 +210,6 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
 
         if (error) {
           console.error('Database update error:', error);
-          console.error('Error details:', JSON.stringify(error, null, 2));
           throw error;
         }
 
@@ -251,10 +234,9 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
       onBack();
     } catch (error) {
       console.error(`Fehler bei ${action}:`, error);
-      const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
       toast({
         title: "Fehler",
-        description: `${action} konnte nicht durchgeführt werden: ${errorMessage}`,
+        description: `${action} konnte nicht durchgeführt werden: ${error}`,
         variant: "destructive",
       });
     }
@@ -420,9 +402,9 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
       case 'planung_visbek':
         if (project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
           buttons.push(
-             <Button key="approve" className="bg-green-600 hover:bg-green-700 text-white w-64" onClick={() => handleAction('approve')}>
-               Genehmigen
-             </Button>
+             <Button key="approve" className="w-64" onClick={() => handleAction('approve')}>
+              Genehmigen
+            </Button>
           );
           buttons.push(
             <Button key="correct" className="bg-orange-600 hover:bg-orange-700 text-white w-64" onClick={() => setShowCorrectionDialog(true)}>
@@ -463,9 +445,9 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         }
         if (project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
           buttons.push(
-            <Button key="approve" className="bg-green-600 hover:bg-green-700 text-white w-64" onClick={() => handleAction('approve')}>
-               Genehmigen
-             </Button>
+            <Button key="approve" className="w-64" onClick={() => handleAction('approve')}>
+              Genehmigen
+            </Button>
           );
           buttons.push(
             <Button key="correct" variant="secondary" className="w-64" onClick={() => setShowCorrectionDialog(true)}>
