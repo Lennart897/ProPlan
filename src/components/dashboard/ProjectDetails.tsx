@@ -143,18 +143,24 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           }
           break;
         case 'reject':
-          updateData = { status: PROJECT_STATUS.ABGELEHNT };
-          actionType = 'Ablehnung';
-          
           // Check if this is a creator rejection (approved project being rejected by creator)
           const isCreatorRejection = project.status === PROJECT_STATUS.GENEHMIGT && 
                                    (project.created_by_id === user.id || project.created_by === user.id);
           
           if (isCreatorRejection) {
-            // Creator rejection email notification is now handled by database trigger
-            console.log('Creator rejection detected - email will be sent by database trigger');
+            // For creator rejections, include rejection_reason in the update
+            updateData = { 
+              status: PROJECT_STATUS.ABGELEHNT,
+              rejection_reason: rejectionReason || 'Abgesagt durch Projektersteller'
+            };
             actionType = 'Projektstornierung durch Ersteller';
+            console.log('Creator rejection detected - email will be sent by database trigger');
           } else {
+            updateData = { 
+              status: PROJECT_STATUS.ABGELEHNT,
+              rejection_reason: rejectionReason
+            };
+            actionType = 'Ablehnung';
             // Send normal rejection email notification
             try {
               await supabase.functions.invoke('send-project-rejection-email', {
@@ -218,13 +224,10 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         console.log('Attempting to update project...');
         
         try {
-          // For creator rejection, explicitly only update status to avoid type issues
-          const cleanUpdateData = { status: updateData.status };
-          console.log('Clean update data (status only):', cleanUpdateData);
-          
+          // For creator rejections, use complete updateData including rejection_reason
           const { error, data } = await supabase
             .from('manufacturing_projects')
-            .update(cleanUpdateData)
+            .update(updateData)
             .eq('id', project.id)
             .select();
 
