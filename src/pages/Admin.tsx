@@ -171,20 +171,11 @@ const Admin = () => {
             {/* Mobile-friendly user creation section */}
             <Card>
               <CardHeader className="pb-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="flex flex-col gap-4">
                   <div>
                     <CardTitle className="text-lg sm:text-xl">Neuen Benutzer anlegen</CardTitle>
                     <CardDescription className="text-sm">E-Mail, Passwort, Anzeigename und Rolle eingeben</CardDescription>
                   </div>
-                  {/* Mobile quick access button */}
-                  <Button 
-                    onClick={onCreate} 
-                    disabled={loading || !email || !password}
-                    className="sm:hidden w-full"
-                    size="sm"
-                  >
-                    {loading ? "Wird erstellt..." : "Benutzer anlegen"}
-                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -234,15 +225,18 @@ const Admin = () => {
                     </Select>
                   </div>
                 </div>
-                {/* Desktop button */}
-                <div className="hidden sm:block pt-2">
-                  <Button onClick={onCreate} disabled={loading || !email || !password}>
+                {/* Button always visible */}
+                <div className="pt-2">
+                  <Button 
+                    onClick={onCreate} 
+                    disabled={loading || !email || !password}
+                    className="w-full sm:w-auto"
+                  >
                     {loading ? "Wird erstellt..." : "Benutzer anlegen"}
                   </Button>
                 </div>
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
