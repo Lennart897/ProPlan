@@ -168,29 +168,62 @@ const Admin = () => {
           </TabsList>
 
           <TabsContent value="users" className="space-y-6">
+            {/* Mobile-friendly user creation section */}
             <Card>
-              <CardHeader>
-                <CardTitle>Neuen Benutzer anlegen</CardTitle>
-                <CardDescription>E-Mail, Passwort, Anzeigename und Rolle für neuen Benutzer eingeben</CardDescription>
+              <CardHeader className="pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div>
+                    <CardTitle className="text-lg sm:text-xl">Neuen Benutzer anlegen</CardTitle>
+                    <CardDescription className="text-sm">E-Mail, Passwort, Anzeigename und Rolle eingeben</CardDescription>
+                  </div>
+                  {/* Mobile quick access button */}
+                  <Button 
+                    onClick={onCreate} 
+                    disabled={loading || !email || !password}
+                    className="sm:hidden w-full"
+                    size="sm"
+                  >
+                    {loading ? "Wird erstellt..." : "Benutzer anlegen"}
+                  </Button>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="email">E-Mail</Label>
-                    <Input id="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@firma.de" />
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-medium">E-Mail</Label>
+                    <Input 
+                      id="email" 
+                      value={email} 
+                      onChange={(e) => setEmail(e.target.value)} 
+                      placeholder="name@firma.de"
+                      className="w-full" 
+                    />
                   </div>
-                  <div>
-                    <Label htmlFor="password">Passwort</Label>
-                    <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-sm font-medium">Passwort</Label>
+                    <Input 
+                      id="password" 
+                      type="password" 
+                      value={password} 
+                      onChange={(e) => setPassword(e.target.value)} 
+                      placeholder="••••••••"
+                      className="w-full" 
+                    />
                   </div>
-                  <div>
-                    <Label htmlFor="displayName">Anzeigename</Label>
-                    <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Max Mustermann" />
+                  <div className="space-y-2">
+                    <Label htmlFor="displayName" className="text-sm font-medium">Anzeigename</Label>
+                    <Input 
+                      id="displayName" 
+                      value={displayName} 
+                      onChange={(e) => setDisplayName(e.target.value)} 
+                      placeholder="Max Mustermann"
+                      className="w-full" 
+                    />
                   </div>
-                  <div>
-                    <Label>Rolle</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Rolle</Label>
                     <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Rolle wählen" />
                       </SelectTrigger>
                       <SelectContent>
@@ -201,7 +234,8 @@ const Admin = () => {
                     </Select>
                   </div>
                 </div>
-                <div>
+                {/* Desktop button */}
+                <div className="hidden sm:block pt-2">
                   <Button onClick={onCreate} disabled={loading || !email || !password}>
                     {loading ? "Wird erstellt..." : "Benutzer anlegen"}
                   </Button>
