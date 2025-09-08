@@ -458,8 +458,11 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
             <div className="flex items-center gap-1 sm:gap-3">
               <ThemeToggle />
               {user.role === "admin" && (
-                <a href="/admin" className="hidden sm:inline-block">
-                  <Button variant="outline" size="sm">Admin</Button>
+                <a href="/admin">
+                  <Button variant="outline" size="sm">
+                    <span className="hidden sm:inline">Admin</span>
+                    <span className="sm:hidden">A</span>
+                  </Button>
                 </a>
               )}
               <Button variant="ghost" size="sm" className="hidden sm:flex">
