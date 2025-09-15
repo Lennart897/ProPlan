@@ -81,7 +81,15 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
            action: action,
            previous_status: oldData?.status ? getStatusLabel(oldData.status) : null,
            new_status: newData?.status ? getStatusLabel(newData.status) : null,
-           reason: newData?.rejection_reason || newData?.correction_reason || null
+           reason: newData?.rejection_reason || newData?.correction_reason || null,
+           old_data: action === 'correction' ? JSON.stringify({
+             gesamtmenge: oldData?.gesamtmenge,
+             standort_verteilung: oldData?.standort_verteilung
+           }) : null,
+           new_data: action === 'correction' ? JSON.stringify({
+             gesamtmenge: newData?.new_gesamtmenge,
+             standort_verteilung: newData?.new_standort_verteilung
+           }) : null
          });
     } catch (error) {
       console.error('Fehler beim Protokollieren der Aktion:', error);
@@ -261,7 +269,14 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         status: project.status,
         gesamtmenge: project.gesamtmenge,
         standort_verteilung: project.standort_verteilung 
-      }, { ...updateData, correction_reason: correctionReason });
+      }, { 
+        ...updateData, 
+        correction_reason: correctionReason,
+        old_gesamtmenge: project.gesamtmenge,
+        new_gesamtmenge: updateData.gesamtmenge || project.gesamtmenge,
+        old_standort_verteilung: project.standort_verteilung,
+        new_standort_verteilung: updateData.standort_verteilung || project.standort_verteilung
+      });
 
       // If location-specific planning user is sending back to SupplyChain (status 3),
       // we need to use a transaction to delete location approvals and update project atomically
