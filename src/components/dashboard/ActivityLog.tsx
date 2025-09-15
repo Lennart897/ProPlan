@@ -91,11 +91,12 @@ export function ActivityLog({ userId }: ActivityLogProps) {
         return;
       }
 
-      // 2) Historie für sichtbare Projekte laden
+      // 2) Historie für sichtbare Projekte vom aktuellen Benutzer laden
       const { data: history, error } = await supabase
         .from('project_history')
         .select('*')
         .in('project_id', projectIds)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(200);
       if (error) {
