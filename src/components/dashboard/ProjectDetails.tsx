@@ -150,7 +150,34 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
             project.status === PROJECT_STATUS.GENEHMIGT
           ) && (project.created_by_id === user.id || project.created_by === user.id);
           
-          if (isCreatorRejection) {
+          if (isCreatorRejection && project.status === PROJECT_STATUS.GENEHMIGT) {
+            // Creator cancellation of approved project: send supply chain rejection email
+            console.log('Creator cancellation of approved project - sending supply chain rejection email');
+            try {
+              await supabase.functions.invoke('send-project-rejection-supply-chain-email', {
+                body: {
+                  id: project.id,
+                  project_number: project.project_number,
+                  customer: project.customer,
+                  artikel_nummer: project.artikel_nummer,
+                  artikel_bezeichnung: project.artikel_bezeichnung,
+                  gesamtmenge: project.gesamtmenge,
+                  erste_anlieferung: project.erste_anlieferung,
+                  letzte_anlieferung: project.letzte_anlieferung,
+                  beschreibung: project.beschreibung,
+                  standort_verteilung: project.standort_verteilung,
+                  created_by_id: project.created_by_id || project.created_by,
+                  created_by_name: project.created_by_name,
+                  rejection_reason: rejectionReason
+                }
+              });
+              console.log('Supply chain rejection email sent successfully');
+            } catch (emailError) {
+              console.error('Error sending supply chain rejection email:', emailError);
+              // Continue with the rejection even if email fails
+            }
+            actionType = 'Projektstornierung durch Ersteller';
+          } else if (isCreatorRejection) {
             // Creator cancellation: do not send email to the creator; DB trigger handles 5->6 only
             console.log('Creator cancellation detected - skipping email invoke');
             actionType = 'Projektstornierung durch Ersteller';
