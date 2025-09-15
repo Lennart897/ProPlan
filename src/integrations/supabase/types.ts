@@ -210,7 +210,9 @@ export type Database = {
           action: string
           created_at: string
           id: string
+          new_data: Json | null
           new_status: string | null
+          old_data: Json | null
           previous_status: string | null
           project_id: string
           reason: string | null
@@ -221,7 +223,9 @@ export type Database = {
           action: string
           created_at?: string
           id?: string
+          new_data?: Json | null
           new_status?: string | null
+          old_data?: Json | null
           previous_status?: string | null
           project_id: string
           reason?: string | null
@@ -232,7 +236,9 @@ export type Database = {
           action?: string
           created_at?: string
           id?: string
+          new_data?: Json | null
           new_status?: string | null
+          old_data?: Json | null
           previous_status?: string | null
           project_id?: string
           reason?: string | null
