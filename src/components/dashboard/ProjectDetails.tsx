@@ -136,12 +136,15 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           actionType = 'Ablehnung';
           
           // Check if this is a creator rejection (approved project being rejected by creator)
-          const isCreatorRejection = project.status === PROJECT_STATUS.GENEHMIGT && 
-                                   (project.created_by_id === user.id || project.created_by === user.id);
+          const isCreatorRejection = (
+            project.status === PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN ||
+            project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG ||
+            project.status === PROJECT_STATUS.GENEHMIGT
+          ) && (project.created_by_id === user.id || project.created_by === user.id);
           
           if (isCreatorRejection) {
-            // Creator rejection email notification is now handled by database trigger
-            console.log('Creator rejection detected - email will be sent by database trigger');
+            // Creator cancellation: do not send email to the creator; DB trigger handles 5->6 only
+            console.log('Creator cancellation detected - skipping email invoke');
             actionType = 'Projektstornierung durch Ersteller';
           } else {
             // Send normal rejection email notification
@@ -465,20 +468,24 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         break;
     }
 
-    // Allow project creators to reject approved projects (status 5) - regardless of role
-    if (project.status === PROJECT_STATUS.GENEHMIGT && (project.created_by_id === user.id || project.created_by === user.id)) {
-      console.log('Creator rejection button should show:', {
+    // Allow project creators to cancel projects in status 3, 4, or 5 - regardless of role
+    if (
+      (project.status === PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN ||
+       project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG ||
+       project.status === PROJECT_STATUS.GENEHMIGT) &&
+      (project.created_by_id === user.id || project.created_by === user.id)
+    ) {
+      console.log('Creator cancellation button should show:', {
         projectStatus: project.status,
-        expectedStatus: PROJECT_STATUS.GENEHMIGT,
+        allowedStatuses: [PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN, PROJECT_STATUS.PRUEFUNG_PLANUNG, PROJECT_STATUS.GENEHMIGT],
         projectCreatorId: project.created_by_id,
         projectCreatedBy: project.created_by,
         currentUserId: user.id,
-        userRole: user.role,
-        matches: project.created_by_id === user.id || project.created_by === user.id
+        userRole: user.role
       });
       buttons.push(
         <Button key="creator_reject" variant="destructive" className="w-64" onClick={() => {
-          console.log('Creator rejection button clicked');
+          console.log('Creator cancellation button clicked');
           setShowRejectionDialog(true);
         }}>
           Projekt absagen
