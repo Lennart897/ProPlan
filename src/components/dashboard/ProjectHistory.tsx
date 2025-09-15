@@ -54,11 +54,20 @@ const actionLabels = {
 };
 
 const actionColors = {
-  created: "bg-blue-500",
-  submitted: "bg-blue-500",
-  approved: "bg-green-500",
-  rejected: "bg-red-500",
-  corrected: "bg-orange-500",
+  create: "default",
+  created: "default",
+  approve: "default",
+  approved: "default",
+  approved_forwarded: "secondary",
+  location_approved: "default",
+  reject: "destructive",
+  rejected: "destructive",
+  correct: "secondary",
+  correction: "warning",
+  corrected: "secondary",
+  archive: "outline",
+  send_to_progress: "default",
+  submitted: "default",
 };
 
 const roleLabels = {
@@ -202,14 +211,14 @@ export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
                   
                   <div className="flex items-start gap-4">
                     {/* Icon */}
-                    <div className={`rounded-full p-2 ${actionColors[entry.action as keyof typeof actionColors] || 'bg-gray-500'}`}>
-                      <IconComponent className="h-4 w-4 text-white" />
+                    <div className="rounded-full p-2 bg-primary">
+                      <IconComponent className="h-4 w-4 text-primary-foreground" />
                     </div>
                     
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <Badge variant="outline">
+                        <Badge variant={actionColors[entry.action as keyof typeof actionColors] as any || "outline"}>
                           {actionLabels[entry.action as keyof typeof actionLabels] || entry.action}
                         </Badge>
                         <Badge 
