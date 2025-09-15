@@ -37,11 +37,20 @@ const actionIcons = {
 };
 
 const actionLabels = {
+  create: "Erstellt",
   created: "Erstellt",
-  submitted: "Eingereicht",
+  approve: "Zugesagt",
   approved: "Genehmigt",
-  rejected: "Abgelehnt", 
-  corrected: "Korrektur angefordert",
+  approved_forwarded: "Weitergeleitet (Supply Chain)",
+  location_approved: "Standort zugesagt",
+  reject: "Abgesagt",
+  rejected: "Abgelehnt",
+  correct: "Korrigiert",
+  correction: "Korrektur",
+  corrected: "Korrigiert",
+  archive: "Archiviert",
+  send_to_progress: "Freigegeben",
+  submitted: "Eingereicht",
 };
 
 const actionColors = {
