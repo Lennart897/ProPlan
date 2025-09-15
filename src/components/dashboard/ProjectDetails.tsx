@@ -557,6 +557,12 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                 </div>
               </div>
             </div>
+            {project.beschreibung && (
+              <div className="mt-6">
+                <Label className="text-sm font-medium text-muted-foreground">Projektbeschreibung</Label>
+                <p className="whitespace-pre-wrap mt-1">{project.beschreibung}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -582,12 +588,6 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                 <Label className="text-sm font-medium text-muted-foreground">Produktgruppe</Label>
                 <p className="font-medium">{project.produktgruppe || "Nicht angegeben"}</p>
               </div>
-              {project.beschreibung && (
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Beschreibung</Label>
-                  <p className="whitespace-pre-wrap">{project.beschreibung}</p>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
