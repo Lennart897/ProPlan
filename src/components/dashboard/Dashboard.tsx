@@ -789,7 +789,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                 <DialogTitle>Aktivitäten</DialogTitle>
                 <DialogDescription>Ihr persönliches Aktivitätenprotokoll</DialogDescription>
               </DialogHeader>
-              <ActivityLog userId={user.id} />
+              <ActivityLog userId={user.id} userRole={user.role} />
             </DialogContent>
           </Dialog>
         </div>

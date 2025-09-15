@@ -8,6 +8,7 @@ import { Activity, Clock, User, Building, Package, Hash } from "lucide-react";
 
 interface ActivityLogProps {
   userId: string;
+  userRole: string;
 }
 
 type HistoryRow = {
@@ -63,7 +64,7 @@ const statusLabels: Record<string, string> = {
   archived: "Archiviert",
 };
 
-export function ActivityLog({ userId }: ActivityLogProps) {
+export function ActivityLog({ userId, userRole }: ActivityLogProps) {
   const [rows, setRows] = useState<HistoryRow[]>([]);
   const [projects, setProjects] = useState<Record<string, ProjectMinimal>>({});
   const [loading, setLoading] = useState(true);
@@ -91,14 +92,20 @@ export function ActivityLog({ userId }: ActivityLogProps) {
         return;
       }
 
-      // 2) Historie für sichtbare Projekte vom aktuellen Benutzer laden
-      const { data: history, error } = await supabase
+      // 2) Historie für sichtbare Projekte laden (Admin sieht alle, andere nur eigene)
+      const historyQuery = supabase
         .from('project_history')
         .select('*')
         .in('project_id', projectIds)
-        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(200);
+      
+      // Nur für nicht-Admin Benutzer nach user_id filtern
+      if (userRole !== 'admin') {
+        historyQuery.eq('user_id', userId);
+      }
+      
+      const { data: history, error } = await historyQuery;
       if (error) {
         console.error('Fehler beim Laden des Aktivitätsprotokolls', error);
         setLoading(false);
