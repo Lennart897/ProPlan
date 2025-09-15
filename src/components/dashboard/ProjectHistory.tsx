@@ -256,55 +256,63 @@ export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
                           <div className="flex items-start gap-2">
                             <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
                             <div className="w-full">
-                              {entry.reason && (
-                                <>
-                                  <p className="text-sm font-medium mb-1">
-                                    {entry.action === 'rejected' ? 'Ablehnungsbegründung:' : 
-                                     entry.action === 'correction' ? 'Korrekturbegründung:' : 'Begründung:'}
-                                  </p>
-                                  <p className="text-sm text-muted-foreground mb-2">{entry.reason}</p>
-                                </>
+                              {entry.action === 'correction' && (entry.old_data || entry.new_data) && (
+                                <div className="space-y-3">
+                                  <div>
+                                    <p className="text-sm font-medium mb-2">Korrektur der Projektdaten:</p>
+                                    {(() => {
+                                      try {
+                                        const oldData = entry.old_data ? JSON.parse(entry.old_data) : null;
+                                        const newData = entry.new_data ? JSON.parse(entry.new_data) : null;
+                                        
+                                        return (
+                                          <div className="space-y-2 text-sm">
+                                            {oldData?.gesamtmenge !== undefined && newData?.gesamtmenge !== undefined && oldData.gesamtmenge !== newData.gesamtmenge && (
+                                              <div className="bg-blue-50 border border-blue-200 rounded p-2">
+                                                <div className="font-medium text-blue-900 mb-1">Gesamtmenge korrigiert:</div>
+                                                <div className="text-blue-800">
+                                                  Ursprünglich angefragt: <span className="font-semibold">{oldData.gesamtmenge.toLocaleString()} kg</span>
+                                                </div>
+                                                <div className="text-blue-800">
+                                                  Korrigiert auf: <span className="font-semibold text-green-700">{newData.gesamtmenge.toLocaleString()} kg</span>
+                                                </div>
+                                              </div>
+                                            )}
+                                            {oldData?.standort_verteilung && newData?.standort_verteilung && JSON.stringify(oldData.standort_verteilung) !== JSON.stringify(newData.standort_verteilung) && (
+                                              <div className="bg-orange-50 border border-orange-200 rounded p-2">
+                                                <div className="font-medium text-orange-900 mb-1">Standortverteilung geändert:</div>
+                                                <div className="space-y-1">
+                                                  {Object.entries(newData.standort_verteilung as Record<string, number>).map(([location, newQty]) => {
+                                                    const oldQty = (oldData.standort_verteilung as Record<string, number>)?.[location] || 0;
+                                                    if (oldQty !== newQty) {
+                                                      return (
+                                                        <div key={location} className="text-orange-800">
+                                                          <span className="font-medium">{location}:</span> {oldQty.toLocaleString()} kg → <span className="font-semibold">{newQty.toLocaleString()} kg</span>
+                                                        </div>
+                                                      );
+                                                    }
+                                                    return null;
+                                                  })}
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      } catch (e) {
+                                        return <p className="text-sm text-muted-foreground">Änderungsdetails nicht verfügbar</p>;
+                                      }
+                                    })()}
+                                  </div>
+                                </div>
                               )}
                               
-                              {entry.action === 'correction' && (entry.old_data || entry.new_data) && (
-                                <div className="space-y-2">
-                                  <p className="text-sm font-medium">Änderungen:</p>
-                                  {(() => {
-                                    try {
-                                      const oldData = entry.old_data ? JSON.parse(entry.old_data) : null;
-                                      const newData = entry.new_data ? JSON.parse(entry.new_data) : null;
-                                      
-                                      return (
-                                        <div className="space-y-1 text-sm">
-                                          {oldData?.gesamtmenge !== undefined && newData?.gesamtmenge !== undefined && oldData.gesamtmenge !== newData.gesamtmenge && (
-                                            <div className="text-muted-foreground">
-                                              Gesamtmenge: <span className="line-through">{oldData.gesamtmenge}</span> → <span className="font-medium">{newData.gesamtmenge}</span>
-                                            </div>
-                                          )}
-                                          {oldData?.standort_verteilung && newData?.standort_verteilung && JSON.stringify(oldData.standort_verteilung) !== JSON.stringify(newData.standort_verteilung) && (
-                                            <div className="text-muted-foreground">
-                                              <div>Standortverteilung geändert:</div>
-                                              <div className="ml-2 mt-1 space-y-1">
-                                                {Object.entries(newData.standort_verteilung as Record<string, number>).map(([location, newQty]) => {
-                                                  const oldQty = (oldData.standort_verteilung as Record<string, number>)?.[location] || 0;
-                                                  if (oldQty !== newQty) {
-                                                    return (
-                                                      <div key={location}>
-                                                        {location}: <span className="line-through">{oldQty}</span> → <span className="font-medium">{newQty}</span>
-                                                      </div>
-                                                    );
-                                                  }
-                                                  return null;
-                                                })}
-                                              </div>
-                                            </div>
-                                          )}
-                                        </div>
-                                      );
-                                    } catch (e) {
-                                      return <p className="text-sm text-muted-foreground">Änderungsdetails nicht verfügbar</p>;
-                                    }
-                                  })()}
+                              {entry.reason && (
+                                <div className="mt-3">
+                                  <p className="text-sm font-medium mb-1">
+                                    {entry.action === 'rejected' ? 'Ablehnungsbegründung:' : 
+                                     entry.action === 'correction' ? 'Begründung der Korrektur:' : 'Begründung:'}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">{entry.reason}</p>
                                 </div>
                               )}
                             </div>
