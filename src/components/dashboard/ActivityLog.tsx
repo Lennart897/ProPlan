@@ -40,6 +40,7 @@ const actionLabels: Record<string, string> = {
   correct: "Korrigiert",
   corrected: "Korrigiert",
   archive: "Archiviert",
+  send_to_progress: "Freigegeben",
 };
 
 const actionColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -52,6 +53,7 @@ const actionColors: Record<string, "default" | "secondary" | "destructive" | "ou
   correct: "secondary",
   corrected: "secondary",
   archive: "outline",
+  send_to_progress: "default",
 };
 
 const statusLabels: Record<string, string> = {
