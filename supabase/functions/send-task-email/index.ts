@@ -68,7 +68,7 @@ serve(async (req: Request) => {
         }
       ],
       from: {
-        email: "ProPlanPost@outlook.com",
+        email: "noreply@proplansystem.de",
         name: "ProPlan System"
       },
       content: [
