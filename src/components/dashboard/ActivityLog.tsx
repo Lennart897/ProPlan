@@ -38,12 +38,13 @@ const actionLabels: Record<string, string> = {
   reject: "Abgesagt",
   rejected: "Abgelehnt",
   correct: "Korrigiert",
+  correction: "Korrektur",
   corrected: "Korrigiert",
   archive: "Archiviert",
   send_to_progress: "Freigegeben",
 };
 
-const actionColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+const actionColors: Record<string, "default" | "secondary" | "destructive" | "outline" | "warning"> = {
   create: "default",
   approve: "default",
   approved_forwarded: "secondary",
@@ -51,6 +52,7 @@ const actionColors: Record<string, "default" | "secondary" | "destructive" | "ou
   reject: "destructive",
   rejected: "destructive",
   correct: "secondary",
+  correction: "warning",
   corrected: "secondary",
   archive: "outline",
   send_to_progress: "default",
