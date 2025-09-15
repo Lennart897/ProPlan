@@ -15,6 +15,7 @@ type ProjectStatus = number;
 
 interface Project {
   id: string;
+  project_number: number;
   customer: string;
   artikel_nummer: string;
   artikel_bezeichnung: string;

@@ -20,6 +20,7 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 // Import the Project type from WeeklyCalendar to avoid type conflicts
 type CalendarProject = {
   id: string;
+  project_number?: number;
   customer: string;
   artikel_nummer: string;
   artikel_bezeichnung: string;
@@ -381,7 +382,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
           const found = projects.find(p => p.id === project.id);
           const projectForDetails: Project = {
             id: project.id,
-            project_number: found?.project_number ?? 0,
+            project_number: (project as any).project_number ?? found?.project_number ?? 0,
             customer: project.customer,
             artikel_nummer: project.artikel_nummer,
             artikel_bezeichnung: project.artikel_bezeichnung,
