@@ -245,7 +245,7 @@ const Index = () => {
         <div className="text-center pt-4 border-t space-y-3">
           <p className="text-sm text-muted-foreground">Demo Accounts:</p>
           <div className="space-y-2">
-            <Button variant="outline" onClick={() => demoLogin("vertrieb@demo.com")} className="w-full">
+            <Button variant="outline" onClick={() => demoLogin("vertriebdemo@proplansystem.de")} className="w-full">
               Vertrieb Demo
             </Button>
             <Button variant="outline" onClick={() => demoLogin("supply@demo.com")} className="w-full">
