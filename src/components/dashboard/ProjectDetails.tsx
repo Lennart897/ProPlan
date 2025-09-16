@@ -628,13 +628,15 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                 <Label className="text-sm font-medium text-muted-foreground">Artikel-Nummer</Label>
                 <p className="font-medium">{project.artikel_nummer}</p>
               </div>
-              <div>
-                <Label className="text-sm font-medium text-muted-foreground">Produktgruppe 1</Label>
-                <p className="font-medium">{project.produktgruppe || "Nicht angegeben"}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-muted-foreground">Produktgruppe 2</Label>
-                <p className="font-medium">{project.produktgruppe_2 || "Nicht angegeben"}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Produktgruppe 1</Label>
+                  <p className="font-medium">{project.produktgruppe || "Nicht angegeben"}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Produktgruppe 2</Label>
+                  <p className="font-medium">{project.produktgruppe_2 || "Nicht angegeben"}</p>
+                </div>
               </div>
             </div>
           </CardContent>
