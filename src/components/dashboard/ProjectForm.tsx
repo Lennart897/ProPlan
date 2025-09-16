@@ -88,7 +88,7 @@ const projectSchema = z.object({
   artikel_nummer: z.string().min(1, "Artikelnummer ist erforderlich"),
   artikel_bezeichnung: z.string().min(1, "Artikelbezeichnung ist erforderlich"),
   produktgruppe: z.enum(PRODUCT_GROUPS, { required_error: "Produktgruppe 1 ist erforderlich" }),
-  produktgruppe_2: z.enum(PRODUCT_GROUPS_2, { required_error: "Produktgruppe 2 ist erforderlich" }),
+  produktgruppe_2: z.enum(PRODUCT_GROUPS_2).optional(),
   gesamtmenge: z.number().min(0.1, "Gesamtmenge muss größer als 0 sein"),
   beschreibung: z.string().optional(),
   
