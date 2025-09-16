@@ -727,18 +727,19 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
               onSubmit={async (e) => {
                 e.preventDefault();
                 
-                // Validierung: Gesamtmenge muss Summe der Standortverteilung entsprechen
-                const locationSum = Object.values(locationQuantities).reduce((sum, qty) => sum + (qty || 0), 0);
-                const totalQuantity = user.role === 'supply_chain' ? parseInt(correctedQuantity) : project.gesamtmenge;
-                
-                if (locationSum !== totalQuantity) {
-                  toast({
-                    title: "Validierungsfehler",
-                    description: `Die Summe der Standortmengen (${locationSum.toLocaleString('de-DE')}) muss der Gesamtmenge (${totalQuantity.toLocaleString('de-DE')}) entsprechen.`,
-                    variant: "destructive",
-                  });
-                  return;
-                }
+                 // Validierung: Nur für SupplyChain muss Gesamtmenge mit Standortverteilung übereinstimmen
+                 // Planung darf Standortverteilung unabhängig von Gesamtmenge korrigieren
+                 const locationSum = Object.values(locationQuantities).reduce((sum, qty) => sum + (qty || 0), 0);
+                 const totalQuantity = user.role === 'supply_chain' ? parseInt(correctedQuantity) : project.gesamtmenge;
+                 
+                 if (user.role === 'supply_chain' && locationSum !== totalQuantity) {
+                   toast({
+                     title: "Validierungsfehler",
+                     description: `Die Summe der Standortmengen (${locationSum.toLocaleString('de-DE')}) muss der Gesamtmenge (${totalQuantity.toLocaleString('de-DE')}) entsprechen.`,
+                     variant: "destructive",
+                   });
+                   return;
+                 }
                 
                 // SupplyChain Korrektur-Logik:
                 // - Wenn Gesamtmenge geändert wurde → Status 2 (Vertrieb prüft)
@@ -859,33 +860,45 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                         </div>
                       </div>
                       
-                      {/* Validation Status */}
-                      {(() => {
-                        const locationSum = Object.values(locationQuantities).reduce((sum, qty) => sum + (qty || 0), 0);
-                        const totalQuantity = user.role === 'supply_chain' ? (parseInt(correctedQuantity) || 0) : project.gesamtmenge;
-                        const isValid = locationSum === totalQuantity;
-                        return (
-                          <div className={`p-3 rounded-lg border transition-all duration-200 ${
-                            isValid 
-                              ? 'bg-green-50 border-green-200 text-green-800' 
-                              : 'bg-amber-50 border-amber-200 text-amber-800'
-                          }`}>
-                            <div className="flex items-center gap-2">
-                              <span className={`text-lg ${isValid ? 'text-green-600' : 'text-amber-600'}`}>
-                                {isValid ? '✓' : '⚠'}
-                              </span>
-                              <span className="font-medium">
-                                {isValid ? 'Mengen stimmen überein' : 'Mengen müssen übereinstimmen'}
-                              </span>
-                            </div>
-                            {!isValid && (
-                              <div className="mt-1 text-sm opacity-80">
-                                Differenz: {Math.abs(locationSum - totalQuantity).toLocaleString('de-DE')} kg
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
+                       {/* Validation Status */}
+                       {(() => {
+                         const locationSum = Object.values(locationQuantities).reduce((sum, qty) => sum + (qty || 0), 0);
+                         const totalQuantity = user.role === 'supply_chain' ? (parseInt(correctedQuantity) || 0) : project.gesamtmenge;
+                         const isValid = user.role === 'supply_chain' ? locationSum === totalQuantity : true; // Planung darf abweichen
+                         const isPlanningRole = user.role.startsWith('planung_') || user.role === 'planung';
+                         
+                         return (
+                           <div className={`p-3 rounded-lg border transition-all duration-200 ${
+                             isValid 
+                               ? 'bg-green-50 border-green-200 text-green-800' 
+                               : 'bg-amber-50 border-amber-200 text-amber-800'
+                           }`}>
+                             <div className="flex items-center gap-2">
+                               <span className={`text-lg ${isValid ? 'text-green-600' : 'text-amber-600'}`}>
+                                 {isValid ? '✓' : '⚠'}
+                               </span>
+                               <span className="font-medium">
+                                 {isPlanningRole 
+                                   ? 'Standortmengen können von Gesamtmenge abweichen'
+                                   : isValid 
+                                     ? 'Mengen stimmen überein' 
+                                     : 'Mengen müssen übereinstimmen'
+                                 }
+                               </span>
+                             </div>
+                             {!isValid && !isPlanningRole && (
+                               <div className="mt-1 text-sm opacity-80">
+                                 Differenz: {Math.abs(locationSum - totalQuantity).toLocaleString('de-DE')} kg
+                               </div>
+                             )}
+                             {isPlanningRole && locationSum !== totalQuantity && (
+                               <div className="mt-1 text-sm opacity-80">
+                                 Abweichung: {(locationSum - totalQuantity).toLocaleString('de-DE')} kg
+                               </div>
+                             )}
+                           </div>
+                         );
+                       })()}
                     </div>
                    </div>
                   
