@@ -20,6 +20,7 @@ interface Project {
   artikel_nummer: string;
   artikel_bezeichnung: string;
   produktgruppe?: string;
+  produktgruppe_2?: string;
   gesamtmenge: number;
   beschreibung?: string;
   erste_anlieferung?: string;
@@ -378,6 +379,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           artikel_nummer: project.artikel_nummer,
           artikel_bezeichnung: project.artikel_bezeichnung,
           produktgruppe: project.produktgruppe,
+          produktgruppe_2: project.produktgruppe_2,
           gesamtmenge: project.gesamtmenge,
           beschreibung: project.beschreibung,
           erste_anlieferung: project.erste_anlieferung,
@@ -627,8 +629,12 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                 <p className="font-medium">{project.artikel_nummer}</p>
               </div>
               <div>
-                <Label className="text-sm font-medium text-muted-foreground">Produktgruppe</Label>
+                <Label className="text-sm font-medium text-muted-foreground">Produktgruppe 1</Label>
                 <p className="font-medium">{project.produktgruppe || "Nicht angegeben"}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Produktgruppe 2</Label>
+                <p className="font-medium">{project.produktgruppe_2 || "Nicht angegeben"}</p>
               </div>
             </div>
           </CardContent>
