@@ -763,7 +763,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                       <div>
                         <Label className="text-muted-foreground">Aktuelle Gesamtmenge (kg)</Label>
                         <div className="px-3 py-2 bg-muted rounded-md mt-1">
-                          <span className="font-medium">{project.gesamtmenge}</span>
+                          <span className="font-medium">{project.gesamtmenge.toLocaleString('de-DE')}</span>
                         </div>
                       </div>
                       <div>
