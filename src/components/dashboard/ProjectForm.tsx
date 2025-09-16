@@ -324,7 +324,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="produktgruppe">Produktgruppe</Label>
+              <Label htmlFor="produktgruppe">Produktgruppe 1</Label>
               <Select
                 value={form.watch("produktgruppe") || undefined}
                 onValueChange={(val) => form.setValue("produktgruppe", val as ProductGroup)}
