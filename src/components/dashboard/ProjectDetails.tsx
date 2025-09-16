@@ -692,7 +692,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                       <span className="font-medium">
                         {getLocationName(location)}
                       </span>
-                      <span className="font-semibold">{amount.toLocaleString('de-DE')} kg</span>
+                      <span className="font-semibold text-primary">{amount.toLocaleString('de-DE')} kg</span>
                     </div>
                   ))}
               </div>
