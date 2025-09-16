@@ -543,7 +543,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <Button variant="ghost" onClick={onBack} className="mb-4">
+          <Button variant="default" onClick={onBack} className="mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Zurück zur Übersicht
           </Button>
