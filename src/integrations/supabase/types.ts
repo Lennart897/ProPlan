@@ -431,6 +431,7 @@ export type Database = {
           menge_fix: boolean | null
           preis: number | null
           produktgruppe: string | null
+          produktgruppe_2: string | null
           project_number: number | null
           rejection_reason: string | null
           standort_verteilung: Json | null
@@ -456,6 +457,7 @@ export type Database = {
           menge_fix?: boolean | null
           preis?: number | null
           produktgruppe?: string | null
+          produktgruppe_2?: string | null
           project_number?: number | null
           rejection_reason?: string | null
           standort_verteilung?: Json | null
@@ -481,6 +483,7 @@ export type Database = {
           menge_fix?: boolean | null
           preis?: number | null
           produktgruppe?: string | null
+          produktgruppe_2?: string | null
           project_number?: number | null
           rejection_reason?: string | null
           standort_verteilung?: Json | null
