@@ -372,7 +372,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                 <ChevronLeft className="h-5 w-5" />
               </Button>
               <Button 
-                variant="outline" 
+                variant="default" 
                 onClick={goToCurrentWeek} 
                 className="h-10 px-4 rounded-xl text-sm font-medium"
               >
