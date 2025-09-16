@@ -716,7 +716,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
 
         {/* Correction Dialog */}
         <Dialog open={showCorrectionDialog} onOpenChange={setShowCorrectionDialog}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4 w-full sm:w-auto">
             <DialogHeader>
               <DialogTitle>Projekt korrigieren</DialogTitle>
               <DialogDescription>
@@ -798,7 +798,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                  
                  <div>
                    <Label>Standortverteilung</Label>
-                   <div className="grid grid-cols-2 gap-3 mt-2">
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                       {Object.keys(locationQuantities).map((key) => {
                         const label = getLocationName(key);
                        // Prüfe ob User standortspezifische Planungsrolle hat
