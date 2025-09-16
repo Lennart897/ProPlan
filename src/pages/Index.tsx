@@ -248,10 +248,10 @@ const Index = () => {
             <Button variant="outline" onClick={() => demoLogin("vertriebdemo@proplansystem.de")} className="w-full">
               Vertrieb Demo
             </Button>
-            <Button variant="outline" onClick={() => demoLogin("supply@demo.com")} className="w-full">
+            <Button variant="outline" onClick={() => demoLogin("supplychaindemo@proplansystem.de")} className="w-full">
               Supply Chain Demo
             </Button>
-            <Button variant="outline" onClick={() => demoLogin("planung@demo.com")} className="w-full">
+            <Button variant="outline" onClick={() => demoLogin("planungdemo@proplansystem.de")} className="w-full">
               Planung Demo
             </Button>
             <Button variant="outline" onClick={() => demoLogin("admin@demo.com")} className="w-full">
