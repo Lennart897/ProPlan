@@ -770,10 +770,13 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                         <Label htmlFor="corrected-quantity">Neue Gesamtmenge (kg)</Label>
                         <Input
                           id="corrected-quantity"
-                          type="number"
-                          value={correctedQuantity}
-                          onChange={(e) => setCorrectedQuantity(e.target.value)}
-                          min="1"
+                          type="text"
+                          value={correctedQuantity ? parseInt(correctedQuantity).toLocaleString('de-DE') : ''}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\./g, '');
+                            setCorrectedQuantity(value);
+                          }}
+                          placeholder="z.B. 1.000"
                           required
                         />
                       </div>
@@ -793,18 +796,21 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                        return (
                          <div key={key}>
                            <Label htmlFor={`location-${key}`} className="text-sm">{label}</Label>
-                           <Input
-                             id={`location-${key}`}
-                             type="number"
-                             value={locationQuantities[key] || 0}
-                             onChange={(e) => setLocationQuantities(prev => ({
-                               ...prev,
-                               [key]: parseInt(e.target.value) || 0
-                             }))}
-                             min="0"
-                             disabled={!canEditThisLocation}
-                             className={!canEditThisLocation ? "bg-muted cursor-not-allowed" : ""}
-                           />
+                            <Input
+                              id={`location-${key}`}
+                              type="text"
+                              value={locationQuantities[key] ? locationQuantities[key].toLocaleString('de-DE') : '0'}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\./g, '');
+                                setLocationQuantities(prev => ({
+                                  ...prev,
+                                  [key]: parseInt(value) || 0
+                                }));
+                              }}
+                              placeholder="0"
+                              disabled={!canEditThisLocation}
+                              className={!canEditThisLocation ? "bg-muted cursor-not-allowed" : ""}
+                            />
                            {!canEditThisLocation && (
                              <p className="text-xs text-muted-foreground mt-1">
                                Nur betroffener Standort kann diese Menge anpassen
