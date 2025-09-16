@@ -835,27 +835,53 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                     </div>
                     
                     {/* Validation indicator */}
-                    <div className="mt-3 p-3 bg-muted rounded-md">
-                      <div className="flex items-center justify-between text-sm">
-                        <span>Summe Standorte:</span>
-                        <span className="font-medium">{Object.values(locationQuantities).reduce((sum, qty) => sum + (qty || 0), 0).toLocaleString('de-DE')} kg</span>
+                    <div className="mt-4 space-y-3">
+                      <Label className="text-sm font-medium">Mengenverteilung Übersicht</Label>
+                      
+                      {/* Summary Cards */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 bg-background border rounded-lg">
+                          <div className="text-xs text-muted-foreground mb-1">Summe Standorte</div>
+                          <div className="font-semibold text-lg">
+                            {Object.values(locationQuantities).reduce((sum, qty) => sum + (qty || 0), 0).toLocaleString('de-DE')} kg
+                          </div>
+                        </div>
+                        
+                        <div className="p-3 bg-background border rounded-lg">
+                          <div className="text-xs text-muted-foreground mb-1">Gesamtmenge</div>
+                          <div className="font-semibold text-lg">
+                            {user.role === 'supply_chain' 
+                              ? (correctedQuantity ? parseInt(correctedQuantity).toLocaleString('de-DE') : '0')
+                              : project.gesamtmenge.toLocaleString('de-DE')
+                            } kg
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span>Gesamtmenge:</span>
-                        <span className="font-medium">
-                          {user.role === 'supply_chain' 
-                            ? (correctedQuantity ? parseInt(correctedQuantity).toLocaleString('de-DE') : '0')
-                            : project.gesamtmenge.toLocaleString('de-DE')
-                          } kg
-                        </span>
-                      </div>
+                      
+                      {/* Validation Status */}
                       {(() => {
                         const locationSum = Object.values(locationQuantities).reduce((sum, qty) => sum + (qty || 0), 0);
                         const totalQuantity = user.role === 'supply_chain' ? (parseInt(correctedQuantity) || 0) : project.gesamtmenge;
                         const isValid = locationSum === totalQuantity;
                         return (
-                          <div className={`mt-2 p-2 rounded text-sm ${isValid ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-                            {isValid ? '✓ Mengen stimmen überein' : '⚠ Summe der Standorte muss der Gesamtmenge entsprechen'}
+                          <div className={`p-3 rounded-lg border transition-all duration-200 ${
+                            isValid 
+                              ? 'bg-green-50 border-green-200 text-green-800' 
+                              : 'bg-amber-50 border-amber-200 text-amber-800'
+                          }`}>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-lg ${isValid ? 'text-green-600' : 'text-amber-600'}`}>
+                                {isValid ? '✓' : '⚠'}
+                              </span>
+                              <span className="font-medium">
+                                {isValid ? 'Mengen stimmen überein' : 'Mengen müssen übereinstimmen'}
+                              </span>
+                            </div>
+                            {!isValid && (
+                              <div className="mt-1 text-sm opacity-80">
+                                Differenz: {Math.abs(locationSum - totalQuantity).toLocaleString('de-DE')} kg
+                              </div>
+                            )}
                           </div>
                         );
                       })()}
