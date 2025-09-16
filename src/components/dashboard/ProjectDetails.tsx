@@ -716,7 +716,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
 
         {/* Correction Dialog */}
         <Dialog open={showCorrectionDialog} onOpenChange={setShowCorrectionDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4 w-full sm:w-auto">
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto mx-4 w-full sm:w-auto my-8">
             <DialogHeader>
               <DialogTitle>Projekt korrigieren</DialogTitle>
               <DialogDescription>
@@ -767,20 +767,20 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                  };
                 
                 await handleCorrection(updateData);
-               }}
-             >
-                <div className="space-y-4">
+              }}
+            >
+                <div className="space-y-3">
                   {/* Nur SupplyChain darf Gesamtmenge ändern */}
                   {user.role === 'supply_chain' && (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <div>
-                        <Label className="text-muted-foreground">Aktuelle Gesamtmenge (kg)</Label>
+                        <Label className="text-muted-foreground text-sm">Aktuelle Gesamtmenge (kg)</Label>
                         <div className="px-3 py-2 bg-muted rounded-md mt-1">
                           <span className="font-medium">{project.gesamtmenge.toLocaleString('de-DE')}</span>
                         </div>
                       </div>
                       <div>
-                        <Label htmlFor="corrected-quantity">Neue Gesamtmenge (kg)</Label>
+                        <Label htmlFor="corrected-quantity" className="text-sm">Neue Gesamtmenge (kg)</Label>
                         <Input
                           id="corrected-quantity"
                           type="text"
@@ -791,6 +791,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                           }}
                           placeholder="z.B. 1.000"
                           required
+                          className="mt-1"
                         />
                       </div>
                     </div>
@@ -835,7 +836,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                     </div>
                     
                     {/* Validation indicator */}
-                    <div className="mt-4 space-y-3">
+                    <div className="mt-3 space-y-2">
                       <Label className="text-sm font-medium">Mengenverteilung Übersicht</Label>
                       
                       {/* Summary Cards */}
