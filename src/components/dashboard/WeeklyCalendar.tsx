@@ -336,7 +336,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Button 
-                variant="ghost" 
+                variant="default" 
                 size="sm" 
                 onClick={onBack} 
                 className="h-9 w-9 p-0 sm:h-auto sm:w-auto sm:px-3 sm:py-2"
