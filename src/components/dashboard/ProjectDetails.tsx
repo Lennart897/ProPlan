@@ -688,7 +688,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                 {Object.entries(project.standort_verteilung)
                   .filter(([_, amount]) => amount > 0)
                   .map(([location, amount]) => (
-                    <div key={location} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                    <div key={location} className="flex justify-between items-center p-3 bg-primary text-primary-foreground rounded-lg">
                       <span className="font-medium">
                         {getLocationName(location)}
                       </span>
