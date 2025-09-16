@@ -727,6 +727,19 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
               onSubmit={async (e) => {
                 e.preventDefault();
                 
+                // Validierung: Gesamtmenge muss Summe der Standortverteilung entsprechen
+                const locationSum = Object.values(locationQuantities).reduce((sum, qty) => sum + (qty || 0), 0);
+                const totalQuantity = user.role === 'supply_chain' ? parseInt(correctedQuantity) : project.gesamtmenge;
+                
+                if (locationSum !== totalQuantity) {
+                  toast({
+                    title: "Validierungsfehler",
+                    description: `Die Summe der Standortmengen (${locationSum.toLocaleString('de-DE')}) muss der Gesamtmenge (${totalQuantity.toLocaleString('de-DE')}) entsprechen.`,
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                
                 // SupplyChain Korrektur-Logik:
                 // - Wenn Gesamtmenge geändert wurde → Status 2 (Vertrieb prüft)
                 // - Wenn nur Standortverteilung geändert wurde → Status 4 (Planung prüft)
@@ -754,8 +767,8 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                  };
                 
                 await handleCorrection(updateData);
-              }}
-            >
+               }}
+             >
                 <div className="space-y-4">
                   {/* Nur SupplyChain darf Gesamtmenge ändern */}
                   {user.role === 'supply_chain' && (
@@ -819,8 +832,35 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                          </div>
                        );
                      })}
+                    </div>
+                    
+                    {/* Validation indicator */}
+                    <div className="mt-3 p-3 bg-muted rounded-md">
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Summe Standorte:</span>
+                        <span className="font-medium">{Object.values(locationQuantities).reduce((sum, qty) => sum + (qty || 0), 0).toLocaleString('de-DE')} kg</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Gesamtmenge:</span>
+                        <span className="font-medium">
+                          {user.role === 'supply_chain' 
+                            ? (correctedQuantity ? parseInt(correctedQuantity).toLocaleString('de-DE') : '0')
+                            : project.gesamtmenge.toLocaleString('de-DE')
+                          } kg
+                        </span>
+                      </div>
+                      {(() => {
+                        const locationSum = Object.values(locationQuantities).reduce((sum, qty) => sum + (qty || 0), 0);
+                        const totalQuantity = user.role === 'supply_chain' ? (parseInt(correctedQuantity) || 0) : project.gesamtmenge;
+                        const isValid = locationSum === totalQuantity;
+                        return (
+                          <div className={`mt-2 p-2 rounded text-sm ${isValid ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                            {isValid ? '✓ Mengen stimmen überein' : '⚠ Summe der Standorte muss der Gesamtmenge entsprechen'}
+                          </div>
+                        );
+                      })()}
+                    </div>
                    </div>
-                  </div>
                   
                   <div>
                     <Label htmlFor="correction-reason">Begründung für die Korrektur</Label>
