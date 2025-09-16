@@ -36,7 +36,7 @@ const parseFormattedNumber = (value: string): number => {
 
 // Locations werden jetzt dynamisch über useLocations Hook geladen
 
-// Feste Auswahlmöglichkeiten für Produktgruppe
+// Feste Auswahlmöglichkeiten für Produktgruppe 1
 export const PRODUCT_GROUPS = [
   "Brustfilet",
   "Flügel",
@@ -50,13 +50,45 @@ export const PRODUCT_GROUPS = [
   "Unterkeule",
 ] as const;
 
+// Feste Auswahlmöglichkeiten für Produktgruppe 2
+export const PRODUCT_GROUPS_2 = [
+  "Brustkappe",
+  "Flügel",
+  "ganze Tiere",
+  "Gelenkschnitt",
+  "Geschnitten",
+  "Gespießt",
+  "Griller",
+  "Hähnchenteile",
+  "Herzen",
+  "Hühnerklein",
+  "Innenfilet",
+  "Knochenprodukte",
+  "Leber",
+  "Magen",
+  "Mägen",
+  "Mit Haut",
+  "Mit Rst",
+  "Nebenprodukte",
+  "Oberkeule",
+  "Ohne Haut",
+  "Ohne Spitze",
+  "Schenkel",
+  "Schenkelpfanne",
+  "Spieße",
+  "Teilstück",
+  "Unterkeule",
+] as const;
+
 export type ProductGroup = typeof PRODUCT_GROUPS[number];
+export type ProductGroup2 = typeof PRODUCT_GROUPS_2[number];
 
 const projectSchema = z.object({
   customer: z.string().min(1, "Kunde ist erforderlich"),
   artikel_nummer: z.string().min(1, "Artikelnummer ist erforderlich"),
   artikel_bezeichnung: z.string().min(1, "Artikelbezeichnung ist erforderlich"),
-  produktgruppe: z.enum(PRODUCT_GROUPS, { required_error: "Produktgruppe ist erforderlich" }),
+  produktgruppe: z.enum(PRODUCT_GROUPS, { required_error: "Produktgruppe 1 ist erforderlich" }),
+  produktgruppe_2: z.enum(PRODUCT_GROUPS_2, { required_error: "Produktgruppe 2 ist erforderlich" }),
   gesamtmenge: z.number().min(0.1, "Gesamtmenge muss größer als 0 sein"),
   beschreibung: z.string().optional(),
   
@@ -222,6 +254,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
           artikel_nummer: data.artikel_nummer,
           artikel_bezeichnung: data.artikel_bezeichnung,
           produktgruppe: data.produktgruppe,
+          produktgruppe_2: data.produktgruppe_2,
           gesamtmenge: data.gesamtmenge,
           beschreibung: data.beschreibung,
           
@@ -323,14 +356,14 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               )}
             </div>
 
-            <div className="space-y-2 sm:col-span-2">
+            <div className="space-y-2">
               <Label htmlFor="produktgruppe">Produktgruppe 1</Label>
               <Select
                 value={form.watch("produktgruppe") || undefined}
                 onValueChange={(val) => form.setValue("produktgruppe", val as ProductGroup)}
               >
                 <SelectTrigger id="produktgruppe">
-                  <SelectValue placeholder="Produktgruppe wählen" />
+                  <SelectValue placeholder="Produktgruppe 1 wählen" />
                 </SelectTrigger>
                 <SelectContent className="z-[60]">
                   {PRODUCT_GROUPS.map((pg) => (
@@ -343,6 +376,30 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               {form.formState.errors.produktgruppe && (
                 <p className="text-sm text-destructive">
                   {form.formState.errors.produktgruppe.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="produktgruppe_2">Produktgruppe 2</Label>
+              <Select
+                value={form.watch("produktgruppe_2") || undefined}
+                onValueChange={(val) => form.setValue("produktgruppe_2", val as ProductGroup2)}
+              >
+                <SelectTrigger id="produktgruppe_2">
+                  <SelectValue placeholder="Produktgruppe 2 wählen" />
+                </SelectTrigger>
+                <SelectContent className="z-[60]">
+                  {PRODUCT_GROUPS_2.map((pg) => (
+                    <SelectItem key={pg} value={pg}>
+                      {pg}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.formState.errors.produktgruppe_2 && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.produktgruppe_2.message}
                 </p>
               )}
             </div>
