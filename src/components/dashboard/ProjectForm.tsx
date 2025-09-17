@@ -649,9 +649,28 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               className="w-full h-12 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer cursor-pointer"
             />
             {selectedFile && (
-              <p className="text-sm text-muted-foreground">
-                Ausgewählte Datei: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-              </p>
+              <div className="flex items-center justify-between p-3 bg-muted rounded-md">
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">
+                    Ausgewählte Datei: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedFile(null);
+                    form.setValue("attachment", undefined);
+                    // Reset file input
+                    const fileInput = document.getElementById('attachment') as HTMLInputElement;
+                    if (fileInput) fileInput.value = '';
+                  }}
+                  className="ml-2"
+                >
+                  Entfernen
+                </Button>
+              </div>
             )}
             {form.formState.errors.attachment && (
               <p className="text-sm text-destructive">
