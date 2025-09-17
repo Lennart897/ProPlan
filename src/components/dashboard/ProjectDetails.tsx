@@ -658,7 +658,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                     <Label className="text-sm font-medium text-muted-foreground">Erste Anlieferung</Label>
                     <div className="flex items-center gap-2 mt-1">
                       <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>{new Date(project.erste_anlieferung).toLocaleDateString("de-DE")}</span>
+                      <span>{new Date(project.erste_anlieferung).toLocaleDateString("de-DE", { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' })}</span>
                     </div>
                   </div>
                 )}
@@ -667,7 +667,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                     <Label className="text-sm font-medium text-muted-foreground">Letzte Anlieferung</Label>
                     <div className="flex items-center gap-2 mt-1">
                       <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>{new Date(project.letzte_anlieferung).toLocaleDateString("de-DE")}</span>
+                      <span>{new Date(project.letzte_anlieferung).toLocaleDateString("de-DE", { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' })}</span>
                     </div>
                   </div>
                 )}
