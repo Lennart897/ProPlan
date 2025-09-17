@@ -466,9 +466,6 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                   </Button>
                 </a>
               )}
-              <Button variant="ghost" size="sm" className="hidden sm:flex">
-                <Bell className="h-4 w-4" />
-              </Button>
               <Button 
                 variant="ghost" 
                 size="sm" 
