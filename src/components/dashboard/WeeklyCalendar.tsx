@@ -484,7 +484,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
         </div>
 
         {/* Professional Weekly Planning Layout */}
-        <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
+        <div className="bg-card rounded-xl border shadow-sm overflow-hidden overflow-x-auto">
           <div className="p-4 border-b bg-gradient-to-r from-primary/5 to-secondary/5">
             <h3 className="text-lg font-semibold text-foreground">Wochenplanung</h3>
             <p className="text-sm text-muted-foreground">
@@ -493,266 +493,307 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
           </div>
 
           {/* Header Row */}
-          <div className="grid grid-cols-12 border-b bg-muted/30">
-            {/* Project Info Headers */}
-            <div className="col-span-5 p-3 border-r">
-              <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                <div className="col-span-3">Kunde</div>
-                <div className="col-span-2">Art.-Nr.</div>
-                <div className="col-span-4">Artikelbezeichnung</div>
-                <div className="col-span-3">Menge</div>
+          <div className="min-w-[1200px]">
+            <div className="grid grid-cols-12 border-b bg-muted/30">
+              {/* Project Info Headers */}
+              <div className="col-span-4 p-3 border-r">
+                <div className="grid grid-cols-3 gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  <div>Kunde</div>
+                  <div>Art.-Nr.</div>
+                  <div>Artikelbezeichnung</div>
+                </div>
+              </div>
+              
+              {/* Location Headers */}
+              <div className="col-span-3 p-3 border-r">
+                <div className="grid grid-cols-5 gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center">
+                  {Object.entries(locationLabels).map(([key, label]) => (
+                    <div key={key} className="truncate" title={label}>
+                      {label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Calendar Headers */}
+              <div className="col-span-5 p-3">
+                <div className="grid grid-cols-7 gap-1">
+                  {weekDays.map((day, index) => {
+                    const isToday = isSameDay(day, new Date());
+                    return (
+                      <div key={index} className="text-center">
+                        <div className={`text-xs font-semibold uppercase tracking-wide ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
+                          {format(day, "EE", { locale: de })}
+                        </div>
+                        <div className={`text-sm font-bold mt-1 ${isToday ? 'text-primary' : 'text-foreground'}`}>
+                          {format(day, "dd")}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-            
-            {/* Calendar Headers */}
-            <div className="col-span-7 p-3">
-              <div className="grid grid-cols-7 gap-1">
-                {weekDays.map((day, index) => {
-                  const isToday = isSameDay(day, new Date());
-                  return (
-                    <div key={index} className="text-center">
-                      <div className={`text-xs font-semibold uppercase tracking-wide ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
-                        {format(day, "EE", { locale: de })}
-                      </div>
-                      <div className={`text-sm font-bold mt-1 ${isToday ? 'text-primary' : 'text-foreground'}`}>
-                        {format(day, "dd")}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
 
-          {/* Project Rows */}
-          <div className="divide-y divide-border/50">
-            {loading ? (
-              <div className="text-center text-muted-foreground py-12">
-                Projekte werden geladen...
-              </div>
-            ) : filteredProjects.length === 0 && !previewProject ? (
-              <div className="text-center text-muted-foreground py-12">
-                Keine Projekte für diese Woche geplant
-              </div>
-            ) : (
-              <>
-                {/* Regular Projects */}
-                {filteredProjects.map((project) => {
-                  const projectSpan = projectSpans.find(span => span.project.id === project.id && !span.isPreview);
-                  if (!projectSpan) return null;
-                  
-                  return (
-                    <div 
-                      key={project.id}
-                      className={`grid grid-cols-12 hover:bg-muted/20 transition-colors ${
-                        selectedProject === project.id ? 'bg-primary/5' : ''
-                      }`}
-                    >
-                      {/* Project Info */}
-                      <div className="col-span-5 p-4 border-r">
-                        <div className="space-y-2">
-                          {/* Main project info row */}
-                          <div className="grid grid-cols-12 gap-2 items-start">
-                            <div className="col-span-3">
-                              <div className="font-semibold text-sm text-foreground truncate" title={project.customer}>
-                                {project.customer}
+            {/* Project Rows */}
+            <div className="divide-y divide-border/50">
+              {loading ? (
+                <div className="text-center text-muted-foreground py-12">
+                  Projekte werden geladen...
+                </div>
+              ) : filteredProjects.length === 0 && !previewProject ? (
+                <div className="text-center text-muted-foreground py-12">
+                  Keine Projekte für diese Woche geplant
+                </div>
+              ) : (
+                <>
+                  {/* Regular Projects */}
+                  {filteredProjects.map((project) => {
+                    const projectSpan = projectSpans.find(span => span.project.id === project.id && !span.isPreview);
+                    if (!projectSpan) return null;
+                    
+                    return (
+                      <div 
+                        key={project.id}
+                        className={`grid grid-cols-12 hover:bg-muted/20 transition-colors ${
+                          selectedProject === project.id ? 'bg-primary/5' : ''
+                        }`}
+                      >
+                        {/* Project Info */}
+                        <div className="col-span-4 p-4 border-r">
+                          <div className="space-y-2">
+                            {/* Main project info row */}
+                            <div className="grid grid-cols-3 gap-2 items-start">
+                              <div>
+                                <div className="font-semibold text-sm text-foreground truncate" title={project.customer}>
+                                  {project.customer}
+                                </div>
+                                <Badge variant="outline" className="text-xs mt-1">
+                                  {project.produktgruppe || 'N/A'}
+                                </Badge>
                               </div>
-                              <Badge variant="outline" className="text-xs mt-1">
-                                {project.produktgruppe || 'N/A'}
-                              </Badge>
-                            </div>
-                            <div className="col-span-2">
-                              <div className="text-xs font-mono text-muted-foreground">
-                                {project.artikel_nummer}
+                              <div>
+                                <div className="text-xs font-mono text-muted-foreground">
+                                  {project.artikel_nummer}
+                                </div>
                               </div>
-                            </div>
-                            <div className="col-span-4">
-                              <div className="text-sm font-medium text-foreground line-clamp-2" title={project.artikel_bezeichnung}>
-                                {project.artikel_bezeichnung}
-                              </div>
-                            </div>
-                            <div className="col-span-3">
-                              <div className="text-sm font-bold text-foreground">
-                                {project.gesamtmenge?.toLocaleString('de-DE')} kg
+                              <div>
+                                <div className="text-sm font-medium text-foreground line-clamp-2" title={project.artikel_bezeichnung}>
+                                  {project.artikel_bezeichnung}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          
-                          {/* Delivery dates */}
-                          <div className="grid grid-cols-2 gap-4 text-xs">
-                            <div>
-                              <span className="text-muted-foreground">Erste Anlieferung:</span>
-                              <div className="font-semibold text-primary">
-                                {project.erste_anlieferung ? format(parseLocalDate(project.erste_anlieferung), "dd.MM.yyyy", { locale: de }) : '-'}
+                            
+                            {/* Delivery dates and total quantity */}
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                              <div>
+                                <span className="text-muted-foreground">Erste:</span>
+                                <div className="font-semibold text-primary">
+                                  {project.erste_anlieferung ? format(parseLocalDate(project.erste_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
+                                </div>
                               </div>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Letzte Anlieferung:</span>
-                              <div className="font-semibold text-secondary-foreground">
-                                {project.letzte_anlieferung ? format(parseLocalDate(project.letzte_anlieferung), "dd.MM.yyyy", { locale: de }) : '-'}
+                              <div>
+                                <span className="text-muted-foreground">Letzte:</span>
+                                <div className="font-semibold text-secondary-foreground">
+                                  {project.letzte_anlieferung ? format(parseLocalDate(project.letzte_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
+                                </div>
                               </div>
-                            </div>
-                          </div>
-
-                          {/* Location Distribution */}
-                          {project.standort_verteilung && Object.keys(project.standort_verteilung).length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {Object.entries(project.standort_verteilung).map(([location, quantity]) => {
-                                const qty = Number(quantity);
-                                if (qty <= 0) return null;
-                                return (
-                                  <Badge key={location} variant="secondary" className="text-xs">
-                                    {locationLabels[location as keyof typeof locationLabels] || location}: {qty.toLocaleString('de-DE')}kg
-                                  </Badge>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Timeline */}
-                      <div className="col-span-7 p-4 relative">
-                        <div className="relative h-12">
-                          {/* Grid lines */}
-                          <div className="absolute inset-0 grid grid-cols-7 gap-0 pointer-events-none">
-                            {weekDays.map((_, index) => (
-                              <div key={index} className="flex justify-center">
-                                <div className="w-px bg-border/30 h-full" />
+                              <div>
+                                <span className="text-muted-foreground">Gesamt:</span>
+                                <div className="font-bold text-foreground">
+                                  {project.gesamtmenge?.toLocaleString('de-DE')} kg
+                                </div>
                               </div>
-                            ))}
-                          </div>
-                          
-                          {/* Project bar */}
-                          <div
-                            className={`absolute rounded-md border transition-all duration-200 cursor-pointer ${
-                              selectedProject === project.id
-                                ? 'bg-primary/20 border-primary ring-2 ring-primary/30'
-                                : 'bg-blue-100 border-blue-300 hover:bg-blue-200'
-                            }`}
-                            style={{
-                              left: `${(projectSpan.startDay / 7) * 100}%`,
-                              width: `${((projectSpan.endDay - projectSpan.startDay + 1) / 7) * 100}%`,
-                              height: '40px',
-                              top: '4px'
-                            }}
-                            onClick={() => {
-                              setSelectedProject(selectedProject === project.id ? null : project.id);
-                              if (onShowProjectDetails) {
-                                onShowProjectDetails(project);
-                              }
-                            }}
-                          >
-                            <div className="p-2 h-full flex items-center justify-between">
-                              <span className="text-xs font-medium text-foreground truncate">
-                                {project.gesamtmenge?.toLocaleString('de-DE')} kg
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {Math.abs(differenceInCalendarDays(parseLocalDate(project.letzte_anlieferung!), parseLocalDate(project.erste_anlieferung!))) + 1}d
-                              </span>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {/* Preview Project */}
-                {previewProject && (() => {
-                  const previewSpan = projectSpans.find(span => span.isPreview);
-                  if (!previewSpan) return null;
-                  
-                  return (
-                    <div key="preview" className="grid grid-cols-12 bg-orange-50/50 border-l-4 border-l-orange-400">
-                      {/* Project Info */}
-                      <div className="col-span-5 p-4 border-r">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="secondary" className="bg-orange-100 text-orange-700 font-semibold">
-                              Vorschau
-                            </Badge>
+                        
+                        {/* Location Columns */}
+                        <div className="col-span-3 p-4 border-r">
+                          <div className="grid grid-cols-5 gap-1 h-full">
+                            {Object.keys(locationLabels).map((locationKey) => {
+                              const quantity = project.standort_verteilung?.[locationKey] || 0;
+                              const qty = Number(quantity);
+                              return (
+                                <div key={locationKey} className="text-center">
+                                  {qty > 0 ? (
+                                    <div className="bg-primary/10 rounded px-2 py-1 text-xs font-bold text-primary">
+                                      {qty.toLocaleString('de-DE')}
+                                    </div>
+                                  ) : (
+                                    <div className="text-xs text-muted-foreground">-</div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
-                          
-                          <div className="grid grid-cols-12 gap-2 items-start">
-                            <div className="col-span-3">
-                              <div className="font-semibold text-sm text-foreground truncate" title={previewProject.customer}>
-                                {previewProject.customer}
-                              </div>
-                              <Badge variant="outline" className="text-xs mt-1">
-                                {previewProject.produktgruppe || 'N/A'}
-                              </Badge>
+                        </div>
+                        
+                        {/* Timeline */}
+                        <div className="col-span-5 p-4 relative">
+                          <div className="relative h-12">
+                            {/* Grid lines */}
+                            <div className="absolute inset-0 grid grid-cols-7 gap-0 pointer-events-none">
+                              {weekDays.map((_, index) => (
+                                <div key={index} className="flex justify-center">
+                                  <div className="w-px bg-border/30 h-full" />
+                                </div>
+                              ))}
                             </div>
-                            <div className="col-span-2">
-                              <div className="text-xs font-mono text-muted-foreground">
-                                {previewProject.artikel_nummer}
-                              </div>
-                            </div>
-                            <div className="col-span-4">
-                              <div className="text-sm font-medium text-foreground line-clamp-2" title={previewProject.artikel_bezeichnung}>
-                                {previewProject.artikel_bezeichnung}
-                              </div>
-                            </div>
-                            <div className="col-span-3">
-                              <div className="text-sm font-bold text-foreground">
-                                {previewProject.gesamtmenge?.toLocaleString('de-DE')} kg
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-4 text-xs">
-                            <div>
-                              <span className="text-muted-foreground">Erste Anlieferung:</span>
-                              <div className="font-semibold text-primary">
-                                {previewProject.erste_anlieferung ? format(parseLocalDate(previewProject.erste_anlieferung), "dd.MM.yyyy", { locale: de }) : '-'}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Letzte Anlieferung:</span>
-                              <div className="font-semibold text-secondary-foreground">
-                                {previewProject.letzte_anlieferung ? format(parseLocalDate(previewProject.letzte_anlieferung), "dd.MM.yyyy", { locale: de }) : '-'}
+                            
+                            {/* Project bar */}
+                            <div
+                              className={`absolute rounded-md border transition-all duration-200 cursor-pointer ${
+                                selectedProject === project.id
+                                  ? 'bg-primary/20 border-primary ring-2 ring-primary/30'
+                                  : 'bg-blue-100 border-blue-300 hover:bg-blue-200'
+                              }`}
+                              style={{
+                                left: `${(projectSpan.startDay / 7) * 100}%`,
+                                width: `${((projectSpan.endDay - projectSpan.startDay + 1) / 7) * 100}%`,
+                                height: '40px',
+                                top: '4px'
+                              }}
+                              onClick={() => {
+                                setSelectedProject(selectedProject === project.id ? null : project.id);
+                                if (onShowProjectDetails) {
+                                  onShowProjectDetails(project);
+                                }
+                              }}
+                            >
+                              <div className="p-2 h-full flex items-center justify-between">
+                                <span className="text-xs font-medium text-foreground truncate">
+                                  {project.gesamtmenge?.toLocaleString('de-DE')} kg
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {Math.abs(differenceInCalendarDays(parseLocalDate(project.letzte_anlieferung!), parseLocalDate(project.erste_anlieferung!))) + 1}d
+                                </span>
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                      
-                      {/* Timeline */}
-                      <div className="col-span-7 p-4 relative">
-                        <div className="relative h-12">
-                          <div className="absolute inset-0 grid grid-cols-7 gap-0 pointer-events-none">
-                            {weekDays.map((_, index) => (
-                              <div key={index} className="flex justify-center">
-                                <div className="w-px bg-border/30 h-full" />
-                              </div>
-                            ))}
-                          </div>
-                          
-                          <div
-                            className="absolute rounded-md border-2 border-dashed border-orange-400 bg-orange-100"
-                            style={{
-                              left: `${(previewSpan.startDay / 7) * 100}%`,
-                              width: `${((previewSpan.endDay - previewSpan.startDay + 1) / 7) * 100}%`,
-                              height: '40px',
-                              top: '4px'
-                            }}
-                          >
-                            <div className="p-2 h-full flex items-center justify-between">
-                              <span className="text-xs font-medium text-orange-800 truncate">
-                                {previewProject.gesamtmenge?.toLocaleString('de-DE')} kg
-                              </span>
-                              <span className="text-xs text-orange-600">
+                    );
+                  })}
+
+                  {/* Preview Project */}
+                  {previewProject && (() => {
+                    const previewSpan = projectSpans.find(span => span.isPreview);
+                    if (!previewSpan) return null;
+                    
+                    return (
+                      <div key="preview" className="grid grid-cols-12 bg-orange-50/50 border-l-4 border-l-orange-400">
+                        {/* Project Info */}
+                        <div className="col-span-4 p-4 border-r">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant="secondary" className="bg-orange-100 text-orange-700 font-semibold">
                                 Vorschau
-                              </span>
+                              </Badge>
+                            </div>
+                            
+                            <div className="grid grid-cols-3 gap-2 items-start">
+                              <div>
+                                <div className="font-semibold text-sm text-foreground truncate" title={previewProject.customer}>
+                                  {previewProject.customer}
+                                </div>
+                                <Badge variant="outline" className="text-xs mt-1">
+                                  {previewProject.produktgruppe || 'N/A'}
+                                </Badge>
+                              </div>
+                              <div>
+                                <div className="text-xs font-mono text-muted-foreground">
+                                  {previewProject.artikel_nummer}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-foreground line-clamp-2" title={previewProject.artikel_bezeichnung}>
+                                  {previewProject.artikel_bezeichnung}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                              <div>
+                                <span className="text-muted-foreground">Erste:</span>
+                                <div className="font-semibold text-primary">
+                                  {previewProject.erste_anlieferung ? format(parseLocalDate(previewProject.erste_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
+                                </div>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Letzte:</span>
+                                <div className="font-semibold text-secondary-foreground">
+                                  {previewProject.letzte_anlieferung ? format(parseLocalDate(previewProject.letzte_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
+                                </div>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Gesamt:</span>
+                                <div className="font-bold text-foreground">
+                                  {previewProject.gesamtmenge?.toLocaleString('de-DE')} kg
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Location Columns */}
+                        <div className="col-span-3 p-4 border-r">
+                          <div className="grid grid-cols-5 gap-1 h-full">
+                            {Object.keys(locationLabels).map((locationKey) => {
+                              const quantity = previewProject.standort_verteilung?.[locationKey] || 0;
+                              const qty = Number(quantity);
+                              return (
+                                <div key={locationKey} className="text-center">
+                                  {qty > 0 ? (
+                                    <div className="bg-orange-200 rounded px-2 py-1 text-xs font-bold text-orange-800">
+                                      {qty.toLocaleString('de-DE')}
+                                    </div>
+                                  ) : (
+                                    <div className="text-xs text-muted-foreground">-</div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        
+                        {/* Timeline */}
+                        <div className="col-span-5 p-4 relative">
+                          <div className="relative h-12">
+                            <div className="absolute inset-0 grid grid-cols-7 gap-0 pointer-events-none">
+                              {weekDays.map((_, index) => (
+                                <div key={index} className="flex justify-center">
+                                  <div className="w-px bg-border/30 h-full" />
+                                </div>
+                              ))}
+                            </div>
+                            
+                            <div
+                              className="absolute rounded-md border-2 border-dashed border-orange-400 bg-orange-100"
+                              style={{
+                                left: `${(previewSpan.startDay / 7) * 100}%`,
+                                width: `${((previewSpan.endDay - previewSpan.startDay + 1) / 7) * 100}%`,
+                                height: '40px',
+                                top: '4px'
+                              }}
+                            >
+                              <div className="p-2 h-full flex items-center justify-between">
+                                <span className="text-xs font-medium text-orange-800 truncate">
+                                  {previewProject.gesamtmenge?.toLocaleString('de-DE')} kg
+                                </span>
+                                <span className="text-xs text-orange-600">
+                                  Vorschau
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })()}
-              </>
-            )}
+                    );
+                  })()}
+                </>
+              )}
+            </div>
           </div>
         </div>
 
