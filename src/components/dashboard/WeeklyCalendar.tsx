@@ -494,7 +494,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
 
           {/* Header Row */}
           <div className="min-w-[1200px]">
-            <div className="grid grid-cols-11 border-b bg-muted/30">
+            <div className="grid grid-cols-12 border-b bg-muted/30">
               {/* Project Info Headers */}
               <div className="col-span-6 p-3 border-r">
                 <div className="grid grid-cols-6 gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -508,13 +508,32 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
               </div>
               
               {/* Location Headers */}
-              <div className="col-span-5 p-3 border-r">
+              <div className="col-span-3 p-3 border-r">
                 <div className="grid grid-cols-5 gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center">
                   {Object.entries(locationLabels).map(([key, label]) => (
                     <div key={key} className="truncate" title={label}>
                       {label}
                     </div>
                   ))}
+                </div>
+              </div>
+              
+              {/* Calendar Headers */}
+              <div className="col-span-3 p-3">
+                <div className="grid grid-cols-7 gap-1">
+                  {weekDays.map((day, index) => {
+                    const isToday = isSameDay(day, new Date());
+                    return (
+                      <div key={index} className="text-center">
+                        <div className={`text-xs font-semibold uppercase tracking-wide ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
+                          {format(day, "EE", { locale: de })}
+                        </div>
+                        <div className={`text-sm font-bold mt-1 ${isToday ? 'text-primary' : 'text-foreground'}`}>
+                          {format(day, "dd")}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
               
@@ -558,7 +577,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                     return (
                       <div 
                         key={project.id}
-                        className={`grid grid-cols-11 hover:bg-muted/20 transition-colors ${
+                        className={`grid grid-cols-12 hover:bg-muted/20 transition-colors ${
                           selectedProject === project.id ? 'bg-primary/5' : ''
                         }`}
                       >
@@ -605,7 +624,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                         </div>
                         
                         {/* Location Columns */}
-                        <div className="col-span-5 p-4 border-r">
+                        <div className="col-span-3 p-4 border-r">
                           <div className="grid grid-cols-5 gap-1 h-full">
                             {Object.keys(locationLabels).map((locationKey) => {
                               const quantity = project.standort_verteilung?.[locationKey] || 0;
@@ -626,7 +645,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                         </div>
                         
                         {/* Timeline */}
-                        <div className="col-span-5 p-4 relative">
+                        <div className="col-span-3 p-4 relative">
                           <div className="relative h-12">
                             {/* Grid lines */}
                             <div className="absolute inset-0 grid grid-cols-7 gap-0 pointer-events-none">
@@ -678,7 +697,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                     if (!previewSpan) return null;
                     
                     return (
-                      <div key="preview" className="grid grid-cols-11 bg-orange-50/50 border-l-4 border-l-orange-400">
+                      <div key="preview" className="grid grid-cols-12 bg-orange-50/50 border-l-4 border-l-orange-400">
                         {/* Project Info */}
                         <div className="col-span-6 p-4 border-r">
                           <div className="space-y-2">
@@ -748,7 +767,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                         </div>
                         
                         {/* Timeline */}
-                        <div className="col-span-5 p-4 relative">
+                        <div className="col-span-3 p-4 relative">
                           <div className="relative h-12">
                             <div className="absolute inset-0 grid grid-cols-7 gap-0 pointer-events-none">
                               {weekDays.map((_, index) => (
