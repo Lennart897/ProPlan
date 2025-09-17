@@ -95,6 +95,10 @@ const projectSchema = z.object({
   erste_anlieferung: z.date().optional(),
   letzte_anlieferung: z.date().optional(),
   menge_fix: z.boolean().default(false),
+  attachment: z.instanceof(File).optional().refine(
+    (file) => !file || file.size <= 5 * 1024 * 1024,
+    { message: "Datei darf maximal 5MB groß sein" }
+  ),
   standort_verteilung: z.record(z.number().min(0)).refine(
     (data) => {
       const total = Object.values(data).reduce((sum, val) => sum + val, 0);
@@ -131,6 +135,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
   const [isLoading, setIsLoading] = useState(false);
   const { locationOptions, isLoading: locationsLoading } = useLocations(true, false);
   const [locationQuantities, setLocationQuantities] = useState<Record<string, number>>({});
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
   const { toast } = useToast();
 
@@ -247,6 +252,23 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
         throw new Error("Nicht angemeldet");
       }
 
+      let attachmentUrl: string | null = null;
+
+      // Upload attachment if selected
+      if (selectedFile) {
+        const fileExt = selectedFile.name.split('.').pop();
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+        const filePath = `${currentUser.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('project-attachments')
+          .upload(filePath, selectedFile);
+
+        if (uploadError) throw uploadError;
+
+        attachmentUrl = filePath;
+      }
+
       const { data: inserted, error } = await supabase
         .from('manufacturing_projects')
         .insert({
@@ -262,6 +284,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
           letzte_anlieferung: data.letzte_anlieferung ? format(data.letzte_anlieferung, 'yyyy-MM-dd') : null,
           menge_fix: data.menge_fix,
           standort_verteilung: data.standort_verteilung,
+          attachment_url: attachmentUrl,
           status: PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN, // Start with SupplyChain review
           created_by_id: currentUser.id,
           created_by_name: user.full_name || user.email
@@ -504,6 +527,46 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               {form.formState.errors.letzte_anlieferung && (
                 <p className="text-sm text-destructive">
                   {form.formState.errors.letzte_anlieferung.message}
+                </p>
+              )}
+            </div>
+
+            {/* Anhang Upload */}
+            <div className="space-y-2">
+              <Label htmlFor="attachment">Anhang (optional, max. 5MB)</Label>
+              <Input
+                id="attachment"
+                type="file"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast({
+                        title: "Datei zu groß",
+                        description: "Die Datei darf maximal 5MB groß sein.",
+                        variant: "destructive",
+                      });
+                      e.target.value = '';
+                      return;
+                    }
+                    setSelectedFile(file);
+                    form.setValue("attachment", file);
+                  } else {
+                    setSelectedFile(null);
+                    form.setValue("attachment", undefined);
+                  }
+                }}
+                className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+              />
+              {selectedFile && (
+                <p className="text-sm text-muted-foreground">
+                  Ausgewählte Datei: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                </p>
+              )}
+              {form.formState.errors.attachment && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.attachment.message}
                 </p>
               )}
             </div>

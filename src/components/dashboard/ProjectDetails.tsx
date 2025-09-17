@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, User, Calendar, Package, Building2, Truck, Clock, MapPin } from "lucide-react";
+import { ArrowLeft, User, Calendar, Package, Building2, Truck, Clock, MapPin, Download, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectHistory } from "./ProjectHistory";
@@ -32,6 +32,7 @@ interface Project {
   created_by_name?: string;
   standort_verteilung?: Record<string, number>;
   menge_fix?: boolean;
+  attachment_url?: string;
 }
 
 interface User {
@@ -672,6 +673,51 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                   </div>
                 )}
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Attachment */}
+        {project.attachment_url && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Anhang
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const { data, error } = await supabase.storage
+                      .from('project-attachments')
+                      .download(project.attachment_url!);
+                    
+                    if (error) throw error;
+                    
+                    const url = URL.createObjectURL(data);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = project.attachment_url!.split('/').pop() || 'anhang';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  } catch (error: any) {
+                    toast({
+                      title: "Fehler beim Download",
+                      description: error.message,
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Anhang herunterladen
+              </Button>
             </CardContent>
           </Card>
         )}

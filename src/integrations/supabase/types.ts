@@ -112,6 +112,7 @@ export type Database = {
           archived_at: string | null
           artikel_bezeichnung: string
           artikel_nummer: string
+          attachment_url: string | null
           beschreibung: string | null
           created_at: string
           created_by_id: string | null
@@ -136,6 +137,7 @@ export type Database = {
           archived_at?: string | null
           artikel_bezeichnung: string
           artikel_nummer: string
+          attachment_url?: string | null
           beschreibung?: string | null
           created_at?: string
           created_by_id?: string | null
@@ -160,6 +162,7 @@ export type Database = {
           archived_at?: string | null
           artikel_bezeichnung?: string
           artikel_nummer?: string
+          attachment_url?: string | null
           beschreibung?: string | null
           created_at?: string
           created_by_id?: string | null
