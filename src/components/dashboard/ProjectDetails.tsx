@@ -622,7 +622,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium text-muted-foreground">Artikelbezeichnung</Label>
-                <p className="text-lg">{project.artikel_bezeichnung}</p>
+                <p className="font-medium">{project.artikel_bezeichnung}</p>
               </div>
               <div>
                 <Label className="text-sm font-medium text-muted-foreground">Artikel-Nummer</Label>
