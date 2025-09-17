@@ -254,21 +254,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
 
       let attachmentUrl: string | null = null;
 
-      // Upload attachment if selected
-      if (selectedFile) {
-        const fileExt = selectedFile.name.split('.').pop();
-        const fileName = `${crypto.randomUUID()}.${fileExt}`;
-        const filePath = `${currentUser.id}/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('project-attachments')
-          .upload(filePath, selectedFile);
-
-        if (uploadError) throw uploadError;
-
-        attachmentUrl = filePath;
-      }
-
+      // 1) Projekt zuerst anlegen, um die ID zu erhalten
       const { data: inserted, error } = await supabase
         .from('manufacturing_projects')
         .insert({
@@ -282,10 +268,9 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
           
           erste_anlieferung: data.erste_anlieferung ? format(data.erste_anlieferung, 'yyyy-MM-dd') : null,
           letzte_anlieferung: data.letzte_anlieferung ? format(data.letzte_anlieferung, 'yyyy-MM-dd') : null,
-          menge_fix: data.menge_fix,
           standort_verteilung: data.standort_verteilung,
-          attachment_url: attachmentUrl,
-          status: PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN, // Start with SupplyChain review
+          attachment_url: null,
+          status: PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN,
           created_by_id: currentUser.id,
           created_by_name: user.full_name || user.email
         })
@@ -293,6 +278,27 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
         .single();
 
       if (error) throw error;
+
+      // 2) Falls eine Datei gewählt wurde, nachträglich in Ordner mit Projekt-ID hochladen
+      if (selectedFile) {
+        const fileExt = selectedFile.name.split('.').pop();
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+        const filePath = `${inserted.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('project-attachments')
+          .upload(filePath, selectedFile);
+
+        if (uploadError) throw uploadError;
+
+        attachmentUrl = filePath;
+
+        const { error: updateErr } = await supabase
+          .from('manufacturing_projects')
+          .update({ attachment_url: attachmentUrl })
+          .eq('id', inserted.id);
+        if (updateErr) throw updateErr;
+      }
 
       // Aktivität 'create' protokollieren
       await supabase.from('project_history').insert({

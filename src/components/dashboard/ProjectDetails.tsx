@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +63,28 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
   const [correctionReason, setCorrectionReason] = useState("");
   const { toast } = useToast();
   const { getLocationName } = useLocations(true, false);
+
+  const [attachmentUrl, setAttachmentUrl] = useState<string | undefined>(project.attachment_url);
+
+  useEffect(() => {
+    setAttachmentUrl(project.attachment_url);
+  }, [project.attachment_url]);
+
+  useEffect(() => {
+    if (project.attachment_url) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('manufacturing_projects')
+        .select('attachment_url')
+        .eq('id', project.id)
+        .maybeSingle();
+      if (!cancelled && data?.attachment_url) {
+        setAttachmentUrl(data.attachment_url as string);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [project.id, project.attachment_url]);
 
   const logProjectAction = async (action: string, oldData?: any, newData?: any) => {
     try {
@@ -678,7 +700,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         )}
 
         {/* Attachment */}
-        {project.attachment_url && (
+        {attachmentUrl && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -693,14 +715,14 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                   try {
                     const { data, error } = await supabase.storage
                       .from('project-attachments')
-                      .download(project.attachment_url!);
+                      .download(attachmentUrl!);
                     
                     if (error) throw error;
                     
                     const url = URL.createObjectURL(data);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = project.attachment_url!.split('/').pop() || 'anhang';
+                    a.download = attachmentUrl!.split('/').pop() || 'anhang';
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
