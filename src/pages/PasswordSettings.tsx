@@ -37,13 +37,6 @@ const PasswordSettings = () => {
         >
           Passwort ändern
         </Button>
-        <Button
-          variant={viewMode === "reset" ? "default" : "outline"}
-          onClick={() => setViewMode("reset")}
-          className="w-full mb-3"
-        >
-          Passwort zurücksetzen per E-Mail
-        </Button>
 
         {/* Entsprechende Komponente anzeigen */}
         {viewMode === "change" && (
