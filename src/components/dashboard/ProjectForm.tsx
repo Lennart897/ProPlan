@@ -551,19 +551,6 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               )}
             </div>
 
-            <div className="space-y-2 flex flex-col justify-end">
-              <div className="flex items-center space-x-2 h-10">
-                <Checkbox
-                  id="menge_fix"
-                  checked={form.watch("menge_fix")}
-                  onCheckedChange={(checked) => form.setValue("menge_fix", !!checked)}
-                />
-                <Label htmlFor="menge_fix">Menge fix</Label>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Wenn aktiviert, kann die Menge nicht mehr geändert werden
-              </p>
-            </div>
           </div>
 
           <div className="space-y-4">
