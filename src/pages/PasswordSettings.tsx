@@ -29,24 +29,21 @@ const PasswordSettings = () => {
         </div>
 
         {/* Mode-Umschaltung */}
-        <Card className="apple-card">
-          <CardContent className="space-y-3">
-            <Button
-              variant={viewMode === "change" ? "default" : "outline"}
-              onClick={() => setViewMode("change")}
-              className="w-full"
-            >
-              Passwort ändern
-            </Button>
-            <Button
-              variant={viewMode === "reset" ? "default" : "outline"}
-              onClick={() => setViewMode("reset")}
-              className="w-full"
-            >
-              Passwort zurücksetzen per E-Mail
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Mode-Umschaltung */}
+        <Button
+          variant={viewMode === "change" ? "default" : "outline"}
+          onClick={() => setViewMode("change")}
+          className="w-full mb-3"
+        >
+          Passwort ändern
+        </Button>
+        <Button
+          variant={viewMode === "reset" ? "default" : "outline"}
+          onClick={() => setViewMode("reset")}
+          className="w-full mb-3"
+        >
+          Passwort zurücksetzen per E-Mail
+        </Button>
 
         {/* Entsprechende Komponente anzeigen */}
         {viewMode === "change" && (
