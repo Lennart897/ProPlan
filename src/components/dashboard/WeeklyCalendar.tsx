@@ -343,28 +343,31 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Mobile-Optimized Header */}
-      <header className="sticky top-0 z-50 border-b bg-card md:bg-card/95 md:backdrop-blur supports-[backdrop-filter]:md:bg-card/85">
-        <div className="px-3 sm:px-6 py-3 sm:py-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95">
+      {/* Professional Header */}
+      <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur-xl supports-[backdrop-filter]:bg-card/90 shadow-sm">
+        <div className="container mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <Button 
-                variant="default" 
+                variant="ghost" 
                 size="sm" 
                 onClick={onBack} 
-                className="h-9 w-9 p-0 sm:h-auto sm:w-auto sm:px-3 sm:py-2"
+                className="h-10 px-3 rounded-xl hover:bg-muted/80 transition-all duration-200"
               >
-                <ArrowLeft className="h-5 w-5" />
-                <span className="sr-only sm:not-sr-only sm:ml-2">Zurück</span>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                <span className="font-medium">Zurück</span>
               </Button>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-md">
+              
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-primary via-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg ring-1 ring-primary/20">
                   <span className="text-sm font-bold text-primary-foreground">PP</span>
                 </div>
                 <div>
-                  <h1 className="text-lg sm:text-xl font-bold text-foreground">ProPlan</h1>
-                  <p className="text-xs text-muted-foreground">Wochenkalender</p>
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                    ProPlan
+                  </h1>
+                  <p className="text-sm text-muted-foreground">Wochenkalender</p>
                 </div>
               </div>
             </div>
@@ -372,110 +375,120 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
         </div>
       </header>
 
-      <div className="px-3 sm:px-6 pb-6 space-y-4">
-        {/* Week Navigation - Mobile First */}
-        <div className="bg-card rounded-xl border shadow-sm p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={goToPreviousWeek}
-                className="h-10 w-10 p-0 rounded-xl"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              <Button 
-                variant="default" 
-                onClick={goToCurrentWeek} 
-                className="h-10 px-4 rounded-xl text-sm font-medium"
-              >
-                <Calendar className="h-4 w-4 mr-2" />
-                Heute
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={goToNextWeek}
-                className="h-10 w-10 p-0 rounded-xl"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </Button>
+      <div className="container mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Professional Week Navigation */}
+        <Card className="rounded-2xl border-0 bg-card/50 backdrop-blur-sm shadow-lg ring-1 ring-border/20">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={goToPreviousWeek}
+                  className="h-10 w-10 p-0 rounded-xl border-2 hover:scale-105 transition-all duration-200"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+                <Button 
+                  variant="default" 
+                  onClick={goToCurrentWeek} 
+                  className="h-10 px-4 rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Heute
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={goToNextWeek}
+                  className="h-10 w-10 p-0 rounded-xl border-2 hover:scale-105 transition-all duration-200"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
-          </div>
-          
-          <div className="text-center">
-            <div className="text-lg font-bold text-foreground">
-              KW {getWeek(weekStart, { locale: de })}
+            
+            <div className="text-center space-y-1">
+              <div className="text-2xl font-bold text-foreground">
+                Kalenderwoche {getWeek(weekStart, { locale: de })}
+              </div>
+              <div className="text-muted-foreground">
+                {format(weekStart, "dd. MMMM", { locale: de })} - {format(addDays(weekStart, 6), "dd. MMMM yyyy", { locale: de })}
+              </div>
             </div>
-            <div className="text-sm text-muted-foreground">
-              {format(weekStart, "dd. MMM", { locale: de })} - {format(addDays(weekStart, 6), "dd. MMM yyyy", { locale: de })}
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Filters - Mobile Optimized */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-            <SelectTrigger className="h-12 rounded-xl border-2">
-              <SelectValue placeholder="Standort wählen" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alle Standorte</SelectItem>
-              {Object.entries(locationLabels).map(([key, label]) => (
-                <SelectItem key={key} value={key}>{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={selectedProductGroup} onValueChange={setSelectedProductGroup}>
-            <SelectTrigger className="h-12 rounded-xl border-2">
-              <SelectValue placeholder="Produktgruppe wählen" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alle Produktgruppen</SelectItem>
-              {productGroups.map(group => (
-                <SelectItem key={group} value={group}>{group}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Summary Cards - Elegant Mobile Design */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <Card className="rounded-xl border-2 bg-gradient-to-br from-card to-card/80">
+        {/* Professional Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="rounded-xl border-0 bg-card/50 backdrop-blur-sm shadow-md ring-1 ring-border/20">
             <CardContent className="p-4">
-              <div className="text-center">
-                <div className="text-xl sm:text-2xl font-bold text-foreground">
+              <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                <SelectTrigger className="h-12 rounded-xl border-2 font-medium">
+                  <SelectValue placeholder="Standort wählen" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="all">Alle Standorte</SelectItem>
+                  {Object.entries(locationLabels).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-xl border-0 bg-card/50 backdrop-blur-sm shadow-md ring-1 ring-border/20">
+            <CardContent className="p-4">
+              <Select value={selectedProductGroup} onValueChange={setSelectedProductGroup}>
+                <SelectTrigger className="h-12 rounded-xl border-2 font-medium">
+                  <SelectValue placeholder="Produktgruppe wählen" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="all">Alle Produktgruppen</SelectItem>
+                  {productGroups.map(group => (
+                    <SelectItem key={group} value={group}>{group}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Professional Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="rounded-2xl border-0 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent shadow-lg ring-1 ring-primary/10">
+            <CardContent className="p-6">
+              <div className="text-center space-y-2">
+                <div className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
                   {weeklyTotalQuantity.toLocaleString('de-DE', { maximumFractionDigits: 0 })}
                 </div>
-                <div className="text-xs font-medium text-muted-foreground mt-1">
+                <div className="text-sm font-medium text-muted-foreground">
                   kg Gesamtmenge
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-xl border-2 bg-gradient-to-br from-card to-card/80">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <div className="text-xl sm:text-2xl font-bold text-foreground">
+          <Card className="rounded-2xl border-0 bg-gradient-to-br from-secondary/5 via-secondary/3 to-transparent shadow-lg ring-1 ring-secondary/10">
+            <CardContent className="p-6">
+              <div className="text-center space-y-2">
+                <div className="text-3xl font-bold bg-gradient-to-r from-secondary to-secondary/80 bg-clip-text text-transparent">
                   {weeklyProjectCount}
                 </div>
-                <div className="text-xs font-medium text-muted-foreground mt-1">
-                  Projekte
+                <div className="text-sm font-medium text-muted-foreground">
+                  Aktive Projekte
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-xl border-2 bg-gradient-to-br from-card to-card/80 col-span-2 sm:col-span-1">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <div className="text-xl sm:text-2xl font-bold text-foreground">
+          <Card className="rounded-2xl border-0 bg-gradient-to-br from-accent/5 via-accent/3 to-transparent shadow-lg ring-1 ring-accent/10">
+            <CardContent className="p-6">
+              <div className="text-center space-y-2">
+                <div className="text-3xl font-bold bg-gradient-to-r from-accent to-accent/80 bg-clip-text text-transparent">
                   {Object.keys(totals.byProduct).length}
                 </div>
-                <div className="text-xs font-medium text-muted-foreground mt-1">
+                <div className="text-sm font-medium text-muted-foreground">
                   Produktgruppen
                 </div>
               </div>
@@ -483,135 +496,155 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
           </Card>
         </div>
 
-        {/* Professional Weekly Planning Layout */}
-        <div className="bg-card rounded-xl border shadow-sm overflow-hidden overflow-x-auto">
-          <div className="p-4 border-b bg-gradient-to-r from-primary/5 to-secondary/5">
-            <h3 className="text-lg font-semibold text-foreground">Wochenplanung</h3>
-            <p className="text-sm text-muted-foreground">
-              {filteredProjects.length + (previewProject ? 1 : 0)} Projekte für KW {getWeek(weekStart, { locale: de })}
-            </p>
+        {/* Professional Data Table */}
+        <Card className="rounded-2xl border-0 bg-card/50 backdrop-blur-sm shadow-xl ring-1 ring-border/20 overflow-hidden">
+          <div className="border-b bg-gradient-to-r from-muted/30 via-muted/20 to-muted/30 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-foreground">Wochenplanung</h3>
+                <p className="text-muted-foreground mt-1">
+                  {filteredProjects.length + (previewProject ? 1 : 0)} Projekte für KW {getWeek(weekStart, { locale: de })}
+                </p>
+              </div>
+              <Badge variant="secondary" className="px-3 py-1 text-sm font-medium">
+                Live
+              </Badge>
+            </div>
           </div>
 
-          {/* Header Row */}
-          <div className="min-w-[1200px]">
-            <div className="grid grid-cols-12 border-b bg-muted/30">
-              {/* Project Info Headers */}
-              <div className="col-span-4 p-3 border-r">
-                <div className="grid grid-cols-5 gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  <div>Kunde</div>
-                  <div>Art.-Nr.</div>
-                  <div>Artikelbezeichnung</div>
-                  <div>Erste Anlieferung</div>
-                  <div>Letzte Anlieferung</div>
-                </div>
-              </div>
-              
-              {/* Location Headers */}
-              <div className="col-span-3 p-3 border-r">
-                <div className="grid grid-cols-5 gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center">
-                  {Object.entries(locationLabels).map(([key, label]) => (
-                    <div key={key} className="truncate" title={label}>
-                      {label}
+          {/* Professional Table Layout */}
+          <div className="overflow-x-auto">
+            <div className="min-w-[1400px]">
+              {/* Enhanced Header */}
+              <div className="grid grid-cols-12 border-b bg-gradient-to-r from-muted/20 via-muted/10 to-muted/20">
+                {/* Project Info Headers */}
+                <div className="col-span-4 p-4 border-r border-border/50">
+                  <div className="grid grid-cols-5 gap-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-primary/60"></div>
+                      Kunde
                     </div>
-                  ))}
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-secondary/60"></div>
+                      Art.-Nr.
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-accent/60"></div>
+                      Bezeichnung
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-primary/60"></div>
+                      Erste Anlieferung
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-secondary/60"></div>
+                      Letzte Anlieferung
+                    </div>
+                  </div>
                 </div>
-              </div>
-              
-              {/* Calendar Headers */}
-              <div className="col-span-5 p-3">
-                <div className="grid grid-cols-7 gap-1">
-                  {weekDays.map((day, index) => {
-                    const isToday = isSameDay(day, new Date());
-                    return (
-                      <div key={index} className="text-center">
-                        <div className={`text-xs font-semibold uppercase tracking-wide ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
-                          {format(day, "EE", { locale: de })}
-                        </div>
-                        <div className={`text-sm font-bold mt-1 ${isToday ? 'text-primary' : 'text-foreground'}`}>
-                          {format(day, "dd")}
-                        </div>
+                
+                {/* Location Headers */}
+                <div className="col-span-3 p-4 border-r border-border/50">
+                  <div className="grid grid-cols-5 gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider text-center">
+                    {Object.entries(locationLabels).map(([key, label]) => (
+                      <div key={key} className="flex flex-col items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-accent/60"></div>
+                        <span className="truncate" title={label}>{label}</span>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Calendar Headers */}
+                <div className="col-span-5 p-4">
+                  <div className="grid grid-cols-7 gap-2">
+                    {weekDays.map((day, index) => {
+                      const isToday = isSameDay(day, new Date());
+                      return (
+                        <div key={index} className="text-center">
+                          <div className={`text-xs font-bold uppercase tracking-wider ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
+                            {format(day, "EE", { locale: de })}
+                          </div>
+                          <div className={`text-lg font-bold mt-2 ${isToday ? 'text-primary bg-primary/10 rounded-lg py-1' : 'text-foreground'}`}>
+                            {format(day, "dd")}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Project Rows */}
-            <div className="divide-y divide-border/50">
-              {loading ? (
-                <div className="text-center text-muted-foreground py-12">
-                  Projekte werden geladen...
-                </div>
-              ) : filteredProjects.length === 0 && !previewProject ? (
-                <div className="text-center text-muted-foreground py-12">
-                  Keine Projekte für diese Woche geplant
-                </div>
-              ) : (
+              {/* Project Rows */}
+              <div className="divide-y divide-border/30">
+                {loading ? (
+                  <div className="text-center py-16">
+                    <div className="inline-flex items-center gap-3 text-muted-foreground">
+                      <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      <span className="font-medium">Projekte werden geladen...</span>
+                    </div>
+                  </div>
+                ) : filteredProjects.length === 0 && !previewProject ? (
+                  <div className="text-center py-16">
+                    <div className="space-y-2 text-muted-foreground">
+                      <Calendar className="w-12 h-12 mx-auto opacity-50" />
+                      <div className="font-medium">Keine Projekte für diese Woche geplant</div>
+                      <div className="text-sm">Wählen Sie eine andere Woche oder passen Sie die Filter an</div>
+                    </div>
+                  </div>
+                ) : (
                 <>
-                   {/* Regular Projects - Each project gets its own row */}
+                   {/* Regular Projects - Enhanced professional rows */}
                   {filteredProjects.map((project) => (
                     <div 
                       key={project.id}
-                      className={`grid grid-cols-12 hover:bg-muted/20 transition-colors ${
-                        selectedProject === project.id ? 'bg-primary/5' : ''
+                      className={`grid grid-cols-12 hover:bg-gradient-to-r hover:from-muted/20 hover:via-muted/10 hover:to-transparent transition-all duration-300 border-l-4 ${
+                        selectedProject === project.id ? 'bg-primary/5 border-l-primary shadow-lg' : 'border-l-transparent hover:border-l-primary/30'
                       }`}
                     >
                       {/* Project Info */}
-                      <div className="col-span-4 p-4 border-r">
-                        <div className="space-y-2">
+                      <div className="col-span-4 p-5 border-r border-border/50">
+                        <div className="space-y-3">
                           {/* Main project info row */}
-                          <div className="grid grid-cols-5 gap-2 items-start">
-                            <div>
-                              <div className="font-semibold text-sm text-foreground truncate" title={project.customer}>
+                          <div className="grid grid-cols-5 gap-3 items-start">
+                            <div className="space-y-2">
+                              <div className="font-bold text-sm text-foreground truncate" title={project.customer}>
                                 {project.customer}
                               </div>
-                              <Badge variant="outline" className="text-xs mt-1">
+                              <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20 text-primary font-medium">
                                 {project.produktgruppe || 'N/A'}
                               </Badge>
                             </div>
                             <div>
-                              <div className="text-xs font-mono text-muted-foreground">
+                              <div className="text-xs font-mono bg-muted/50 px-2 py-1 rounded text-muted-foreground border">
                                 {project.artikel_nummer}
                               </div>
                             </div>
                             <div>
-                              <div className="text-sm font-medium text-foreground line-clamp-2" title={project.artikel_bezeichnung}>
+                              <div className="text-sm font-semibold text-foreground line-clamp-2 leading-relaxed" title={project.artikel_bezeichnung}>
                                 {project.artikel_bezeichnung}
                               </div>
                             </div>
-                            <div>
-                              <div className="text-xs font-semibold text-primary">
+                            <div className="text-center">
+                              <div className="text-xs text-muted-foreground mb-1">Erste</div>
+                              <div className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">
                                 {project.erste_anlieferung ? format(parseLocalDate(project.erste_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
                               </div>
                             </div>
-                            <div>
-                              <div className="text-xs font-semibold text-secondary-foreground">
+                            <div className="text-center">
+                              <div className="text-xs text-muted-foreground mb-1">Letzte</div>
+                              <div className="text-xs font-bold text-secondary bg-secondary/10 px-2 py-1 rounded-md">
                                 {project.letzte_anlieferung ? format(parseLocalDate(project.letzte_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
                               </div>
                             </div>
                           </div>
                           
-                          {/* Delivery dates and total quantity */}
-                          <div className="grid grid-cols-3 gap-2 text-xs">
-                            <div>
-                              <span className="text-muted-foreground">Erste:</span>
-                              <div className="font-semibold text-primary">
-                                {project.erste_anlieferung ? format(parseLocalDate(project.erste_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Letzte:</span>
-                              <div className="font-semibold text-secondary-foreground">
-                                {project.letzte_anlieferung ? format(parseLocalDate(project.letzte_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Gesamt:</span>
-                              <div className="font-bold text-foreground">
-                                {project.gesamtmenge?.toLocaleString('de-DE')} kg
-                              </div>
-                            </div>
+                          {/* Total quantity display */}
+                          <div className="flex items-center gap-2 pt-2 border-t border-border/30">
+                            <span className="text-xs text-muted-foreground">Gesamtmenge:</span>
+                            <Badge variant="secondary" className="font-bold bg-accent/10 text-accent">
+                              {project.gesamtmenge?.toLocaleString('de-DE')} kg
+                            </Badge>
                           </div>
                         </div>
                       </div>
@@ -839,54 +872,61 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                     );
                   })()}
                 </>
-              )}
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </Card>
 
-        {/* Summary breakdown cards */}
+        {/* Professional Summary Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* By Location */}
-          <Card className="rounded-xl shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Standort-Übersicht</CardTitle>
+          <Card className="rounded-2xl border-0 bg-card/50 backdrop-blur-sm shadow-lg ring-1 ring-border/20">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-bold">Standort-Übersicht</CardTitle>
               <CardDescription>Mengenverteilung nach Standorten</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4">
               {Object.entries(totals.byLocation).map(([location, quantity]) => (
-                <div key={location} className="flex justify-between items-center">
+                <div key={location} className="flex justify-between items-center p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
                   <span className="font-medium">{locationLabels[location as keyof typeof locationLabels] || location}</span>
-                  <Badge variant="secondary" className="font-bold">
+                  <Badge variant="secondary" className="font-bold px-3 py-1">
                     {quantity.toLocaleString('de-DE')} kg
                   </Badge>
                 </div>
               ))}
               {Object.keys(totals.byLocation).length === 0 && (
-                <div className="text-center text-muted-foreground py-4">
-                  Keine Daten verfügbar
+                <div className="text-center text-muted-foreground py-8">
+                  <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                    <Calendar className="w-6 h-6" />
+                  </div>
+                  <div className="font-medium">Keine Daten verfügbar</div>
                 </div>
               )}
             </CardContent>
           </Card>
 
           {/* By Product Group */}
-          <Card className="rounded-xl shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Produktgruppen-Übersicht</CardTitle>
+          <Card className="rounded-2xl border-0 bg-card/50 backdrop-blur-sm shadow-lg ring-1 ring-border/20">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-bold">Produktgruppen-Übersicht</CardTitle>
               <CardDescription>Mengenverteilung nach Produktgruppen</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4">
               {Object.entries(totals.byProduct).map(([product, quantity]) => (
-                <div key={product} className="flex justify-between items-center">
+                <div key={product} className="flex justify-between items-center p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
                   <span className="font-medium">{product}</span>
-                  <Badge variant="secondary" className="font-bold">
+                  <Badge variant="secondary" className="font-bold px-3 py-1">
                     {quantity.toLocaleString('de-DE')} kg
                   </Badge>
                 </div>
               ))}
               {Object.keys(totals.byProduct).length === 0 && (
-                <div className="text-center text-muted-foreground py-4">
-                  Keine Daten verfügbar
+                <div className="text-center text-muted-foreground py-8">
+                  <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                    <Calendar className="w-6 h-6" />
+                  </div>
+                  <div className="font-medium">Keine Daten verfügbar</div>
                 </div>
               )}
             </CardContent>
