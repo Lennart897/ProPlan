@@ -42,7 +42,7 @@ const PasswordSettings = () => {
 
         {/* Zurück-Button */}
         <Button 
-          variant="ghost" 
+          variant="default"
           onClick={() => navigate('/')}
           className="w-full"
         >
