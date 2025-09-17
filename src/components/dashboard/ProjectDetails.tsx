@@ -711,50 +711,90 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
             <CardContent>
               <Button
                 variant="outline"
-                onClick={async () => {
+onClick={async () => {
                   try {
-                    let downloadError: any = null;
                     let downloadData: Blob | null = null;
+                    let usedPath = attachmentUrl!;
 
-                    // Try downloading from current path first
-                    try {
+                    const triggerDownload = async (path: string) => {
                       const { data, error } = await supabase.storage
                         .from('project-attachments')
-                        .download(attachmentUrl!);
-                      
+                        .download(path);
                       if (error) throw error;
-                      downloadData = data;
-                    } catch (error) {
-                      downloadError = error;
-                      console.log('First download attempt failed, trying alternative path...');
-                      
-                      // If current path fails, try the user-based path (for old files)
-                      const fileName = attachmentUrl!.split('/').pop();
-                      const userBasedPath = `${project.created_by_id}/${fileName}`;
-                      
-                      try {
-                        const { data, error } = await supabase.storage
-                          .from('project-attachments')
-                          .download(userBasedPath);
-                        
-                        if (error) throw error;
-                        downloadData = data;
-                        
-                        // Update the database with the correct path for future downloads
-                        await supabase
-                          .from('manufacturing_projects')
-                          .update({ attachment_url: userBasedPath })
-                          .eq('id', project.id);
-                      } catch (secondError) {
-                        throw downloadError; // Use original error
+                      return data as Blob;
+                    };
+
+                    const fileName = attachmentUrl!.split('/')?.pop() || '';
+
+                    const tryListAndFind = async (prefix?: string, targetFile?: string): Promise<string | null> => {
+                      if (!prefix) return null;
+                      const { data: list, error } = await supabase.storage
+                        .from('project-attachments')
+                        .list(prefix, { limit: 100 });
+                      if (error || !list || list.length === 0) return null;
+                      const exact = targetFile ? list.find((f) => f.name === targetFile) : null;
+                      if (exact) return `${prefix}/${exact.name}`;
+                      if (list.length === 1) return `${prefix}/${list[0].name}`;
+                      return null;
+                    };
+
+                    // 1) Try downloading from current path first
+                    try {
+                      downloadData = await triggerDownload(attachmentUrl!);
+                    } catch (firstErr) {
+                      console.log('First download attempt failed, trying alternative paths...');
+
+                      // 2) Try the user-based path (legacy)
+                      const userBasedPath = project.created_by_id && fileName
+                        ? `${project.created_by_id}/${fileName}`
+                        : null;
+
+                      const trySmartSearch = async () => {
+                        // 3) Smart search in project folder
+                        const discoveredProjectPath = await tryListAndFind(project.id, fileName);
+                        if (discoveredProjectPath) {
+                          downloadData = await triggerDownload(discoveredProjectPath);
+                          usedPath = discoveredProjectPath;
+                          return true;
+                        }
+                        // 4) Smart search in user folder
+                        const discoveredUserPath = await tryListAndFind(project.created_by_id, fileName);
+                        if (discoveredUserPath) {
+                          downloadData = await triggerDownload(discoveredUserPath);
+                          usedPath = discoveredUserPath;
+                          return true;
+                        }
+                        return false;
+                      };
+
+                      if (userBasedPath) {
+                        try {
+                          downloadData = await triggerDownload(userBasedPath);
+                          usedPath = userBasedPath;
+                        } catch {
+                          const found = await trySmartSearch();
+                          if (!found) throw firstErr;
+                        }
+                      } else {
+                        const found = await trySmartSearch();
+                        if (!found) throw firstErr;
                       }
                     }
-                    
+
                     if (downloadData) {
+                      // Update DB if we resolved to a different path
+                      if (usedPath !== attachmentUrl) {
+                        await supabase
+                          .from('manufacturing_projects')
+                          .update({ attachment_url: usedPath })
+                          .eq('id', project.id);
+                        setAttachmentUrl(usedPath);
+                      }
+
                       const url = URL.createObjectURL(downloadData);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = attachmentUrl!.split('/').pop() || 'anhang';
+                      a.download = usedPath.split('/')?.pop() || 'anhang';
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);
@@ -763,7 +803,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                   } catch (error: any) {
                     toast({
                       title: "Fehler beim Download",
-                      description: error.message || "Die Datei konnte nicht heruntergeladen werden.",
+                      description: "Der Anhang konnte nicht gefunden werden. Bitte laden Sie die Datei erneut hoch.",
                       variant: "destructive",
                     });
                   }
