@@ -30,12 +30,6 @@ const PasswordSettings = () => {
 
         {/* Mode-Umschaltung */}
         <Card className="apple-card">
-          <CardHeader>
-            <CardTitle>Passwort-Verwaltung</CardTitle>
-            <CardDescription>
-              Wählen Sie eine Option zum Verwalten Ihres Passworts
-            </CardDescription>
-          </CardHeader>
           <CardContent className="space-y-3">
             <Button
               variant={viewMode === "change" ? "default" : "outline"}
