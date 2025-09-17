@@ -620,19 +620,6 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-4">
-            <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
-              Abbrechen
-            </Button>
-            <Button
-              type="submit"
-              disabled={isLoading || totalDistributed > gesamtmenge}
-              className="w-full sm:w-auto"
-            >
-              {isLoading ? "Wird erstellt..." : "Projekt erstellen"}
-            </Button>
-          </div>
-
           {/* Anhang Upload */}
           <div className="space-y-2">
             <Label htmlFor="attachment">Anhang (optional, max. 5MB)</Label>
@@ -671,6 +658,19 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
                 {form.formState.errors.attachment.message}
               </p>
             )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-4">
+            <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
+              Abbrechen
+            </Button>
+            <Button
+              type="submit"
+              disabled={isLoading || totalDistributed > gesamtmenge}
+              className="w-full sm:w-auto"
+            >
+              {isLoading ? "Wird erstellt..." : "Projekt erstellen"}
+            </Button>
           </div>
         </form>
       </CardContent>
