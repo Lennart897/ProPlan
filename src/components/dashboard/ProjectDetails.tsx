@@ -713,24 +713,57 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                 variant="outline"
                 onClick={async () => {
                   try {
-                    const { data, error } = await supabase.storage
-                      .from('project-attachments')
-                      .download(attachmentUrl!);
+                    let downloadError: any = null;
+                    let downloadData: Blob | null = null;
+
+                    // Try downloading from current path first
+                    try {
+                      const { data, error } = await supabase.storage
+                        .from('project-attachments')
+                        .download(attachmentUrl!);
+                      
+                      if (error) throw error;
+                      downloadData = data;
+                    } catch (error) {
+                      downloadError = error;
+                      console.log('First download attempt failed, trying alternative path...');
+                      
+                      // If current path fails, try the user-based path (for old files)
+                      const fileName = attachmentUrl!.split('/').pop();
+                      const userBasedPath = `${project.created_by_id}/${fileName}`;
+                      
+                      try {
+                        const { data, error } = await supabase.storage
+                          .from('project-attachments')
+                          .download(userBasedPath);
+                        
+                        if (error) throw error;
+                        downloadData = data;
+                        
+                        // Update the database with the correct path for future downloads
+                        await supabase
+                          .from('manufacturing_projects')
+                          .update({ attachment_url: userBasedPath })
+                          .eq('id', project.id);
+                      } catch (secondError) {
+                        throw downloadError; // Use original error
+                      }
+                    }
                     
-                    if (error) throw error;
-                    
-                    const url = URL.createObjectURL(data);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = attachmentUrl!.split('/').pop() || 'anhang';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
+                    if (downloadData) {
+                      const url = URL.createObjectURL(downloadData);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = attachmentUrl!.split('/').pop() || 'anhang';
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                    }
                   } catch (error: any) {
                     toast({
                       title: "Fehler beim Download",
-                      description: error.message,
+                      description: error.message || "Die Datei konnte nicht heruntergeladen werden.",
                       variant: "destructive",
                     });
                   }
