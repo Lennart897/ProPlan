@@ -165,12 +165,26 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  // Filter projects based on status and selected filters  
+  // Filter projects based on status, selected filters, and current week
   const filteredProjects = projects.filter(project => {
     // Include both approved (5) and completed (7) projects, whether archived or not
     const statusEligible = (project.status === 5 || project.status === 7) && 
                           project.erste_anlieferung && project.letzte_anlieferung;
     if (!statusEligible) return false;
+
+    // Check if project overlaps with current week
+    try {
+      const startDate = parseLocalDate(project.erste_anlieferung);
+      const endDate = parseLocalDate(project.letzte_anlieferung);
+      const weekEnd = addDays(weekStart, 6);
+      
+      // Project must overlap with the current week
+      const hasWeekOverlap = startDate <= weekEnd && endDate >= weekStart;
+      if (!hasWeekOverlap) return false;
+    } catch (error) {
+      console.error('Error parsing project dates:', error);
+      return false;
+    }
 
     const locationMatch = selectedLocation === 'all' || 
       (project.standort_verteilung && typeof project.standort_verteilung === 'object' && 
@@ -480,7 +494,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                   {filteredProjects.length} Projekte für diese Woche
                 </p>
               </div>
-              <div className="max-h-[600px] overflow-y-auto">
+              <div className="min-h-[200px]">
                 {loading ? (
                   <div className="text-center text-muted-foreground py-8">
                     Projekte werden geladen...
