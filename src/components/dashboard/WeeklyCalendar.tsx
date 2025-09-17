@@ -497,10 +497,12 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
             <div className="grid grid-cols-12 border-b bg-muted/30">
               {/* Project Info Headers */}
               <div className="col-span-4 p-3 border-r">
-                <div className="grid grid-cols-3 gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <div className="grid grid-cols-5 gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   <div>Kunde</div>
                   <div>Art.-Nr.</div>
                   <div>Artikelbezeichnung</div>
+                  <div>Erste Anlieferung</div>
+                  <div>Letzte Anlieferung</div>
                 </div>
               </div>
               
@@ -559,7 +561,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                       <div className="col-span-4 p-4 border-r">
                         <div className="space-y-2">
                           {/* Main project info row */}
-                          <div className="grid grid-cols-3 gap-2 items-start">
+                          <div className="grid grid-cols-5 gap-2 items-start">
                             <div>
                               <div className="font-semibold text-sm text-foreground truncate" title={project.customer}>
                                 {project.customer}
@@ -576,6 +578,16 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                             <div>
                               <div className="text-sm font-medium text-foreground line-clamp-2" title={project.artikel_bezeichnung}>
                                 {project.artikel_bezeichnung}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs font-semibold text-primary">
+                                {project.erste_anlieferung ? format(parseLocalDate(project.erste_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs font-semibold text-secondary-foreground">
+                                {project.letzte_anlieferung ? format(parseLocalDate(project.letzte_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
                               </div>
                             </div>
                           </div>
@@ -717,7 +729,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                               </Badge>
                             </div>
                             
-                            <div className="grid grid-cols-3 gap-2 items-start">
+                            <div className="grid grid-cols-5 gap-2 items-start">
                               <div>
                                 <div className="font-semibold text-sm text-foreground truncate" title={previewProject.customer}>
                                   {previewProject.customer}
@@ -734,6 +746,16 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                               <div>
                                 <div className="text-sm font-medium text-foreground line-clamp-2" title={previewProject.artikel_bezeichnung}>
                                   {previewProject.artikel_bezeichnung}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-xs font-semibold text-primary">
+                                  {previewProject.erste_anlieferung ? format(parseLocalDate(previewProject.erste_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-xs font-semibold text-secondary-foreground">
+                                  {previewProject.letzte_anlieferung ? format(parseLocalDate(previewProject.letzte_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
                                 </div>
                               </div>
                             </div>
