@@ -454,9 +454,9 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
           </Card>
         </div>
 
-        {/* Professional Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="rounded-2xl border-0 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent shadow-lg ring-1 ring-primary/10">
+        {/* Enhanced Planning Overview Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="rounded-2xl border-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-lg ring-1 ring-primary/20">
             <CardContent className="p-6">
               <div className="text-center space-y-2">
                 <div className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
@@ -465,11 +465,14 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                 <div className="text-sm font-medium text-muted-foreground">
                   kg Gesamtmenge
                 </div>
+                <div className="text-xs text-primary/70">
+                  Woche {getWeek(weekStart, { locale: de })}
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-0 bg-gradient-to-br from-secondary/5 via-secondary/3 to-transparent shadow-lg ring-1 ring-secondary/10">
+          <Card className="rounded-2xl border-0 bg-gradient-to-br from-secondary/10 via-secondary/5 to-transparent shadow-lg ring-1 ring-secondary/20">
             <CardContent className="p-6">
               <div className="text-center space-y-2">
                 <div className="text-3xl font-bold bg-gradient-to-r from-secondary to-secondary/80 bg-clip-text text-transparent">
@@ -478,11 +481,14 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                 <div className="text-sm font-medium text-muted-foreground">
                   Aktive Projekte
                 </div>
+                <div className="text-xs text-secondary/70">
+                  In Produktion
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-0 bg-gradient-to-br from-accent/5 via-accent/3 to-transparent shadow-lg ring-1 ring-accent/10">
+          <Card className="rounded-2xl border-0 bg-gradient-to-br from-accent/10 via-accent/5 to-transparent shadow-lg ring-1 ring-accent/20">
             <CardContent className="p-6">
               <div className="text-center space-y-2">
                 <div className="text-3xl font-bold bg-gradient-to-r from-accent to-accent/80 bg-clip-text text-transparent">
@@ -491,6 +497,120 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                 <div className="text-sm font-medium text-muted-foreground">
                   Produktgruppen
                 </div>
+                <div className="text-xs text-accent/70">
+                  Aktiv diese Woche
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border-0 bg-gradient-to-br from-orange-100/50 via-orange-50/30 to-transparent shadow-lg ring-1 ring-orange-200/30">
+            <CardContent className="p-6">
+              <div className="text-center space-y-2">
+                <div className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
+                  {Object.keys(totals.byLocation).length}
+                </div>
+                <div className="text-sm font-medium text-muted-foreground">
+                  Standorte
+                </div>
+                <div className="text-xs text-orange-600/70">
+                  Mit Produktion
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Planning Overview Panels */}
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+          {/* Quick Product Group Overview */}
+          <Card className="xl:col-span-2 rounded-2xl border-0 bg-card/50 backdrop-blur-sm shadow-lg ring-1 ring-border/20">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-primary"></div>
+                Produktgruppen-Schnellübersicht
+              </CardTitle>
+              <CardDescription>Aktuelle Woche - Mengen nach Produktgruppen</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {Object.entries(totals.byProduct).slice(0, 5).map(([product, quantity], index) => {
+                  const percentage = (quantity / totals.totalQuantity) * 100;
+                  const colors = ['bg-primary', 'bg-secondary', 'bg-accent', 'bg-orange-500', 'bg-green-500'];
+                  return (
+                    <div key={product} className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-semibold text-foreground">{product}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold">{quantity.toLocaleString('de-DE')} kg</span>
+                          <span className="text-xs text-muted-foreground">({percentage.toFixed(1)}%)</span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-muted/30 rounded-full h-2">
+                        <div 
+                          className={`${colors[index % colors.length]} h-2 rounded-full transition-all duration-300`}
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {Object.keys(totals.byProduct).length === 0 && (
+                  <div className="text-center py-4 text-muted-foreground">
+                    Keine Produktgruppen für diese Woche
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Location Capacity Overview */}
+          <Card className="xl:col-span-2 rounded-2xl border-0 bg-card/50 backdrop-blur-sm shadow-lg ring-1 ring-border/20">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-secondary"></div>
+                Standort-Kapazitäten
+              </CardTitle>
+              <CardDescription>Mengenverteilung nach Produktionsstandorten</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 gap-3">
+                {Object.entries(totals.byLocation).map(([location, quantity]) => {
+                  const percentage = totals.totalQuantity > 0 ? (quantity / totals.totalQuantity) * 100 : 0;
+                  const locationColor = {
+                    'brenz': 'bg-blue-500',
+                    'visbek': 'bg-green-500', 
+                    'doebeln': 'bg-yellow-500',
+                    'storkow': 'bg-purple-500',
+                    'gudensberg': 'bg-red-500'
+                  }[location] || 'bg-gray-500';
+                  
+                  return (
+                    <div key={location} className="p-3 rounded-xl bg-muted/20 hover:bg-muted/30 transition-colors">
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-3 h-3 rounded-full ${locationColor}`}></div>
+                          <span className="font-semibold text-sm">{locationLabels[location as keyof typeof locationLabels] || location}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-bold">{quantity.toLocaleString('de-DE')} kg</div>
+                          <div className="text-xs text-muted-foreground">{percentage.toFixed(1)}%</div>
+                        </div>
+                      </div>
+                      <div className="w-full bg-background/50 rounded-full h-2">
+                        <div 
+                          className={`${locationColor} h-2 rounded-full transition-all duration-300`}
+                          style={{ width: `${Math.max(percentage, 2)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {Object.keys(totals.byLocation).length === 0 && (
+                  <div className="text-center py-4 text-muted-foreground">
+                    Keine Standortdaten für diese Woche
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -649,20 +769,44 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                         </div>
                       </div>
                       
-                      {/* Location Columns */}
-                      <div className="col-span-3 p-4 border-r">
-                        <div className="grid grid-cols-5 gap-1 h-full">
+                      {/* Enhanced Location Columns with Visual Indicators */}
+                      <div className="col-span-3 p-5 border-r border-border/50">
+                        <div className="grid grid-cols-5 gap-2 h-full">
                           {Object.keys(locationLabels).map((locationKey) => {
                             const quantity = project.standort_verteilung?.[locationKey] || 0;
                             const qty = Number(quantity);
+                            const totalProjectQty = project.gesamtmenge || 1;
+                            const percentage = (qty / totalProjectQty) * 100;
+                            
+                            const locationColors = {
+                              'brenz': 'bg-blue-500 border-blue-200 text-blue-50',
+                              'visbek': 'bg-green-500 border-green-200 text-green-50', 
+                              'doebeln': 'bg-yellow-500 border-yellow-200 text-yellow-900',
+                              'storkow': 'bg-purple-500 border-purple-200 text-purple-50',
+                              'gudensberg': 'bg-red-500 border-red-200 text-red-50'
+                            }[locationKey] || 'bg-gray-500 border-gray-200 text-gray-50';
+                            
                             return (
-                              <div key={locationKey} className="text-center">
+                              <div key={locationKey} className="text-center space-y-1">
                                 {qty > 0 ? (
-                                  <div className="bg-primary/10 rounded px-2 py-1 text-xs font-bold text-primary">
-                                    {qty.toLocaleString('de-DE')}
+                                  <div className={`${locationColors} rounded-lg px-2 py-2 text-xs font-bold border-2 shadow-sm relative overflow-hidden`}>
+                                    <div className="relative z-10">
+                                      <div className="font-bold">{qty.toLocaleString('de-DE')}</div>
+                                      <div className="text-xs opacity-90">{percentage.toFixed(0)}%</div>
+                                    </div>
+                                    <div 
+                                      className="absolute bottom-0 left-0 bg-white/20 transition-all duration-300" 
+                                      style={{
+                                        height: `${Math.max(percentage * 0.8, 8)}%`,
+                                        width: '100%'
+                                      }}
+                                    ></div>
                                   </div>
                                 ) : (
-                                  <div className="text-xs text-muted-foreground">-</div>
+                                  <div className="text-xs text-muted-foreground bg-muted/20 rounded-lg py-3 px-2 border-2 border-dashed border-muted/40">
+                                    <div>-</div>
+                                    <div className="text-xs">0%</div>
+                                  </div>
                                 )}
                               </div>
                             );
@@ -816,20 +960,36 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                           </div>
                         </div>
                         
-                        {/* Location Columns */}
-                        <div className="col-span-3 p-4 border-r">
-                          <div className="grid grid-cols-5 gap-1 h-full">
+                        {/* Enhanced Location Columns for Preview */}
+                        <div className="col-span-3 p-5 border-r border-border/50">
+                          <div className="grid grid-cols-5 gap-2 h-full">
                             {Object.keys(locationLabels).map((locationKey) => {
                               const quantity = previewProject.standort_verteilung?.[locationKey] || 0;
                               const qty = Number(quantity);
+                              const totalProjectQty = previewProject.gesamtmenge || 1;
+                              const percentage = (qty / totalProjectQty) * 100;
+                              
                               return (
-                                <div key={locationKey} className="text-center">
+                                <div key={locationKey} className="text-center space-y-1">
                                   {qty > 0 ? (
-                                    <div className="bg-orange-200 rounded px-2 py-1 text-xs font-bold text-orange-800">
-                                      {qty.toLocaleString('de-DE')}
+                                    <div className="bg-orange-400 border-orange-200 text-orange-50 rounded-lg px-2 py-2 text-xs font-bold border-2 shadow-sm relative overflow-hidden">
+                                      <div className="relative z-10">
+                                        <div className="font-bold">{qty.toLocaleString('de-DE')}</div>
+                                        <div className="text-xs opacity-90">{percentage.toFixed(0)}%</div>
+                                      </div>
+                                      <div 
+                                        className="absolute bottom-0 left-0 bg-white/20 transition-all duration-300" 
+                                        style={{
+                                          height: `${Math.max(percentage * 0.8, 8)}%`,
+                                          width: '100%'
+                                        }}
+                                      ></div>
                                     </div>
                                   ) : (
-                                    <div className="text-xs text-muted-foreground">-</div>
+                                    <div className="text-xs text-muted-foreground bg-muted/20 rounded-lg py-3 px-2 border-2 border-dashed border-muted/40">
+                                      <div>-</div>
+                                      <div className="text-xs">0%</div>
+                                    </div>
                                   )}
                                 </div>
                               );
