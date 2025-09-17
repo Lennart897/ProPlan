@@ -646,7 +646,7 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
                   form.setValue("attachment", undefined);
                 }
               }}
-              className="w-full file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer cursor-pointer"
+              className="w-full h-12 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer cursor-pointer"
             />
             {selectedFile && (
               <p className="text-sm text-muted-foreground">
