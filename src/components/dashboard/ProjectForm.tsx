@@ -295,7 +295,10 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
 
         const { error: updateErr } = await supabase
           .from('manufacturing_projects')
-          .update({ attachment_url: attachmentUrl })
+          .update({ 
+            attachment_url: attachmentUrl,
+            original_filename: selectedFile.name 
+          })
           .eq('id', inserted.id);
         if (updateErr) throw updateErr;
       }

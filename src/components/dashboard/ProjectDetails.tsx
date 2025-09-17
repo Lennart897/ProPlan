@@ -33,6 +33,7 @@ interface Project {
   standort_verteilung?: Record<string, number>;
   menge_fix?: boolean;
   attachment_url?: string;
+  original_filename?: string;
 }
 
 interface User {
@@ -794,7 +795,8 @@ onClick={async () => {
                       const url = URL.createObjectURL(downloadData);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = usedPath.split('/')?.pop() || 'anhang';
+                      // Use original filename if available, otherwise extract from path
+                      a.download = project.original_filename || usedPath.split('/')?.pop() || 'anhang';
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);

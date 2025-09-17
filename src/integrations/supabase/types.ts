@@ -123,6 +123,7 @@ export type Database = {
           id: string
           letzte_anlieferung: string | null
           menge_fix: boolean | null
+          original_filename: string | null
           preis: number | null
           produktgruppe: string | null
           produktgruppe_2: string | null
@@ -148,6 +149,7 @@ export type Database = {
           id?: string
           letzte_anlieferung?: string | null
           menge_fix?: boolean | null
+          original_filename?: string | null
           preis?: number | null
           produktgruppe?: string | null
           produktgruppe_2?: string | null
@@ -173,6 +175,7 @@ export type Database = {
           id?: string
           letzte_anlieferung?: string | null
           menge_fix?: boolean | null
+          original_filename?: string | null
           preis?: number | null
           produktgruppe?: string | null
           produktgruppe_2?: string | null
