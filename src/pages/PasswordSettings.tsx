@@ -30,13 +30,6 @@ const PasswordSettings = () => {
 
         {/* Mode-Umschaltung */}
         {/* Mode-Umschaltung */}
-        <Button
-          variant={viewMode === "change" ? "default" : "outline"}
-          onClick={() => setViewMode("change")}
-          className="w-full mb-3"
-        >
-          Passwort ändern
-        </Button>
 
         {/* Entsprechende Komponente anzeigen */}
         {viewMode === "change" && (
