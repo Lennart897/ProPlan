@@ -531,46 +531,6 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
               )}
             </div>
 
-            {/* Anhang Upload */}
-            <div className="space-y-2">
-              <Label htmlFor="attachment">Anhang (optional, max. 5MB)</Label>
-              <Input
-                id="attachment"
-                type="file"
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    if (file.size > 5 * 1024 * 1024) {
-                      toast({
-                        title: "Datei zu groß",
-                        description: "Die Datei darf maximal 5MB groß sein.",
-                        variant: "destructive",
-                      });
-                      e.target.value = '';
-                      return;
-                    }
-                    setSelectedFile(file);
-                    form.setValue("attachment", file);
-                  } else {
-                    setSelectedFile(null);
-                    form.setValue("attachment", undefined);
-                  }
-                }}
-                className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-              />
-              {selectedFile && (
-                <p className="text-sm text-muted-foreground">
-                  Ausgewählte Datei: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-                </p>
-              )}
-              {form.formState.errors.attachment && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.attachment.message}
-                </p>
-              )}
-            </div>
-
             {/* Gesamtmenge und Menge fix nebeneinander - nach Anlieferungsdaten */}
             <div className="space-y-2">
               <Label htmlFor="gesamtmenge">Gesamtmenge (kg)</Label>
@@ -671,6 +631,46 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
             >
               {isLoading ? "Wird erstellt..." : "Projekt erstellen"}
             </Button>
+          </div>
+
+          {/* Anhang Upload */}
+          <div className="space-y-2">
+            <Label htmlFor="attachment">Anhang (optional, max. 5MB)</Label>
+            <Input
+              id="attachment"
+              type="file"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  if (file.size > 5 * 1024 * 1024) {
+                    toast({
+                      title: "Datei zu groß",
+                      description: "Die Datei darf maximal 5MB groß sein.",
+                      variant: "destructive",
+                    });
+                    e.target.value = '';
+                    return;
+                  }
+                  setSelectedFile(file);
+                  form.setValue("attachment", file);
+                } else {
+                  setSelectedFile(null);
+                  form.setValue("attachment", undefined);
+                }
+              }}
+              className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+            />
+            {selectedFile && (
+              <p className="text-sm text-muted-foreground">
+                Ausgewählte Datei: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+              </p>
+            )}
+            {form.formState.errors.attachment && (
+              <p className="text-sm text-destructive">
+                {form.formState.errors.attachment.message}
+              </p>
+            )}
           </div>
         </form>
       </CardContent>
