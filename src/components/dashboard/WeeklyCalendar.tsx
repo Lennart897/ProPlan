@@ -753,7 +753,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                             </div>
                             <div className="text-center">
                               <div className="text-xs text-muted-foreground mb-1">Letzte</div>
-                              <div className="text-xs font-bold text-secondary bg-secondary/10 px-2 py-1 rounded-md">
+                              <div className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">
                                 {project.letzte_anlieferung ? format(parseLocalDate(project.letzte_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
                               </div>
                             </div>
