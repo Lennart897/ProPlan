@@ -494,18 +494,21 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
 
           {/* Header Row */}
           <div className="min-w-[1200px]">
-            <div className="grid grid-cols-12 border-b bg-muted/30">
+            <div className="grid grid-cols-11 border-b bg-muted/30">
               {/* Project Info Headers */}
-              <div className="col-span-4 p-3 border-r">
-                <div className="grid grid-cols-3 gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <div className="col-span-6 p-3 border-r">
+                <div className="grid grid-cols-6 gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   <div>Kunde</div>
                   <div>Art.-Nr.</div>
                   <div>Artikelbezeichnung</div>
+                  <div className="text-center">Gesamtmenge</div>
+                  <div className="text-center">Erste Anlieferung</div>
+                  <div className="text-center">Letzte Anlieferung</div>
                 </div>
               </div>
               
               {/* Location Headers */}
-              <div className="col-span-3 p-3 border-r">
+              <div className="col-span-5 p-3 border-r">
                 <div className="grid grid-cols-5 gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center">
                   {Object.entries(locationLabels).map(([key, label]) => (
                     <div key={key} className="truncate" title={label}>
@@ -555,15 +558,15 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                     return (
                       <div 
                         key={project.id}
-                        className={`grid grid-cols-12 hover:bg-muted/20 transition-colors ${
+                        className={`grid grid-cols-11 hover:bg-muted/20 transition-colors ${
                           selectedProject === project.id ? 'bg-primary/5' : ''
                         }`}
                       >
                         {/* Project Info */}
-                        <div className="col-span-4 p-4 border-r">
+                        <div className="col-span-6 p-4 border-r">
                           <div className="space-y-2">
-                            {/* Main project info row */}
-                            <div className="grid grid-cols-3 gap-2 items-start">
+                            {/* Table-like row structure */}
+                            <div className="grid grid-cols-6 gap-2 items-center">
                               <div>
                                 <div className="font-semibold text-sm text-foreground truncate" title={project.customer}>
                                   {project.customer}
@@ -582,26 +585,19 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                                   {project.artikel_bezeichnung}
                                 </div>
                               </div>
-                            </div>
-                            
-                            {/* Delivery dates and total quantity */}
-                            <div className="grid grid-cols-3 gap-2 text-xs">
-                              <div>
-                                <span className="text-muted-foreground">Erste:</span>
-                                <div className="font-semibold text-primary">
+                              <div className="text-center">
+                                <div className="font-bold text-foreground">
+                                  {project.gesamtmenge?.toLocaleString('de-DE')} kg
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="font-semibold text-primary text-xs">
                                   {project.erste_anlieferung ? format(parseLocalDate(project.erste_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
                                 </div>
                               </div>
-                              <div>
-                                <span className="text-muted-foreground">Letzte:</span>
-                                <div className="font-semibold text-secondary-foreground">
+                              <div className="text-center">
+                                <div className="font-semibold text-secondary-foreground text-xs">
                                   {project.letzte_anlieferung ? format(parseLocalDate(project.letzte_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
-                                </div>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Gesamt:</span>
-                                <div className="font-bold text-foreground">
-                                  {project.gesamtmenge?.toLocaleString('de-DE')} kg
                                 </div>
                               </div>
                             </div>
@@ -609,7 +605,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                         </div>
                         
                         {/* Location Columns */}
-                        <div className="col-span-3 p-4 border-r">
+                        <div className="col-span-5 p-4 border-r">
                           <div className="grid grid-cols-5 gap-1 h-full">
                             {Object.keys(locationLabels).map((locationKey) => {
                               const quantity = project.standort_verteilung?.[locationKey] || 0;
@@ -682,9 +678,9 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                     if (!previewSpan) return null;
                     
                     return (
-                      <div key="preview" className="grid grid-cols-12 bg-orange-50/50 border-l-4 border-l-orange-400">
+                      <div key="preview" className="grid grid-cols-11 bg-orange-50/50 border-l-4 border-l-orange-400">
                         {/* Project Info */}
-                        <div className="col-span-4 p-4 border-r">
+                        <div className="col-span-6 p-4 border-r">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2 mb-2">
                               <Badge variant="secondary" className="bg-orange-100 text-orange-700 font-semibold">
@@ -692,7 +688,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                               </Badge>
                             </div>
                             
-                            <div className="grid grid-cols-3 gap-2 items-start">
+                            <div className="grid grid-cols-6 gap-2 items-center">
                               <div>
                                 <div className="font-semibold text-sm text-foreground truncate" title={previewProject.customer}>
                                   {previewProject.customer}
@@ -711,25 +707,19 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                                   {previewProject.artikel_bezeichnung}
                                 </div>
                               </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-3 gap-2 text-xs">
-                              <div>
-                                <span className="text-muted-foreground">Erste:</span>
-                                <div className="font-semibold text-primary">
+                              <div className="text-center">
+                                <div className="font-bold text-foreground">
+                                  {previewProject.gesamtmenge?.toLocaleString('de-DE')} kg
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="font-semibold text-primary text-xs">
                                   {previewProject.erste_anlieferung ? format(parseLocalDate(previewProject.erste_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
                                 </div>
                               </div>
-                              <div>
-                                <span className="text-muted-foreground">Letzte:</span>
-                                <div className="font-semibold text-secondary-foreground">
+                              <div className="text-center">
+                                <div className="font-semibold text-secondary-foreground text-xs">
                                   {previewProject.letzte_anlieferung ? format(parseLocalDate(previewProject.letzte_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
-                                </div>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Gesamt:</span>
-                                <div className="font-bold text-foreground">
-                                  {previewProject.gesamtmenge?.toLocaleString('de-DE')} kg
                                 </div>
                               </div>
                             </div>
