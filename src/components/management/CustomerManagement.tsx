@@ -9,8 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useCustomers, Customer } from '@/hooks/useCustomers';
-import { Plus, Edit, User, Building2, UserCheck, Calendar } from 'lucide-react';
+import { Plus, Edit, User, Building2, UserCheck, Calendar, ArrowLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
 
 type CustomerFormData = Omit<Customer, 'id' | 'created_at' | 'updated_at'>;
 
@@ -73,6 +74,17 @@ export function CustomerManagement() {
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
+      {/* Back Button */}
+      <div className="flex items-center gap-4">
+        <Link to="/">
+          <Button variant="outline" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Zurück zum Dashboard
+          </Button>
+        </Link>
+      </div>
+      
+      {/* Header Section */}
       {/* Header Section */}
       <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-lg p-6 border">
         <div className="flex justify-between items-start">
