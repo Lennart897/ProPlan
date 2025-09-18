@@ -77,7 +77,7 @@ export function CustomerManagement() {
       {/* Back Button */}
       <div className="flex items-center gap-4">
         <Link to="/">
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />
             Zurück zum Dashboard
           </Button>
