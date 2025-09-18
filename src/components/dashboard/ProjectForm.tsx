@@ -329,6 +329,43 @@ export function ProjectForm({ user, onSuccess, onCancel }: ProjectFormProps) {
                 )}
               </div>
 
+              {/* Display selected article details */}
+              {form.watch("article_id") && (() => {
+                const selectedArticle = getArticleById(form.watch("article_id"));
+                if (selectedArticle) {
+                  return (
+                    <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Artikelnummer</Label>
+                        <p className="text-sm font-medium">{selectedArticle.artikel_nummer}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Produktgruppe</Label>
+                        <p className="text-sm">{selectedArticle.produktgruppe || '-'}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Produktgruppe 2</Label>
+                        <p className="text-sm">{selectedArticle.produktgruppe_2 || '-'}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Verkaufseinheit</Label>
+                        <p className="text-sm">{selectedArticle.verkaufseinheit || '-'}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Grammatur</Label>
+                        <p className="text-sm">
+                          {selectedArticle.grammatur_verkaufseinheit 
+                            ? `${selectedArticle.grammatur_verkaufseinheit.toFixed(3)} kg`
+                            : '-'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
               <div className="space-y-2">
                 <Label htmlFor="gesamtmenge" className="flex items-center gap-2">
                   <Package className="h-4 w-4" />
