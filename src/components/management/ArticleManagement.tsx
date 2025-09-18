@@ -439,7 +439,7 @@ export function ArticleManagement() {
                         )}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {article.grammatur_verkaufseinheit || '-'}
+                        {article.grammatur_verkaufseinheit ? article.grammatur_verkaufseinheit.toFixed(3) : '-'}
                       </TableCell>
                       <TableCell>
                         <Badge 
