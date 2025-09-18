@@ -142,7 +142,7 @@ ${formatLocationDistribution(project.standort_verteilung)}
   <h2 style="margin-top: 0; color: #2e7d32;">✅ Status: Vollständig genehmigt</h2>
   <p style="margin-bottom: 0;"><strong>Alle beteiligten Standorte haben Ihr Projekt genehmigt. Die Produktion kann beginnen!</strong></p>
 </div>
-<p>🔗 <a href="https://lovable.dev/projects/ea0f2a9b-f59f-4af0-aaa1-f3b0bffaf89e" style="color: #2196f3; text-decoration: none;">Zum Projekt im ProPlan System</a></p>
+<p>🔗 <a href="https://demo-proplan.de" style="color: #2196f3; text-decoration: none;">Zum Projekt im ProPlan System</a></p>
 <hr>
 <p style="color: #666; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em></p>
 <p><strong>Mit freundlichen Grüßen,<br>ProPlan Benachrichtigungssystem</strong></p>`;
