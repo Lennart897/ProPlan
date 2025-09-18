@@ -142,6 +142,29 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'update_email_notifications') {
+      const { user_id, email_notifications_enabled } = body as { user_id: string; email_notifications_enabled: boolean };
+      if (!user_id || email_notifications_enabled === undefined) {
+        return new Response(JSON.stringify({ error: 'Missing fields' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { error } = await adminClient
+        .from('profiles')
+        .update({ email_notifications_enabled })
+        .eq('user_id', user_id);
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (action === 'delete_user') {
       const { user_id } = body as { user_id: string };
       if (!user_id) {
@@ -176,7 +199,7 @@ Deno.serve(async (req) => {
       const ids = list.users.map((u) => u.id);
       const { data: profiles, error: profErr } = await adminClient
         .from('profiles')
-        .select('user_id, display_name, role, created_at, updated_at')
+        .select('user_id, display_name, role, created_at, updated_at, email_notifications_enabled')
         .in('user_id', ids);
       if (profErr) {
         return new Response(JSON.stringify({ error: profErr.message }), {

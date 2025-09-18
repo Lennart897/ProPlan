@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +37,7 @@ type ListedUser = {
     role: AppRole | null;
     created_at: string | null;
     updated_at: string | null;
+    email_notifications_enabled: boolean | null;
   } | null;
 };
 const roleIndex = new Map<AppRole, number>(roles.map((r, i) => [r, i]));
@@ -134,6 +136,19 @@ const Admin = () => {
       await loadUsers();
     } catch (e: any) {
       toast({ title: "Fehler", description: e?.message || "Rollenänderung fehlgeschlagen", variant: "destructive" });
+    }
+  };
+
+  const onUpdateEmailNotifications = async (user_id: string, enabled: boolean) => {
+    try {
+      const { error } = await supabase.functions.invoke("admin-users", {
+        body: { action: "update_email_notifications", user_id, email_notifications_enabled: enabled },
+      });
+      if (error) throw error;
+      toast({ title: "Aktualisiert", description: "E-Mail Benachrichtigungen " + (enabled ? "aktiviert" : "deaktiviert") });
+      await loadUsers();
+    } catch (e: any) {
+      toast({ title: "Fehler", description: e?.message || "Änderung fehlgeschlagen", variant: "destructive" });
     }
   };
 
@@ -249,15 +264,16 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>E-Mail</TableHead>
-                        <TableHead>Anzeigename</TableHead>
-                        <TableHead>Rolle</TableHead>
-                        <TableHead>Aktionen</TableHead>
-                      </TableRow>
-                    </TableHeader>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>E-Mail</TableHead>
+                          <TableHead>Anzeigename</TableHead>
+                          <TableHead>Rolle</TableHead>
+                          <TableHead>E-Mail Benachrichtigungen</TableHead>
+                          <TableHead>Aktionen</TableHead>
+                        </TableRow>
+                      </TableHeader>
                     <TableBody>
                       {users.map((u) => (
                         <TableRow key={u.id}>
@@ -274,6 +290,17 @@ const Admin = () => {
                                 ))}
                               </SelectContent>
                             </Select>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                checked={u.profile?.email_notifications_enabled ?? true}
+                                onCheckedChange={(enabled) => onUpdateEmailNotifications(u.id, enabled)}
+                              />
+                              <Label className="text-sm">
+                                {u.profile?.email_notifications_enabled ?? true ? "Aktiviert" : "Deaktiviert"}
+                              </Label>
+                            </div>
                           </TableCell>
                           <TableCell>
                             <Button variant="destructive" size="sm" onClick={() => onDelete(u.id)}>Löschen</Button>
