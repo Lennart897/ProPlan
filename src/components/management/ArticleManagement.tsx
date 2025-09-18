@@ -27,11 +27,10 @@ const PRODUCT_GROUPS = [
 ] as const;
 
 const PRODUCT_GROUPS_2 = [
-  "Verpackung",
-  "Display", 
-  "Zuschnitt",
-  "Stanzteile",
-  "Sonderprodukt"
+  "Teilstück",
+  "mit Rst", 
+  "geschnitten",
+  "mariniert"
 ] as const;
 
 const SALES_UNITS = [
