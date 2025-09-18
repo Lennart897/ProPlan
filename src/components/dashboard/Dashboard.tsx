@@ -487,143 +487,160 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       <div className="container mx-auto p-4 sm:p-6">
         <div className="space-y-4 sm:space-y-6">
           {/* Action Bar */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
-            <div className="flex flex-col gap-4 sm:flex-row sm:gap-4 sm:items-center">
-              <div className="relative">
+          <div className="space-y-4">
+            {/* Search and Filter Row */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Projekte suchen..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-full sm:w-80"
+                  className="pl-10"
                 />
               </div>
-              {statusFilter === 'archived' ? (
-                <Select value={archiveStatusFilter} onValueChange={(v) => setArchiveStatusFilter(v as 'all' | '5' | '6')}>
-                  <SelectTrigger className="w-full sm:w-56">
-                    <SelectValue placeholder="Archiv-Status filtern" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle im Archiv</SelectItem>
-                    <SelectItem value="5">Genehmigt (archiviert)</SelectItem>
-                    <SelectItem value="6">Abgelehnt (archiviert)</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full sm:w-48">
-                    <SelectValue placeholder="Status filtern" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle Status</SelectItem>
-                    <SelectItem value="2">Prüfung Vertrieb</SelectItem>
-                    <SelectItem value="3">Prüfung SupplyChain</SelectItem>
-                    <SelectItem value="4">Prüfung Planung</SelectItem>
-                    <SelectItem value="5">Genehmigt</SelectItem>
-                    <SelectItem value="6">Abgelehnt</SelectItem>
-                    <SelectItem value="7">Abgeschlossen</SelectItem>
-                    <SelectItem value="archived">Archiviert</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
+              
+              <div className="flex gap-2">
+                {statusFilter === 'archived' ? (
+                  <Select value={archiveStatusFilter} onValueChange={(v) => setArchiveStatusFilter(v as 'all' | '5' | '6')}>
+                    <SelectTrigger className="w-56">
+                      <SelectValue placeholder="Archiv-Status filtern" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Alle im Archiv</SelectItem>
+                      <SelectItem value="5">Genehmigt (archiviert)</SelectItem>
+                      <SelectItem value="6">Abgelehnt (archiviert)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Status filtern" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Alle Status</SelectItem>
+                      <SelectItem value="2">Prüfung Vertrieb</SelectItem>
+                      <SelectItem value="3">Prüfung SupplyChain</SelectItem>
+                      <SelectItem value="4">Prüfung Planung</SelectItem>
+                      <SelectItem value="5">Genehmigt</SelectItem>
+                      <SelectItem value="6">Abgelehnt</SelectItem>
+                      <SelectItem value="7">Abgeschlossen</SelectItem>
+                      <SelectItem value="archived">Archiviert</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
             </div>
-            
-            <div className="flex flex-wrap gap-2">
-              {/* Ansicht umschalten: Matrix | Liste */}
-              <div className="flex">
-                <Button
-                  variant={viewMode === 'matrix' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewMode('matrix')}
-                  className="rounded-r-none"
-                >
-                  <LayoutGrid className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Matrix</span>
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className="rounded-l-none -ml-px"
-                >
-                  <List className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Liste</span>
-                </Button>
+
+            {/* Action Buttons Row */}
+            <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">
+              {/* Left: View Controls */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+                  <Button
+                    variant={viewMode === 'matrix' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('matrix')}
+                    className="h-8"
+                  >
+                    <LayoutGrid className="h-4 w-4 mr-2" />
+                    Matrix
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className="h-8"
+                  >
+                    <List className="h-4 w-4 mr-2" />
+                    Liste
+                  </Button>
+                </div>
+
+                {statusFilter !== 'archived' && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowCalendar(true)}
+                    size="sm"
+                    className="h-8"
+                  >
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Wochenkalender
+                  </Button>
+                )}
+                
+                {statusFilter === 'archived' ? (
+                  <Button 
+                    variant="outline"
+                    onClick={() => setStatusFilter('all')}
+                    size="sm"
+                    className="h-8"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Zurück
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="outline"
+                    onClick={() => setStatusFilter('archived')}
+                    size="sm"
+                    className="h-8"
+                  >
+                    <Archive className="h-4 w-4 mr-2" />
+                    Archiv
+                  </Button>
+                )}
               </div>
 
-              {statusFilter !== 'archived' && (
-                <Button 
-                  variant="default" 
-                  onClick={() => setShowCalendar(true)}
-                  size="sm"
-                >
-                  <Calendar className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Wochenkalender</span>
-                </Button>
-              )}
-              
-              {statusFilter === 'archived' ? (
-                <Button 
+              {/* Right: Action Buttons */}
+              <div className="flex flex-wrap gap-2">
+                {user.role === "vertrieb" && (
+                  <div className="flex items-center gap-2 p-2 bg-primary/5 rounded-lg border border-primary/10">
+                    <span className="text-sm font-medium text-primary px-2">Vertrieb:</span>
+                    {statusFilter !== 'archived' && (
+                      <Button 
+                        onClick={() => setShowProjectForm(true)}
+                        size="sm"
+                        className="h-8"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Neues Projekt
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      onClick={() => window.location.href = '/customers'}
+                      size="sm"
+                      className="h-8"
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Kunden verwalten</span>
+                      <span className="sm:hidden">Kunden</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => window.location.href = '/articles'}
+                      size="sm"
+                      className="h-8"
+                    >
+                      <Package className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Artikel verwalten</span>
+                      <span className="sm:hidden">Artikel</span>
+                    </Button>
+                  </div>
+                )}
+                
+                <Button
                   variant="outline"
-                  onClick={() => setStatusFilter('all')}
+                  onClick={() => setShowActivity(true)}
                   size="sm"
+                  className="h-8"
                 >
-                  <ArrowLeft className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Zurück</span>
+                  <History className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Aktivitäten</span>
+                  <span className="sm:hidden">Log</span>
                 </Button>
-              ) : (
-                <Button 
-                  variant="outline"
-                  onClick={() => setStatusFilter('archived')}
-                  size="sm"
-                >
-                  <Archive className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Archiv</span>
-                </Button>
-              )}
-              
-              {user.role === "vertrieb" && statusFilter !== 'archived' && (
-                <Button 
-                  onClick={() => setShowProjectForm(true)}
-                  size="sm"
-                >
-                  <Plus className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Neues Projekt</span>
-                </Button>
-              )}
-              
-              {user.role === "vertrieb" && (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => window.location.href = '/customers'}
-                    size="sm"
-                  >
-                    <Users className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden lg:inline">Kunden verwalten</span>
-                    <span className="lg:hidden hidden sm:inline">Kunden</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => window.location.href = '/articles'}
-                    size="sm"
-                  >
-                    <Package className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden lg:inline">Artikel verwalten</span>
-                    <span className="lg:hidden hidden sm:inline">Artikel</span>
-                  </Button>
-                </>
-              )}
-              
-              <Button
-                variant="outline"
-                onClick={() => setShowActivity(true)}
-                size="sm"
-              >
-                <History className="h-4 w-4 sm:mr-2" />
-                <span className="hidden lg:inline">Aktivitäten</span>
-                <span className="lg:hidden hidden sm:inline">Log</span>
-              </Button>
+              </div>
             </div>
           </div>
 
