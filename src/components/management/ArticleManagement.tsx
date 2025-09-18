@@ -34,6 +34,13 @@ const PRODUCT_GROUPS_2 = [
   "Sonderprodukt"
 ] as const;
 
+const SALES_UNITS = [
+  "Kilogramm",
+  "Stück",
+  "Karton",
+  "Kiste"
+] as const;
+
 type ArticleFormData = Omit<Article, 'id' | 'created_at' | 'updated_at'>;
 
 export function ArticleManagement() {
@@ -264,24 +271,33 @@ export function ArticleManagement() {
                       <Label htmlFor="verkaufseinheit" className="text-sm font-medium">
                         Verkaufseinheit
                       </Label>
-                      <Input
-                        id="verkaufseinheit"
-                        {...form.register('verkaufseinheit')}
-                        placeholder="z.B. Stück, m², m, kg"
-                        className="h-11"
-                      />
+                      <Select
+                        value={form.watch('verkaufseinheit') || ''}
+                        onValueChange={(value) => form.setValue('verkaufseinheit', value)}
+                      >
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Verkaufseinheit auswählen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SALES_UNITS.map((unit) => (
+                            <SelectItem key={unit} value={unit}>
+                              {unit}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     
                     <div className="space-y-2">
                       <Label htmlFor="grammatur_verkaufseinheit" className="text-sm font-medium">
-                        Grammatur Verkaufseinheit
+                        Grammatur Verkaufseinheit (kg)
                       </Label>
                       <Input
                         id="grammatur_verkaufseinheit"
                         type="number"
-                        step="0.01"
+                        step="0.001"
                         {...form.register('grammatur_verkaufseinheit', { valueAsNumber: true })}
-                        placeholder="z.B. 120.5"
+                        placeholder="z.B. 1,200"
                         className="h-11"
                       />
                     </div>
