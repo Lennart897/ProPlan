@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, User, Package, Building2, Truck, Clock, MapPin, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parse, isValid } from "date-fns";
 import { de } from "date-fns/locale";
@@ -347,333 +347,467 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
         </CardDescription>
       </CardHeader>
       <CardContent className="p-4 sm:p-6">
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="customer">Kunde</Label>
-              <Input
-                id="customer"
-                {...form.register("customer")}
-              />
-              {form.formState.errors.customer && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.customer.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="artikel_nummer">Artikelnummer</Label>
-              <Input
-                id="artikel_nummer"
-                {...form.register("artikel_nummer")}
-              />
-              {form.formState.errors.artikel_nummer && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.artikel_nummer.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="artikel_bezeichnung">Artikelbezeichnung</Label>
-              <Input
-                id="artikel_bezeichnung"
-                {...form.register("artikel_bezeichnung")}
-              />
-              {form.formState.errors.artikel_bezeichnung && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.artikel_bezeichnung.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="produktgruppe">Produktgruppe 1</Label>
-              <Select
-                value={form.watch("produktgruppe") || undefined}
-                onValueChange={(val) => form.setValue("produktgruppe", val as ProductGroup)}
-              >
-                <SelectTrigger id="produktgruppe">
-                  <SelectValue placeholder="Produktgruppe 1 wählen" />
-                </SelectTrigger>
-                <SelectContent className="z-[60]">
-                  {PRODUCT_GROUPS.map((pg) => (
-                    <SelectItem key={pg} value={pg}>
-                      {pg}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {form.formState.errors.produktgruppe && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.produktgruppe.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="produktgruppe_2">Produktgruppe 2</Label>
-              <Select
-                value={form.watch("produktgruppe_2") || undefined}
-                onValueChange={(val) => form.setValue("produktgruppe_2", val as ProductGroup2)}
-              >
-                <SelectTrigger id="produktgruppe_2">
-                  <SelectValue placeholder="Produktgruppe 2 wählen" />
-                </SelectTrigger>
-                <SelectContent className="z-[60]">
-                  {PRODUCT_GROUPS_2.map((pg) => (
-                    <SelectItem key={pg} value={pg}>
-                      {pg}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {form.formState.errors.produktgruppe_2 && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.produktgruppe_2.message}
-                </p>
-              )}
-            </div>
-
-
-            {/* Erste und letzte Anlieferung nebeneinander */}
-            <div className="space-y-2">
-              <Label>Erste Anlieferung</Label>
-              <Popover>
-                <div className="flex gap-2">
-                  <Input
-                    id="erste_anlieferung"
-                    placeholder="TT.MM.JJJJ"
-                    value={ersteInput}
-                    onChange={(e) => setErsteInput(e.target.value)}
-                    onBlur={() => parseAndSetDate("erste_anlieferung", ersteInput)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        parseAndSetDate("erste_anlieferung", ersteInput);
-                      }
-                    }}
-                  />
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" aria-label="Kalender öffnen" className="shrink-0">
-                      <CalendarIcon className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* Customer Information Section */}
+          <Card className="border-l-4 border-l-primary">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <User className="h-5 w-5 text-primary" />
                 </div>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={form.watch("erste_anlieferung")}
-                    onSelect={(date) => form.setValue("erste_anlieferung", date)}
-                    locale={de}
-                    showWeekNumber
-                    classNames={{
-                      weeknumber: "text-left w-9 font-medium bg-primary/10 text-primary rounded-md",
-                    }}
-                    modifiers={{
-                      otherDate: form.watch("letzte_anlieferung") || undefined,
-                    }}
-                    modifiersClassNames={{
-                      otherDate: "ring-2 ring-primary",
-                    }}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-              {form.formState.errors.erste_anlieferung && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.erste_anlieferung.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Letzte Anlieferung</Label>
-              <Popover>
-                <div className="flex gap-2">
-                  <Input
-                    id="letzte_anlieferung"
-                    placeholder="TT.MM.JJJJ"
-                    value={letzteInput}
-                    onChange={(e) => setLetzteInput(e.target.value)}
-                    onBlur={() => parseAndSetDate("letzte_anlieferung", letzteInput)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        parseAndSetDate("letzte_anlieferung", letzteInput);
-                      }
-                    }}
-                  />
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" aria-label="Kalender öffnen" className="shrink-0">
-                      <CalendarIcon className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
+                <div>
+                  <CardTitle className="text-lg">Kundendaten</CardTitle>
+                  <CardDescription>Grundlegende Projektinformationen</CardDescription>
                 </div>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={form.watch("letzte_anlieferung")}
-                    onSelect={(date) => form.setValue("letzte_anlieferung", date)}
-                    locale={de}
-                    showWeekNumber
-                    classNames={{
-                      weeknumber: "text-left w-9 font-medium bg-primary/10 text-primary rounded-md",
-                    }}
-                    modifiers={{
-                      otherDate: form.watch("erste_anlieferung") || undefined,
-                    }}
-                    modifiersClassNames={{
-                      otherDate: "ring-2 ring-primary",
-                    }}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-              {form.formState.errors.letzte_anlieferung && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.letzte_anlieferung.message}
-                </p>
-              )}
-            </div>
-
-            {/* Gesamtmenge und Menge fix nebeneinander - nach Anlieferungsdaten */}
-            <div className="space-y-2">
-              <Label htmlFor="gesamtmenge">Gesamtmenge (kg)</Label>
-              <Input
-                id="gesamtmenge"
-                type="text"
-                value={gesamtmenge > 0 ? formatNumberWithThousandSeparator(gesamtmenge) : ''}
-                onChange={(e) => {
-                  const value = parseFormattedNumber(e.target.value);
-                  form.setValue("gesamtmenge", value);
-                }}
-                placeholder="0"
-              />
-              {form.formState.errors.gesamtmenge && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.gesamtmenge.message}
-                </p>
-              )}
-            </div>
-
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Standortverteilung</h3>
-              <div className="text-sm">
-                <span className={totalDistributed > gesamtmenge ? "text-destructive" : "text-muted-foreground"}>
-                  Verteilt: {formatNumberWithThousandSeparator(totalDistributed)} kg / {formatNumberWithThousandSeparator(gesamtmenge)} kg
-                </span>
               </div>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {locationsLoading ? (
-                <p className="col-span-full text-center text-muted-foreground">Lade Standorte...</p>
-              ) : (
-                locationOptions.map((location) => (
-                  <div key={location.value} className="space-y-2">
-                    <Label htmlFor={location.value}>{location.label} (kg)</Label>
-                    <Input
-                      id={location.value}
-                      type="text"
-                      value={locationQuantities[location.value] > 0 ? formatNumberWithThousandSeparator(locationQuantities[location.value]) : ''}
-                      onChange={(e) => {
-                        const value = parseFormattedNumber(e.target.value);
-                        handleLocationQuantityChange(location.value, value);
-                      }}
-                      placeholder="0"
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="customer" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Kunde
+                  </Label>
+                  <Input
+                    id="customer"
+                    {...form.register("customer")}
+                    placeholder="Kundenname eingeben"
+                  />
+                  {form.formState.errors.customer && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.customer.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="artikel_nummer" className="flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Artikelnummer
+                  </Label>
+                  <Input
+                    id="artikel_nummer"
+                    {...form.register("artikel_nummer")}
+                    placeholder="Artikelnummer eingeben"
+                  />
+                  {form.formState.errors.artikel_nummer && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.artikel_nummer.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="artikel_bezeichnung" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Artikelbezeichnung
+                  </Label>
+                  <Input
+                    id="artikel_bezeichnung"
+                    {...form.register("artikel_bezeichnung")}
+                    placeholder="Bezeichnung des Artikels"
+                  />
+                  {form.formState.errors.artikel_bezeichnung && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.artikel_bezeichnung.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Product Information Section */}
+          <Card className="border-l-4 border-l-blue-500">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-blue-100">
+                  <Package className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Produktdaten</CardTitle>
+                  <CardDescription>Produktgruppen und Mengendefinition</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="produktgruppe">Produktgruppe 1</Label>
+                  <Select
+                    value={form.watch("produktgruppe") || undefined}
+                    onValueChange={(val) => form.setValue("produktgruppe", val as ProductGroup)}
+                  >
+                    <SelectTrigger id="produktgruppe">
+                      <SelectValue placeholder="Produktgruppe 1 wählen" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[60]">
+                      {PRODUCT_GROUPS.map((pg) => (
+                        <SelectItem key={pg} value={pg}>
+                          {pg}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.produktgruppe && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.produktgruppe.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="produktgruppe_2">Produktgruppe 2</Label>
+                  <Select
+                    value={form.watch("produktgruppe_2") || undefined}
+                    onValueChange={(val) => form.setValue("produktgruppe_2", val as ProductGroup2)}
+                  >
+                    <SelectTrigger id="produktgruppe_2">
+                      <SelectValue placeholder="Produktgruppe 2 wählen" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[60]">
+                      {PRODUCT_GROUPS_2.map((pg) => (
+                        <SelectItem key={pg} value={pg}>
+                          {pg}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.produktgruppe_2 && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.produktgruppe_2.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="gesamtmenge" className="flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Gesamtmenge (kg)
+                  </Label>
+                  <Input
+                    id="gesamtmenge"
+                    type="text"
+                    value={gesamtmenge > 0 ? formatNumberWithThousandSeparator(gesamtmenge) : ""}
+                    onChange={(e) => {
+                      const value = parseFormattedNumber(e.target.value);
+                      form.setValue("gesamtmenge", value);
+                    }}
+                    placeholder="0"
+                  />
+                  {form.formState.errors.gesamtmenge && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.gesamtmenge.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="menge_fix"
+                      checked={form.watch("menge_fix")}
+                      onCheckedChange={(checked) => form.setValue("menge_fix", !!checked)}
                     />
+                    <Label htmlFor="menge_fix" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      Menge fest
+                    </Label>
                   </div>
-                ))
-              )}
-            </div>
-            
-            {totalDistributed > gesamtmenge && (
-              <p className="text-sm text-destructive">
-                ⚠️ Die Standortverteilung ({formatNumberWithThousandSeparator(totalDistributed)} kg) übersteigt die Gesamtmenge ({formatNumberWithThousandSeparator(gesamtmenge)} kg)
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="beschreibung">Projektbeschreibung (optional)</Label>
-            <Textarea
-              id="beschreibung"
-              {...form.register("beschreibung")}
-              placeholder="Beschreibung des Projekts..."
-              rows={4}
-            />
-            {form.formState.errors.beschreibung && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.beschreibung.message}
-              </p>
-            )}
-          </div>
-
-          {/* Anhang Upload */}
-          <div className="space-y-2">
-            <Label htmlFor="attachment">Anhang (optional, max. 5MB)</Label>
-            <Input
-              id="attachment"
-              type="file"
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  if (file.size > 5 * 1024 * 1024) {
-                    toast({
-                      title: "Datei zu groß",
-                      description: "Die Datei darf maximal 5MB groß sein.",
-                      variant: "destructive",
-                    });
-                    e.target.value = '';
-                    return;
-                  }
-                  setSelectedFile(file);
-                  form.setValue("attachment", file);
-                } else {
-                  setSelectedFile(null);
-                  form.setValue("attachment", undefined);
-                }
-              }}
-              className="w-full h-12 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer cursor-pointer"
-            />
-            {selectedFile && (
-              <div className="flex items-center justify-between p-3 bg-muted rounded-md">
-                <div className="flex-1">
-                  <p className="text-sm text-muted-foreground">
-                    Ausgewählte Datei: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-                  </p>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedFile(null);
-                    form.setValue("attachment", undefined);
-                    // Reset file input
-                    const fileInput = document.getElementById('attachment') as HTMLInputElement;
-                    if (fileInput) fileInput.value = '';
-                  }}
-                  className="ml-2"
-                >
-                  Entfernen
-                </Button>
               </div>
-            )}
-            {form.formState.errors.attachment && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.attachment.message}
-              </p>
-            )}
-          </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="beschreibung" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Beschreibung (optional)
+                </Label>
+                <Textarea
+                  id="beschreibung"
+                  {...form.register("beschreibung")}
+                  placeholder="Zusätzliche Informationen zum Projekt"
+                  rows={3}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Delivery Information Section */}
+          <Card className="border-l-4 border-l-green-500">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-green-100">
+                  <Clock className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Lieferzeitraum</CardTitle>
+                  <CardDescription>Erste und letzte Anlieferung definieren</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Truck className="h-4 w-4" />
+                    Erste Anlieferung
+                  </Label>
+                  <Popover>
+                    <div className="flex gap-2">
+                      <Input
+                        id="erste_anlieferung"
+                        placeholder="TT.MM.JJJJ"
+                        value={ersteInput}
+                        onChange={(e) => setErsteInput(e.target.value)}
+                        onBlur={() => parseAndSetDate("erste_anlieferung", ersteInput)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            parseAndSetDate("erste_anlieferung", ersteInput);
+                          }
+                        }}
+                      />
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" aria-label="Kalender öffnen" className="shrink-0">
+                          <CalendarIcon className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                    </div>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={form.watch("erste_anlieferung")}
+                        onSelect={(date) => form.setValue("erste_anlieferung", date)}
+                        locale={de}
+                        showWeekNumber
+                        classNames={{
+                          weeknumber: "text-left w-9 font-medium bg-primary/10 text-primary rounded-md",
+                        }}
+                        modifiers={{
+                          otherDate: form.watch("letzte_anlieferung") || undefined,
+                        }}
+                        modifiersClassNames={{
+                          otherDate: "ring-2 ring-primary",
+                        }}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {form.formState.errors.erste_anlieferung && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.erste_anlieferung.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Truck className="h-4 w-4" />
+                    Letzte Anlieferung
+                  </Label>
+                  <Popover>
+                    <div className="flex gap-2">
+                      <Input
+                        id="letzte_anlieferung"
+                        placeholder="TT.MM.JJJJ"
+                        value={letzteInput}
+                        onChange={(e) => setLetzteInput(e.target.value)}
+                        onBlur={() => parseAndSetDate("letzte_anlieferung", letzteInput)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            parseAndSetDate("letzte_anlieferung", letzteInput);
+                          }
+                        }}
+                      />
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" aria-label="Kalender öffnen" className="shrink-0">
+                          <CalendarIcon className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                    </div>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={form.watch("letzte_anlieferung")}
+                        onSelect={(date) => form.setValue("letzte_anlieferung", date)}
+                        locale={de}
+                        showWeekNumber
+                        classNames={{
+                          weeknumber: "text-left w-9 font-medium bg-primary/10 text-primary rounded-md",
+                        }}
+                        modifiers={{
+                          otherDate: form.watch("erste_anlieferung") || undefined,
+                        }}
+                        modifiersClassNames={{
+                          otherDate: "ring-2 ring-primary",
+                        }}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {form.formState.errors.letzte_anlieferung && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.letzte_anlieferung.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Location Distribution Section */}
+          <Card className="border-l-4 border-l-orange-500">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-orange-100">
+                  <MapPin className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Standortverteilung</CardTitle>
+                  <CardDescription>Mengen auf Standorte verteilen</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                {locationsLoading ? (
+                  <div className="text-sm text-muted-foreground">Lade Standorte...</div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {locationOptions.map((location) => (
+                      <div key={location.value} className="space-y-2 p-4 border rounded-lg bg-card">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <Label htmlFor={`location-${location.value}`} className="font-medium">
+                            {location.label}
+                          </Label>
+                        </div>
+                        <Input
+                          id={`location-${location.value}`}
+                          type="text"
+                          value={locationQuantities[location.value] > 0 ? formatNumberWithThousandSeparator(locationQuantities[location.value]) : ""}
+                          onChange={(e) => {
+                            const value = parseFormattedNumber(e.target.value);
+                            handleLocationQuantityChange(location.value, value);
+                          }}
+                          placeholder="0"
+                          className="w-full"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">Gesamtmenge:</span>
+                      <span className="font-bold text-primary">
+                        {formatNumberWithThousandSeparator(gesamtmenge)} kg
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">Verteilt:</span>
+                      <span className={`font-bold ${totalDistributed > gesamtmenge ? 'text-destructive' : 'text-green-600'}`}>
+                        {formatNumberWithThousandSeparator(totalDistributed)} kg
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">Verbleibt:</span>
+                      <span className={`font-bold ${gesamtmenge - totalDistributed < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                        {formatNumberWithThousandSeparator(gesamtmenge - totalDistributed)} kg
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {totalDistributed > gesamtmenge && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
+                    ⚠️ Die Verteilung übersteigt die Gesamtmenge um {formatNumberWithThousandSeparator(totalDistributed - gesamtmenge)} kg
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* File Attachment Section */}
+          <Card className="border-l-4 border-l-purple-500">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-purple-100">
+                  <FileText className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Anhang</CardTitle>
+                  <CardDescription>Optionale Datei zum Projekt hinzufügen</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="attachment">Datei anhängen (optional)</Label>
+                <Input
+                  id="attachment"
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast({
+                          title: "Datei zu groß",
+                          description: "Die Datei darf maximal 5MB groß sein.",
+                          variant: "destructive",
+                        });
+                        e.target.value = '';
+                        return;
+                      }
+                      setSelectedFile(file);
+                      form.setValue("attachment", file);
+                    } else {
+                      setSelectedFile(null);
+                      form.setValue("attachment", undefined);
+                    }
+                  }}
+                  className="w-full h-12 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer cursor-pointer"
+                />
+                {selectedFile && (
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-md">
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground">
+                        Ausgewählte Datei: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedFile(null);
+                        form.setValue("attachment", undefined);
+                        // Reset file input
+                        const fileInput = document.getElementById('attachment') as HTMLInputElement;
+                        if (fileInput) fileInput.value = '';
+                      }}
+                      className="ml-2"
+                    >
+                      Entfernen
+                    </Button>
+                  </div>
+                )}
+                {form.formState.errors.attachment && (
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.attachment.message}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-4">
             <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
