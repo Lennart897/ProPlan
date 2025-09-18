@@ -370,10 +370,13 @@ export function ProjectForm({ user, onSuccess, onCancel }: ProjectFormProps) {
                 </Label>
                 <Input
                   id="gesamtmenge"
-                  type="number"
-                  step="0.01"
-                  {...form.register("gesamtmenge", { valueAsNumber: true })}
-                  placeholder="1000"
+                  type="text"
+                  value={form.watch("gesamtmenge") ? formatNumberWithThousandSeparator(form.watch("gesamtmenge")) : ""}
+                  onChange={(e) => {
+                    const numericValue = parseFormattedNumber(e.target.value);
+                    form.setValue("gesamtmenge", numericValue);
+                  }}
+                  placeholder="1.000"
                 />
                 {form.formState.errors.gesamtmenge && (
                   <p className="text-sm text-destructive">
@@ -454,14 +457,16 @@ export function ProjectForm({ user, onSuccess, onCancel }: ProjectFormProps) {
                   </Label>
                   <Input
                     id={`location-${location.value}`}
-                    type="number"
-                    step="0.01"
+                    type="text"
                     min="0"
                     placeholder="0"
-                    value={form.watch(`standort_verteilung.${location.value}`) || ""}
+                    value={(() => {
+                      const value = form.watch(`standort_verteilung.${location.value}`);
+                      return value ? formatNumberWithThousandSeparator(value) : "";
+                    })()}
                     onChange={(e) => {
-                      const value = parseFloat(e.target.value) || 0;
-                      updateLocationQuantity(location.value, value);
+                      const numericValue = parseFormattedNumber(e.target.value);
+                      updateLocationQuantity(location.value, numericValue);
                     }}
                   />
                 </div>
