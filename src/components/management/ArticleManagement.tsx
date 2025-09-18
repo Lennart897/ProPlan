@@ -399,7 +399,7 @@ export function ArticleManagement() {
                 <TableBody>
                   {articles.map((article) => (
                     <TableRow key={article.id} className="hover:bg-muted/30 transition-colors">
-                      <TableCell className="font-mono text-sm font-medium">
+                      <TableCell className="text-sm font-medium">
                         {article.artikel_nummer}
                       </TableCell>
                       <TableCell className="font-medium">
