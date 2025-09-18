@@ -46,7 +46,6 @@ const projectSchema = z.object({
   
   erste_anlieferung: z.date().optional(),
   letzte_anlieferung: z.date().optional(),
-  menge_fix: z.boolean().default(false),
   attachment: z.instanceof(File).optional().refine(
     (file) => !file || file.size <= 5 * 1024 * 1024,
     { message: "Datei darf maximal 5MB groß sein" }
@@ -99,7 +98,6 @@ export function ProjectForm({ user, onSuccess, onCancel }: ProjectFormProps) {
       beschreibung: "",
       erste_anlieferung: undefined,
       letzte_anlieferung: undefined,
-      menge_fix: false,
       standort_verteilung: {},
     },
   });
@@ -179,7 +177,6 @@ export function ProjectForm({ user, onSuccess, onCancel }: ProjectFormProps) {
         beschreibung: data.beschreibung || "",
         erste_anlieferung: data.erste_anlieferung || null,
         letzte_anlieferung: data.letzte_anlieferung || null,
-        menge_fix: data.menge_fix,
         standort_verteilung: data.standort_verteilung,
         attachment_url: attachmentUrl,
         original_filename: originalFilename,
@@ -385,18 +382,6 @@ export function ProjectForm({ user, onSuccess, onCancel }: ProjectFormProps) {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="menge_fix"
-                    checked={form.watch("menge_fix")}
-                    onCheckedChange={(checked) => form.setValue("menge_fix", !!checked)}
-                  />
-                  <Label htmlFor="menge_fix" className="text-sm">
-                    Menge fix
-                  </Label>
-                </div>
-              </div>
             </div>
           </CardContent>
         </Card>
