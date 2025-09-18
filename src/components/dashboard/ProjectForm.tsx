@@ -413,6 +413,24 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
                     </p>
                   )}
                 </div>
+
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="beschreibung" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Projektbeschreibung
+                  </Label>
+                  <Textarea
+                    id="beschreibung"
+                    {...form.register("beschreibung")}
+                    placeholder="Beschreibung des Projekts (optional)"
+                    rows={3}
+                  />
+                  {form.formState.errors.beschreibung && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.beschreibung.message}
+                    </p>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -516,18 +534,6 @@ export const ProjectForm = ({ user, onSuccess, onCancel }: ProjectFormProps) => 
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="beschreibung" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Beschreibung (optional)
-                </Label>
-                <Textarea
-                  id="beschreibung"
-                  {...form.register("beschreibung")}
-                  placeholder="Zusätzliche Informationen zum Projekt"
-                  rows={3}
-                />
-              </div>
             </CardContent>
           </Card>
 
