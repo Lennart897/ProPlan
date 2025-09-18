@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Filter, Search, Bell, User, LogOut, Calendar, Archive, ArrowLeft, Building2, Package, Scale, LayoutGrid, List, History } from "lucide-react";
+import { Plus, Filter, Search, Bell, User, LogOut, Calendar, Archive, ArrowLeft, Building2, Package, Scale, LayoutGrid, List, History, Users, FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProjectForm } from "./ProjectForm";
@@ -590,6 +590,26 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                   <Plus className="h-4 w-4 mr-2" />
                   Neues Projekt
                 </Button>
+              )}
+              {user.role === "vertrieb" && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => window.location.href = '/customers'}
+                    className="w-full sm:w-auto"
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Kunden verwalten
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => window.location.href = '/articles'}
+                    className="w-full sm:w-auto"
+                  >
+                    <Package className="h-4 w-4 mr-2" />
+                    Artikel verwalten
+                  </Button>
+                </>
               )}
               <Button
                 variant="outline"

@@ -14,6 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      articles: {
+        Row: {
+          active: boolean
+          artikel_bezeichnung: string
+          artikel_nummer: string
+          created_at: string
+          grammatur_verkaufseinheit: number | null
+          id: string
+          produktgruppe: string | null
+          produktgruppe_2: string | null
+          updated_at: string
+          verkaufseinheit: string | null
+        }
+        Insert: {
+          active?: boolean
+          artikel_bezeichnung: string
+          artikel_nummer: string
+          created_at?: string
+          grammatur_verkaufseinheit?: number | null
+          id?: string
+          produktgruppe?: string | null
+          produktgruppe_2?: string | null
+          updated_at?: string
+          verkaufseinheit?: string | null
+        }
+        Update: {
+          active?: boolean
+          artikel_bezeichnung?: string
+          artikel_nummer?: string
+          created_at?: string
+          grammatur_verkaufseinheit?: number | null
+          id?: string
+          produktgruppe?: string | null
+          produktgruppe_2?: string | null
+          updated_at?: string
+          verkaufseinheit?: string | null
+        }
+        Relationships: []
+      }
+      customers: {
+        Row: {
+          active: boolean
+          created_at: string
+          customer_number: string
+          id: string
+          name: string
+          representative_id: string | null
+          representative_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          customer_number: string
+          id?: string
+          name: string
+          representative_id?: string | null
+          representative_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          customer_number?: string
+          id?: string
+          name?: string
+          representative_id?: string | null
+          representative_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_representative_id_fkey"
+            columns: ["representative_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       email_notifications: {
         Row: {
           correction_reason: string | null
@@ -110,6 +190,7 @@ export type Database = {
         Row: {
           archived: boolean
           archived_at: string | null
+          article_id: string | null
           artikel_bezeichnung: string
           artikel_nummer: string
           attachment_url: string | null
@@ -118,6 +199,7 @@ export type Database = {
           created_by_id: string | null
           created_by_name: string
           customer: string
+          customer_id: string | null
           erste_anlieferung: string | null
           gesamtmenge: number
           id: string
@@ -136,6 +218,7 @@ export type Database = {
         Insert: {
           archived?: boolean
           archived_at?: string | null
+          article_id?: string | null
           artikel_bezeichnung: string
           artikel_nummer: string
           attachment_url?: string | null
@@ -144,6 +227,7 @@ export type Database = {
           created_by_id?: string | null
           created_by_name: string
           customer: string
+          customer_id?: string | null
           erste_anlieferung?: string | null
           gesamtmenge: number
           id?: string
@@ -162,6 +246,7 @@ export type Database = {
         Update: {
           archived?: boolean
           archived_at?: string | null
+          article_id?: string | null
           artikel_bezeichnung?: string
           artikel_nummer?: string
           attachment_url?: string | null
@@ -170,6 +255,7 @@ export type Database = {
           created_by_id?: string | null
           created_by_name?: string
           customer?: string
+          customer_id?: string | null
           erste_anlieferung?: string | null
           gesamtmenge?: number
           id?: string
@@ -185,7 +271,22 @@ export type Database = {
           status?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "manufacturing_projects_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_projects_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
