@@ -528,26 +528,26 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
               )}
             </div>
             
-            <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="flex flex-wrap gap-2">
               {/* Ansicht umschalten: Matrix | Liste */}
-              <div className="flex w-full sm:w-auto">
+              <div className="flex">
                 <Button
                   variant={viewMode === 'matrix' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setViewMode('matrix')}
-                  className="w-1/2 sm:w-auto rounded-r-none"
+                  className="rounded-r-none"
                 >
-                  <LayoutGrid className="h-4 w-4 mr-2" />
-                  Matrix
+                  <LayoutGrid className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Matrix</span>
                 </Button>
                 <Button
                   variant={viewMode === 'list' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setViewMode('list')}
-                  className="w-1/2 sm:w-auto rounded-l-none -ml-px"
+                  className="rounded-l-none -ml-px"
                 >
-                  <List className="h-4 w-4 mr-2" />
-                  Liste
+                  <List className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Liste</span>
                 </Button>
               </div>
 
@@ -555,10 +555,10 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                 <Button 
                   variant="default" 
                   onClick={() => setShowCalendar(true)}
-                  className="w-full sm:w-auto"
+                  size="sm"
                 >
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Wochenkalender
+                  <Calendar className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Wochenkalender</span>
                 </Button>
               )}
               
@@ -566,58 +566,63 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                 <Button 
                   variant="outline"
                   onClick={() => setStatusFilter('all')}
-                  className="w-full sm:w-auto"
+                  size="sm"
                 >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Zurück
+                  <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Zurück</span>
                 </Button>
               ) : (
                 <Button 
                   variant="outline"
                   onClick={() => setStatusFilter('archived')}
-                  className="w-full sm:w-auto"
+                  size="sm"
                 >
-                  <Archive className="h-4 w-4 mr-2" />
-                  Archiv
+                  <Archive className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Archiv</span>
                 </Button>
               )}
               
               {user.role === "vertrieb" && statusFilter !== 'archived' && (
                 <Button 
                   onClick={() => setShowProjectForm(true)}
-                  className="w-full sm:w-auto"
+                  size="sm"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Neues Projekt
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Neues Projekt</span>
                 </Button>
               )}
+              
               {user.role === "vertrieb" && (
                 <>
                   <Button
                     variant="outline"
                     onClick={() => window.location.href = '/customers'}
-                    className="w-full sm:w-auto"
+                    size="sm"
                   >
-                    <Users className="h-4 w-4 mr-2" />
-                    Kunden verwalten
+                    <Users className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden lg:inline">Kunden verwalten</span>
+                    <span className="lg:hidden hidden sm:inline">Kunden</span>
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => window.location.href = '/articles'}
-                    className="w-full sm:w-auto"
+                    size="sm"
                   >
-                    <Package className="h-4 w-4 mr-2" />
-                    Artikel verwalten
+                    <Package className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden lg:inline">Artikel verwalten</span>
+                    <span className="lg:hidden hidden sm:inline">Artikel</span>
                   </Button>
                 </>
               )}
+              
               <Button
                 variant="outline"
                 onClick={() => setShowActivity(true)}
-                className="w-full sm:w-auto"
+                size="sm"
               >
-                <History className="h-4 w-4 mr-2" />
-                Aktivitäten
+                <History className="h-4 w-4 sm:mr-2" />
+                <span className="hidden lg:inline">Aktivitäten</span>
+                <span className="lg:hidden hidden sm:inline">Log</span>
               </Button>
             </div>
           </div>
