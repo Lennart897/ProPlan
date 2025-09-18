@@ -171,7 +171,7 @@ const Admin = () => {
       <div className="container mx-auto max-w-7xl space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Administration</h1>
-          <Button variant="outline" onClick={() => navigate('/')}>
+          <Button onClick={() => navigate('/')}>
             Zurück zur Übersicht
           </Button>
         </div>
