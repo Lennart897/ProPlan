@@ -14,14 +14,16 @@ import { Plus, Edit, Package, Package2, Scale, Tag, ArrowLeft, Calendar, CheckCi
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 
-// Product groups from the original ProjectForm
+// Product groups - Chicken raw materials for Product Group 1
 const PRODUCT_GROUPS = [
-  "Wellpappe 1-wellig",
-  "Wellpappe 2-wellig", 
-  "Wellpappe 3-wellig",
-  "Vollpappe",
-  "Graupappe",
-  "Sonderkarton"
+  "Hähnchenbrust",
+  "Hähnchenschenkel", 
+  "Hähnchen-Flügel",
+  "Hähnchen-Keule",
+  "Hähnchen-Innereien",
+  "Hähnchen-Haut",
+  "Hähnchen-Knochen",
+  "Hähnchen-Hals"
 ] as const;
 
 const PRODUCT_GROUPS_2 = [
