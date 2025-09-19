@@ -194,6 +194,16 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
       project.produktgruppe === selectedProductGroup;
 
     return locationMatch && productMatch;
+  }).sort((a, b) => {
+    // Sort by product group first, then by customer name
+    const productGroupA = a.produktgruppe || 'ZZZ'; // Put items without product group at the end
+    const productGroupB = b.produktgruppe || 'ZZZ';
+    
+    if (productGroupA !== productGroupB) {
+      return productGroupA.localeCompare(productGroupB);
+    }
+    
+    return a.customer.localeCompare(b.customer);
   });
 
   // Calculate project spans across days
@@ -324,6 +334,40 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
   };
 
   const totals = calculateTotals();
+
+  // Calculate daily sums by product group
+  const calculateDailySums = () => {
+    const dailySums: Record<string, Record<string, number>> = {}; // date -> productGroup -> quantity
+    const productGroups = new Set<string>();
+
+    filteredProjects.forEach(project => {
+      if (!project.erste_anlieferung || !project.letzte_anlieferung || !project.produktgruppe) return;
+      
+      try {
+        const startDate = parseLocalDate(project.erste_anlieferung);
+        const endDate = parseLocalDate(project.letzte_anlieferung);
+        const projDays = Math.max(1, differenceInCalendarDays(endDate, startDate) + 1);
+        const dailyQuantity = project.gesamtmenge / projDays;
+        
+        productGroups.add(project.produktgruppe);
+        
+        weekDays.forEach(day => {
+          if (day >= startDate && day <= endDate) {
+            const dateKey = format(day, 'yyyy-MM-dd');
+            if (!dailySums[dateKey]) dailySums[dateKey] = {};
+            if (!dailySums[dateKey][project.produktgruppe]) dailySums[dateKey][project.produktgruppe] = 0;
+            dailySums[dateKey][project.produktgruppe] += dailyQuantity;
+          }
+        });
+      } catch (error) {
+        console.error('Error calculating daily sums:', error);
+      }
+    });
+
+    return { dailySums, productGroups: Array.from(productGroups).sort() };
+  };
+
+  const { dailySums, productGroups: activeProductGroups } = calculateDailySums();
 
   // Navigate weeks
   const goToPreviousWeek = () => {
@@ -680,13 +724,44 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                   <div className="grid grid-cols-7 gap-2">
                     {weekDays.map((day, index) => {
                       const isToday = isSameDay(day, new Date());
+                      const dateKey = format(day, 'yyyy-MM-dd');
+                      const dayProductSums = dailySums[dateKey] || {};
+                      
                       return (
-                        <div key={index} className="text-center">
+                        <div key={index} className="text-center space-y-2">
                           <div className={`text-xs font-bold uppercase tracking-wider ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
                             {format(day, "EE", { locale: de })}
                           </div>
-                          <div className={`text-lg font-bold mt-2 ${isToday ? 'text-primary bg-primary/10 rounded-lg py-1' : 'text-foreground'}`}>
+                          <div className={`text-lg font-bold ${isToday ? 'text-primary bg-primary/10 rounded-lg py-1' : 'text-foreground'}`}>
                             {format(day, "dd")}
+                          </div>
+                          
+                          {/* Product group sums for this day */}
+                          <div className="space-y-1 mt-2">
+                            {activeProductGroups.map(productGroup => {
+                              const sum = dayProductSums[productGroup] || 0;
+                              const colors = {
+                                'Oberkeule': 'bg-blue-100 text-blue-800 border-blue-200',
+                                'Unterschenkel': 'bg-green-100 text-green-800 border-green-200',
+                                'Bauch': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                                'Keule': 'bg-purple-100 text-purple-800 border-purple-200',
+                                'Schulter': 'bg-red-100 text-red-800 border-red-200'
+                              }[productGroup] || 'bg-gray-100 text-gray-800 border-gray-200';
+                              
+                              if (sum > 0) {
+                                return (
+                                  <div key={productGroup} className={`text-xs px-1 py-0.5 rounded border ${colors} font-medium`}>
+                                    <div className="truncate" title={productGroup}>
+                                      {productGroup.substring(0, 3)}
+                                    </div>
+                                    <div className="font-bold">
+                                      {Math.round(sum).toLocaleString('de-DE')}
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })}
                           </div>
                         </div>
                       );
@@ -713,9 +788,42 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                     </div>
                   </div>
                 ) : (
-                <>
-                   {/* Regular Projects - Enhanced professional rows */}
-                  {filteredProjects.map((project) => (
+                 <>
+                   {/* Regular Projects - Enhanced professional rows grouped by product group */}
+                  {(() => {
+                    // Group projects by product group
+                    const groupedProjects = filteredProjects.reduce((groups, project) => {
+                      const group = project.produktgruppe || 'Ohne Produktgruppe';
+                      if (!groups[group]) groups[group] = [];
+                      groups[group].push(project);
+                      return groups;
+                    }, {} as Record<string, Project[]>);
+
+                    return Object.entries(groupedProjects).map(([productGroup, projects]) => (
+                      <div key={productGroup}>
+                        {/* Product Group Header */}
+                        <div className="grid grid-cols-12 bg-gradient-to-r from-muted/40 via-muted/30 to-muted/40 border-l-4 border-l-primary">
+                          <div className="col-span-12 p-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-3 h-3 rounded-full bg-primary"></div>
+                                <h4 className="font-bold text-lg text-foreground">{productGroup}</h4>
+                                <Badge variant="secondary" className="font-medium">
+                                  {projects.length} Projekt{projects.length !== 1 ? 'e' : ''}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-muted-foreground">Gesamtmenge:</span>
+                                <Badge variant="outline" className="font-bold bg-primary/5 border-primary/20 text-primary">
+                                  {projects.reduce((sum, p) => sum + p.gesamtmenge, 0).toLocaleString('de-DE')} kg
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Projects in this group */}
+                        {projects.map((project) => (
                     <div 
                       key={project.id}
                       className={`grid grid-cols-12 hover:bg-gradient-to-r hover:from-muted/20 hover:via-muted/10 hover:to-transparent transition-all duration-300 border-l-4 ${
@@ -887,10 +995,13 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                           })()}
                         </div>
                       </div>
-                    </div>
-                  ))}
+                     </div>
+                        ))}
+                      </div>
+                    ));
+                  })()}
 
-                  {/* Preview Project */}
+                   {/* Preview Project */}
                   {previewProject && (() => {
                     const previewSpan = projectSpans.find(span => span.isPreview);
                     if (!previewSpan) return null;
