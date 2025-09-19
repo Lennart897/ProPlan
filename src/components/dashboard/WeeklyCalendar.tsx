@@ -943,7 +943,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                                   {qty > 0 ? (
                                     <div className={`${locationStyles} rounded-2xl px-4 py-4 text-sm font-bold border-2 shadow-xl relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-[1.08] hover:-translate-y-1 w-full min-h-[80px] flex flex-col justify-center items-center backdrop-blur-sm`}>
                                       <div className="relative z-10 text-center space-y-2">
-                                        <div className="font-bold text-sm leading-tight tracking-tight tabular-nums">
+                                        <div className={`font-bold leading-none tracking-tight tabular-nums ${qty >= 100000 ? 'text-xs' : qty >= 10000 ? 'text-sm' : 'text-sm'}`}>
                                           {qty.toLocaleString('de-DE')}
                                         </div>
                                         <div className="text-xs font-semibold opacity-90 tracking-wide bg-black/10 px-2 py-1 rounded-full">
