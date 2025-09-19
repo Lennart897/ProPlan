@@ -784,7 +784,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                               </>
                             )}
                             <TableCell className="whitespace-nowrap">
-                              {project.created_by_name || "-"}
+                              {project.created_by_name || "Unbekannt"}
                             </TableCell>
                             <TableCell>
                              <Badge className={project.status_color || getStatusColor(project.status)}>
