@@ -92,6 +92,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const [viewMode, setViewMode] = useState<'matrix' | 'list'>('list');
   const [showActivity, setShowActivity] = useState(false);
   const [previewInitialWeek, setPreviewInitialWeek] = useState<Date | null>(null);
+  const [displayNameMap, setDisplayNameMap] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
   // Load saved view preference per user
@@ -124,6 +125,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       if (error) throw error;
 
       setProjects(data || []);
+      await loadDisplayNames((data || []).map((p: any) => p.created_by_id));
     } catch (error) {
       console.error('Fehler beim Laden der Projekte:', error);
       toast({
@@ -145,6 +147,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       if (error) throw error;
 
       setArchivedProjects(data || []);
+      await loadDisplayNames((data || []).map((p: any) => p.created_by_id));
     } catch (error) {
       console.error('Fehler beim Laden der archivierten Projekte:', error);
       toast({
@@ -351,6 +354,38 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
     planung_doebeln: "Planung Döbeln",
     planung_visbek: "Planung Visbek",
     admin: "Admin"
+  };
+
+  // Load display names for given user ids
+  const loadDisplayNames = async (ids: (string | null | undefined)[]) => {
+    const unique = Array.from(new Set(ids.filter(Boolean) as string[]));
+    if (unique.length === 0) return;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('user_id, display_name')
+      .in('user_id', unique);
+    if (error) {
+      console.error('Fehler beim Laden der Anzeigenamen:', error);
+      return;
+    }
+    const map: Record<string, string> = {};
+    for (const p of (data as any[]) || []) {
+      const user_id = (p as any).user_id;
+      const display_name = (p as any).display_name;
+      if (user_id && display_name) {
+        map[user_id] = display_name;
+      }
+    }
+    setDisplayNameMap(prev => ({ ...prev, ...map }));
+  };
+
+  // Resolve display name for project creator
+  const resolveUserName = (p: Project) => {
+    const byId = p.created_by_id ? displayNameMap[p.created_by_id] : undefined;
+    if (byId) return byId;
+    const candidate = p.created_by_name || p.created_by || '';
+    if (candidate && !candidate.includes('@')) return candidate;
+    return 'Unbekannt';
   };
 
   if (showProjectForm) {
@@ -694,7 +729,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                     <div className="flex items-center justify-between pt-2 border-t">
                       <div className="text-xs text-muted-foreground">
                         <p>{new Date(project.created_at).toLocaleDateString("de-DE")}</p>
-                        <p>von {project.created_by_name || project.created_by || 'Unbekannt'}</p>
+                        <p>von {resolveUserName(project)}</p>
                       </div>
                       
                       <div className="flex flex-col items-end gap-1">
@@ -784,7 +819,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                               </>
                             )}
                             <TableCell className="whitespace-nowrap">
-                              {project.created_by_name || "Unbekannt"}
+                              {resolveUserName(project)}
                             </TableCell>
                             <TableCell>
                              <Badge className={project.status_color || getStatusColor(project.status)}>
