@@ -102,20 +102,13 @@ export function ActivityLog({ userId, userRole }: ActivityLogProps) {
         return;
       }
 
-      // 2) Historie für sichtbare Projekte laden (Admin sieht alle, andere nur eigene)
-      const historyQuery = supabase
+      // 2) Historie für sichtbare Projekte laden
+      const { data: history, error } = await supabase
         .from('project_history')
         .select('*')
         .in('project_id', projectIds)
         .order('created_at', { ascending: false })
         .limit(200);
-      
-      // Alle Benutzer sehen ihre eigenen Aktivitäten, Admins sehen alle
-      if (userRole !== 'admin') {
-        historyQuery.eq('user_id', userId);
-      }
-      
-      const { data: history, error } = await historyQuery;
       if (error) {
         console.error('Fehler beim Laden des Aktivitätsprotokolls', error);
         setLoading(false);
