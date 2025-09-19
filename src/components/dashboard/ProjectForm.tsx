@@ -44,8 +44,14 @@ const projectSchema = z.object({
   gesamtmenge: z.number().min(0.1, "Gesamtmenge muss größer als 0 sein"),
   beschreibung: z.string().optional(),
   
-  erste_anlieferung: z.date().optional(),
-  letzte_anlieferung: z.date().optional(),
+  erste_anlieferung: z.date({
+    required_error: "Erste Anlieferung ist erforderlich",
+    invalid_type_error: "Ungültiges Datum für erste Anlieferung"
+  }),
+  letzte_anlieferung: z.date({
+    required_error: "Letzte Anlieferung ist erforderlich", 
+    invalid_type_error: "Ungültiges Datum für letzte Anlieferung"
+  }),
   attachment: z.instanceof(File).optional().refine(
     (file) => !file || file.size <= 5 * 1024 * 1024,
     { message: "Datei darf maximal 5MB groß sein" }
@@ -175,8 +181,8 @@ export function ProjectForm({ user, onSuccess, onCancel }: ProjectFormProps) {
         produktgruppe_2: article.produktgruppe_2,
         gesamtmenge: data.gesamtmenge,
         beschreibung: data.beschreibung || "",
-        erste_anlieferung: data.erste_anlieferung || null,
-        letzte_anlieferung: data.letzte_anlieferung || null,
+        erste_anlieferung: data.erste_anlieferung,
+        letzte_anlieferung: data.letzte_anlieferung,
         standort_verteilung: data.standort_verteilung,
         attachment_url: attachmentUrl,
         original_filename: originalFilename,
