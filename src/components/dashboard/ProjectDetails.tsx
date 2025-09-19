@@ -66,6 +66,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
   const { getLocationName } = useLocations(true, false);
 
   const [attachmentUrl, setAttachmentUrl] = useState<string | undefined>(project.attachment_url);
+  const [creatorDisplayName, setCreatorDisplayName] = useState<string | null>(null);
 
   useEffect(() => {
     setAttachmentUrl(project.attachment_url);
@@ -86,6 +87,22 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
     })();
     return () => { cancelled = true; };
   }, [project.id, project.attachment_url]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!project.created_by_id) { setCreatorDisplayName(null); return; }
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('user_id', project.created_by_id)
+        .maybeSingle();
+      if (!cancelled) {
+        setCreatorDisplayName(error ? null : (data?.display_name ?? null));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [project.created_by_id]);
 
   const logProjectAction = async (action: string, oldData?: any, newData?: any) => {
     try {
@@ -564,6 +581,13 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
     return buttons;
   };
 
+  const resolveCreatorName = () => {
+    if (creatorDisplayName) return creatorDisplayName;
+    const candidate = project.created_by_name || project.created_by || '';
+    if (candidate && !candidate.includes('@')) return candidate;
+    return 'Unbekannt';
+  };
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -603,7 +627,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                   <Label className="text-sm font-medium text-muted-foreground">Erstellt von</Label>
                   <div className="flex items-center gap-2 mt-1">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span>{project.created_by_name || project.created_by || "Unbekannt"}</span>
+                    <span>{resolveCreatorName()}</span>
                   </div>
                 </div>
                 <div>
