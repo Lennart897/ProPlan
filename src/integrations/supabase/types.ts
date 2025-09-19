@@ -630,6 +630,16 @@ export type Database = {
         Args: { standort_verteilung: Json }
         Returns: string[]
       }
+      get_projects_minimal_for_user_history: {
+        Args: { p_project_ids: string[]; p_user: string }
+        Returns: {
+          artikel_bezeichnung: string
+          artikel_nummer: string
+          customer: string
+          id: string
+          project_number: number
+        }[]
+      }
       get_user_location_code: {
         Args: { user_uuid: string }
         Returns: string

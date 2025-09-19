@@ -131,12 +131,26 @@ export function ActivityLog({ userId, userRole }: ActivityLogProps) {
       let map: Record<string, ProjectMinimal> = {};
       
       if (historyProjectIds.length > 0) {
-        const { data: projs } = await supabase
-          .from('manufacturing_projects')
-          .select('id, project_number, customer, artikel_nummer, artikel_bezeichnung')
-          .in('id', historyProjectIds);
+        let projs: any[] = [];
         
-        (projs || []).forEach((p: any) => {
+        if (userRole === 'admin') {
+          // Admins können direkt auf manufacturing_projects zugreifen
+          const { data } = await supabase
+            .from('manufacturing_projects')
+            .select('id, project_number, customer, artikel_nummer, artikel_bezeichnung')
+            .in('id', historyProjectIds);
+          projs = data || [];
+        } else {
+          // Nicht-Admins verwenden die sichere Funktion für eigene Aktivitäten
+          const { data } = await supabase
+            .rpc('get_projects_minimal_for_user_history', {
+              p_user: userId,
+              p_project_ids: historyProjectIds
+            });
+          projs = data || [];
+        }
+        
+        projs.forEach((p: any) => {
           map[p.id] = {
             id: p.id,
             project_number: p.project_number ?? null,
