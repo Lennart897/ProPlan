@@ -598,27 +598,36 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {Object.entries(totals.byProduct).slice(0, 5).map(([product, quantity], index) => {
-                  const percentage = (quantity / totals.totalQuantity) * 100;
-                  const colors = ['bg-primary', 'bg-secondary', 'bg-accent', 'bg-orange-500', 'bg-green-500'];
-                  return (
-                    <div key={product} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-semibold text-foreground">{product}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold">{quantity.toLocaleString('de-DE')} kg</span>
-                          <span className="text-xs text-muted-foreground">({percentage.toFixed(1)}%)</span>
-                        </div>
-                      </div>
-                      <div className="w-full bg-muted/30 rounded-full h-2">
-                        <div 
-                          className={`${colors[index % colors.length]} h-2 rounded-full transition-all duration-300`}
-                          style={{ width: `${percentage}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  );
-                })}
+                 {Object.entries(totals.byProduct).slice(0, 5).map(([product, quantity], index) => {
+                   const percentage = (quantity / totals.totalQuantity) * 100;
+                   const barColor = ({
+                     'Brustfilet': 'bg-sky-500',
+                     'Schenkel': 'bg-rose-500',
+                     'Flügel': 'bg-orange-500',
+                     'Oberkeule': 'bg-violet-500',
+                     'Unterschenkel': 'bg-green-500',
+                     'Bauch': 'bg-yellow-500',
+                     'Keule': 'bg-purple-500',
+                     'Schulter': 'bg-red-500'
+                   } as Record<string, string>)[product] || 'bg-gray-500';
+                   return (
+                     <div key={product} className="space-y-2">
+                       <div className="flex justify-between items-center">
+                         <span className="text-sm font-semibold text-foreground">{product}</span>
+                         <div className="flex items-center gap-2">
+                           <span className="text-sm font-bold">{quantity.toLocaleString('de-DE')} kg</span>
+                           <span className="text-xs text-muted-foreground">({percentage.toFixed(1)}%)</span>
+                         </div>
+                       </div>
+                       <div className="w-full bg-muted/30 rounded-full h-2">
+                         <div 
+                           className={`${barColor} h-2 rounded-full transition-all duration-300`}
+                           style={{ width: `${percentage}%` }}
+                         ></div>
+                       </div>
+                     </div>
+                   );
+                 })}
                 {Object.keys(totals.byProduct).length === 0 && (
                   <div className="text-center py-4 text-muted-foreground">
                     Keine Produktgruppen für diese Woche
@@ -764,12 +773,14 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                             {activeProductGroups.map(productGroup => {
                               const sum = dayProductSums[productGroup] || 0;
                               const colors = {
-                                'Oberkeule': 'bg-blue-100 text-blue-800 border-blue-200',
+                                'Brustfilet': 'bg-sky-100 text-sky-800 border-sky-200',
+                                'Schenkel': 'bg-rose-100 text-rose-800 border-rose-200',
+                                'Flügel': 'bg-orange-100 text-orange-800 border-orange-200',
+                                'Oberkeule': 'bg-violet-100 text-violet-800 border-violet-200',
                                 'Unterschenkel': 'bg-green-100 text-green-800 border-green-200',
                                 'Bauch': 'bg-yellow-100 text-yellow-800 border-yellow-200',
                                 'Keule': 'bg-purple-100 text-purple-800 border-purple-200',
-                                'Schulter': 'bg-red-100 text-red-800 border-red-200',
-                                'Flügel': 'bg-orange-100 text-orange-800 border-orange-200'
+                                'Schulter': 'bg-red-100 text-red-800 border-red-200'
                               }[productGroup] || 'bg-gray-100 text-gray-800 border-gray-200';
                               
                               if (sum > 0) {
