@@ -931,7 +931,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                                  {qty > 0 ? (
                                    <div className={`${locationColors} rounded-xl px-3 py-3 text-xs font-bold border-2 shadow-lg relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-105`}>
                                      <div className="relative z-10 space-y-1">
-                                       <div className="font-black text-base tracking-wide">
+                                       <div className="font-black text-xs tracking-wide">
                                          {qty.toLocaleString('de-DE')}
                                        </div>
                                        <div className="text-xs font-semibold opacity-95 tracking-wider">
