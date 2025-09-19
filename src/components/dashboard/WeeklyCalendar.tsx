@@ -873,7 +873,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                                       </Badge>
                                     </div>
                                     <div>
-                                      <div className="text-xs font-mono bg-muted/50 px-2 py-1 rounded text-muted-foreground border">
+                                      <div className="text-xs font-bold bg-muted text-foreground border border-border/50 px-2 py-1 rounded">
                                         {project.artikel_nummer}
                                       </div>
                                     </div>
