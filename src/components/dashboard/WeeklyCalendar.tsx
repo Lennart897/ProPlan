@@ -922,42 +922,43 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                               </div>
                        
                        {/* Enhanced Location Columns with Visual Indicators */}
-                       <div className="col-span-3 p-4 border-r border-border/50">
-                         <div className="grid grid-cols-5 gap-2 h-full">
-                           {Object.keys(locationLabels).map((locationKey) => {
-                             const quantity = project.standort_verteilung?.[locationKey] || 0;
-                             const qty = Number(quantity);
-                             const totalProjectQty = project.gesamtmenge || 1;
-                             const percentage = (qty / totalProjectQty) * 100;
-                             
-                             const locationColors = {
-                               'brenz': 'bg-blue-500 border-blue-200 text-blue-50',
-                               'visbek': 'bg-green-500 border-green-200 text-green-50', 
-                               'doebeln': 'bg-yellow-500 border-yellow-200 text-yellow-900',
-                               'storkow': 'bg-purple-500 border-purple-200 text-purple-50',
-                               'gudensberg': 'bg-red-500 border-red-200 text-red-50'
-                             }[locationKey] || 'bg-gray-500 border-gray-200 text-gray-50';
-                             
-                             return (
-                               <div key={locationKey} className="text-center space-y-2">
-                                 {qty > 0 ? (
-                                   <div className={`${locationColors} rounded-xl px-3 py-3 text-xs font-bold border-2 shadow-lg relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-105`}>
-                                     <div className="relative z-10 space-y-1">
-                                        <div className="font-semibold text-[10px] leading-tight tracking-tight tabular-nums w-full text-center">
+                        <div className="col-span-3 p-6 border-r border-border/30 bg-gradient-to-br from-card/50 to-background">
+                          <div className="grid grid-cols-5 gap-3 h-full">
+                            {Object.keys(locationLabels).map((locationKey) => {
+                              const quantity = project.standort_verteilung?.[locationKey] || 0;
+                              const qty = Number(quantity);
+                              const totalProjectQty = project.gesamtmenge || 1;
+                              const percentage = (qty / totalProjectQty) * 100;
+                              
+                              const locationStyles = {
+                                'brenz': 'bg-gradient-to-br from-blue-500 to-blue-600 border-blue-300/50 text-white shadow-blue-500/20',
+                                'visbek': 'bg-gradient-to-br from-green-500 to-green-600 border-green-300/50 text-white shadow-green-500/20', 
+                                'doebeln': 'bg-gradient-to-br from-amber-400 to-amber-500 border-amber-300/50 text-amber-950 shadow-amber-500/20',
+                                'storkow': 'bg-gradient-to-br from-purple-500 to-purple-600 border-purple-300/50 text-white shadow-purple-500/20',
+                                'gudensberg': 'bg-gradient-to-br from-red-500 to-red-600 border-red-300/50 text-white shadow-red-500/20'
+                              }[locationKey] || 'bg-gradient-to-br from-gray-500 to-gray-600 border-gray-300/50 text-white shadow-gray-500/20';
+                              
+                              return (
+                                <div key={locationKey} className="flex flex-col items-center justify-center">
+                                  {qty > 0 ? (
+                                    <div className={`${locationStyles} rounded-2xl px-4 py-4 text-sm font-bold border-2 shadow-xl relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-[1.08] hover:-translate-y-1 w-full min-h-[80px] flex flex-col justify-center items-center backdrop-blur-sm`}>
+                                      <div className="relative z-10 text-center space-y-2">
+                                        <div className="font-bold text-sm leading-tight tracking-tight tabular-nums">
                                           {qty.toLocaleString('de-DE')}
                                         </div>
-                                       <div className="text-xs font-semibold opacity-95 tracking-wider">
-                                         {percentage.toFixed(0)}%
-                                       </div>
-                                     </div>
-                                     <div 
-                                       className="absolute bottom-0 left-0 bg-white/20 transition-all duration-500 rounded-t-lg" 
-                                       style={{
-                                         height: `${Math.max(percentage * 0.8, 8)}%`,
-                                         width: '100%'
-                                       }}
-                                     ></div>
-                                   </div>
+                                        <div className="text-xs font-semibold opacity-90 tracking-wide bg-black/10 px-2 py-1 rounded-full">
+                                          {percentage.toFixed(0)}%
+                                        </div>
+                                      </div>
+                                      <div 
+                                        className="absolute bottom-0 left-0 bg-white/15 transition-all duration-700 rounded-t-xl backdrop-blur-sm" 
+                                        style={{
+                                          height: `${Math.max(percentage * 0.7, 10)}%`,
+                                          width: '100%'
+                                        }}
+                                      ></div>
+                                      <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent rounded-2xl"></div>
+                                    </div>
                                  ) : (
                                    <div className="text-xs text-muted-foreground bg-muted/30 rounded-xl py-4 px-3 border-2 border-dashed border-muted/50 hover:bg-muted/40 transition-colors duration-200">
                                      <div className="font-medium text-sm">-</div>
