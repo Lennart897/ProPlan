@@ -22,6 +22,11 @@ type HistoryRow = {
   created_at: string;
 };
 
+type UserProfile = {
+  user_id: string;
+  display_name: string | null;
+};
+
 type ProjectMinimal = {
   id: string;
   project_number: number | null;
@@ -71,6 +76,7 @@ const statusLabels: Record<string, string> = {
 export function ActivityLog({ userId, userRole }: ActivityLogProps) {
   const [rows, setRows] = useState<HistoryRow[]>([]);
   const [projects, setProjects] = useState<Record<string, ProjectMinimal>>({});
+  const [userProfiles, setUserProfiles] = useState<Record<string, UserProfile>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -135,6 +141,26 @@ export function ActivityLog({ userId, userRole }: ActivityLogProps) {
       });
       if (!isMounted) return;
       setProjects(map);
+
+      // 4) Benutzerprofile für Anzeigenamen laden
+      const uniqueUserIds = Array.from(new Set((history as HistoryRow[]).map(h => h.user_id)));
+      if (uniqueUserIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, display_name')
+          .in('user_id', uniqueUserIds);
+        
+        const profilesMap: Record<string, UserProfile> = {};
+        (profiles || []).forEach((profile: any) => {
+          profilesMap[profile.user_id] = {
+            user_id: profile.user_id,
+            display_name: profile.display_name,
+          };
+        });
+        if (!isMounted) return;
+        setUserProfiles(profilesMap);
+      }
+      
       setLoading(false);
     }
     load();
@@ -144,7 +170,8 @@ export function ActivityLog({ userId, userRole }: ActivityLogProps) {
   const formatted = useMemo(() => rows.map(r => ({
     ...r,
     project: projects[r.project_id],
-  })), [rows, projects]);
+    userDisplayName: userProfiles[r.user_id]?.display_name || r.user_name,
+  })), [rows, projects, userProfiles]);
 
   if (loading) {
     return (
@@ -283,7 +310,7 @@ export function ActivityLog({ userId, userRole }: ActivityLogProps) {
                     {row.project?.artikel_bezeichnung ?? '—'}
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground p-2">
-                    {row.user_name}
+                    {row.userDisplayName}
                   </TableCell>
                 </TableRow>
               ))}
