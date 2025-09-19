@@ -717,11 +717,11 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                 
                 {/* Location Headers */}
                 <div className="col-span-3 p-4 border-r border-border/50">
-                  <div className="grid grid-cols-5 gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider text-center">
+                  <div className="grid grid-cols-5 gap-1 text-xs font-bold text-muted-foreground uppercase tracking-wider text-center">
                     {Object.entries(locationLabels).map(([key, label]) => (
-                      <div key={key} className="flex flex-col items-center gap-1">
+                      <div key={key} className="flex flex-col items-center gap-1 min-w-0">
                         <div className="w-2 h-2 rounded-full bg-accent/60"></div>
-                        <span className="truncate" title={label}>{label}</span>
+                        <span className="truncate text-[10px] leading-tight px-1" title={label}>{label}</span>
                       </div>
                     ))}
                   </div>
