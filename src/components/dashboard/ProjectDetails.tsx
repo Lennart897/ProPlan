@@ -713,8 +713,8 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Grammatur Verkaufseinheit</Label>
                   <p className="font-medium">
-                    {articleData?.grammatur_verkaufseinheit ? 
-                      `${(articleData.grammatur_verkaufseinheit / 1000).toFixed(3)} kg` : 
+                    {articleData?.grammatur_verkaufseinheit != null && articleData?.grammatur_verkaufseinheit !== '' ? 
+                      `${Number(articleData.grammatur_verkaufseinheit).toLocaleString('de-DE', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kg` : 
                       "Nicht verfügbar"
                     }
                   </p>
