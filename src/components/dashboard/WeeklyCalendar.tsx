@@ -912,15 +912,19 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                              }[locationKey] || 'bg-gray-500 border-gray-200 text-gray-50';
                              
                              return (
-                               <div key={locationKey} className="text-center space-y-1">
+                               <div key={locationKey} className="text-center space-y-2">
                                  {qty > 0 ? (
-                                   <div className={`${locationColors} rounded-lg px-2 py-2 text-xs font-bold border-2 shadow-sm relative overflow-hidden`}>
-                                     <div className="relative z-10">
-                                       <div className="font-bold">{qty.toLocaleString('de-DE')}</div>
-                                       <div className="text-xs opacity-90">{percentage.toFixed(0)}%</div>
+                                   <div className={`${locationColors} rounded-xl px-3 py-3 text-xs font-bold border-2 shadow-lg relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-105`}>
+                                     <div className="relative z-10 space-y-1">
+                                       <div className="font-black text-sm tracking-wide">
+                                         {qty.toLocaleString('de-DE')}
+                                       </div>
+                                       <div className="text-xs font-semibold opacity-95 tracking-wider">
+                                         {percentage.toFixed(0)}%
+                                       </div>
                                      </div>
                                      <div 
-                                       className="absolute bottom-0 left-0 bg-white/20 transition-all duration-300" 
+                                       className="absolute bottom-0 left-0 bg-white/20 transition-all duration-500 rounded-t-lg" 
                                        style={{
                                          height: `${Math.max(percentage * 0.8, 8)}%`,
                                          width: '100%'
@@ -928,9 +932,9 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                                      ></div>
                                    </div>
                                  ) : (
-                                   <div className="text-xs text-muted-foreground bg-muted/20 rounded-lg py-3 px-2 border-2 border-dashed border-muted/40">
-                                     <div>-</div>
-                                     <div className="text-xs">0%</div>
+                                   <div className="text-xs text-muted-foreground bg-muted/30 rounded-xl py-4 px-3 border-2 border-dashed border-muted/50 hover:bg-muted/40 transition-colors duration-200">
+                                     <div className="font-medium text-sm">-</div>
+                                     <div className="text-xs font-medium opacity-70">0%</div>
                                    </div>
                                  )}
                                </div>
