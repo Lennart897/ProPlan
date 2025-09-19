@@ -219,7 +219,7 @@ export function ArticleManagement() {
                       <Input
                         id="artikel_bezeichnung"
                         {...form.register('artikel_bezeichnung', { required: true })}
-                        placeholder="z.B. Wellpappschachtel 300x200x100"
+                        placeholder="z.B. H-Brustfilet 2,5kg"
                         className="h-11"
                       />
                     </div>
