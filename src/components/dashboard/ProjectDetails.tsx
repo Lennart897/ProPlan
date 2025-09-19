@@ -58,12 +58,14 @@ interface ProjectDetailsProps {
 export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowPreview }: ProjectDetailsProps) => {
   const [showCorrectionDialog, setShowCorrectionDialog] = useState(false);
   const [showRejectionDialog, setShowRejectionDialog] = useState(false);
+  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [correctedQuantity, setCorrectedQuantity] = useState(project.gesamtmenge.toString());
   const [locationQuantities, setLocationQuantities] = useState<Record<string, number>>(
     project.standort_verteilung || {}
   );
   const [rejectionReason, setRejectionReason] = useState("");
   const [correctionReason, setCorrectionReason] = useState("");
+  const [approvalComment, setApprovalComment] = useState("");
   const { toast } = useToast();
   const { getLocationName } = useLocations(true, false);
 
@@ -136,13 +138,13 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
        await supabase
          .from('project_history')
          .insert({
-           project_id: project.id,
-           user_id: user.id,
-           user_name: displayName,
-           action: action,
-           previous_status: oldData?.status ? getStatusLabel(oldData.status) : null,
-           new_status: newData?.status ? getStatusLabel(newData.status) : null,
-           reason: newData?.rejection_reason || newData?.correction_reason || null,
+            project_id: project.id,
+            user_id: user.id,
+            user_name: displayName,
+            action: action,
+            previous_status: oldData?.status ? getStatusLabel(oldData.status) : null,
+            new_status: newData?.status ? getStatusLabel(newData.status) : null,
+            reason: newData?.rejection_reason || newData?.correction_reason || newData?.approval_comment || null,
            old_data: action === 'correction' ? JSON.stringify({
              gesamtmenge: oldData?.gesamtmenge,
              standort_verteilung: oldData?.standort_verteilung
@@ -157,7 +159,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
     }
   };
 
-  const handleAction = async (action: string) => {
+  const handleAction = async (action: string, comment?: string) => {
     try {
       console.log('Starting action:', action, 'for project:', project.id);
       
@@ -427,6 +429,12 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
     await handleAction('reject');
   };
 
+  const handleApproval = () => {
+    handleAction('approve', approvalComment);
+    setShowApprovalDialog(false);
+    setApprovalComment("");
+  };
+
   const getActionButtons = () => {
     const buttons = [];
 
@@ -509,7 +517,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
       case 'planung_visbek':
         if (project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
           buttons.push(
-             <Button key="approve" className="bg-green-600 hover:bg-green-700 text-white w-64" onClick={() => handleAction('approve')}>
+             <Button key="approve" className="bg-green-600 hover:bg-green-700 text-white w-64" onClick={() => setShowApprovalDialog(true)}>
                Genehmigen
              </Button>
           );
@@ -552,7 +560,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
         }
         if (project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
           buttons.push(
-            <Button key="approve" className="bg-green-600 hover:bg-green-700 text-white w-64" onClick={() => handleAction('approve')}>
+            <Button key="approve" className="bg-green-600 hover:bg-green-700 text-white w-64" onClick={() => setShowApprovalDialog(true)}>
                Genehmigen
              </Button>
           );
@@ -1160,6 +1168,38 @@ onClick={async () => {
               </Button>
               <Button variant="destructive" onClick={handleRejection}>
                   Projekt absagen
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Approval Dialog */}
+        <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Projekt genehmigen</DialogTitle>
+              <DialogDescription>
+                Sie können optional einen Kommentar zur Genehmigung hinzufügen.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="approval-comment">Kommentar (optional)</Label>
+                <Textarea
+                  id="approval-comment"
+                  value={approvalComment}
+                  onChange={(e) => setApprovalComment(e.target.value)}
+                  placeholder="Fügen Sie hier einen Kommentar zur Genehmigung hinzu..."
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowApprovalDialog(false)}>
+                Abbrechen
+              </Button>
+              <Button className="bg-green-600 hover:bg-green-700" onClick={handleApproval}>
+                Projekt genehmigen
               </Button>
             </DialogFooter>
           </DialogContent>
