@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, Calendar, ArrowLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, ArrowLeft, ChevronDown, ChevronRight as ChevronRightIcon, Minus, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, getWeek, isWithinInterval, differenceInCalendarDays } from "date-fns";
@@ -85,6 +85,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
   const [selectedProductGroup, setSelectedProductGroup] = useState<string>("all");
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   // Parse a date-only string (YYYY-MM-DD) as a local Date without timezone shifts
@@ -368,6 +369,17 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
   };
 
   const { dailySums, productGroups: activeProductGroups } = calculateDailySums();
+
+  // Toggle product group expansion
+  const toggleGroup = (groupName: string) => {
+    const newExpandedGroups = new Set(expandedGroups);
+    if (newExpandedGroups.has(groupName)) {
+      newExpandedGroups.delete(groupName);
+    } else {
+      newExpandedGroups.add(groupName);
+    }
+    setExpandedGroups(newExpandedGroups);
+  };
 
   // Navigate weeks
   const goToPreviousWeek = () => {
@@ -676,17 +688,17 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
             </div>
           </div>
 
-          {/* Professional Table Layout */}
+          {/* Professional Table Layout - Hierarchical Structure */}
           <div className="w-full">
             <div className="w-full">
               {/* Enhanced Header */}
               <div className="grid grid-cols-12 border-b bg-gradient-to-r from-muted/20 via-muted/10 to-muted/20">
                 {/* Project Info Headers */}
                 <div className="col-span-4 p-4 border-r border-border/50">
-                  <div className="grid grid-cols-5 gap-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  <div className="grid grid-cols-4 gap-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-primary/60"></div>
-                      Kunde
+                      Rohware / Kunde
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-secondary/60"></div>
@@ -698,11 +710,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-primary/60"></div>
-                      Erste Anlieferung
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-secondary/60"></div>
-                      Letzte Anlieferung
+                      Lieferung
                     </div>
                   </div>
                 </div>
@@ -770,9 +778,8 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                 </div>
               </div>
 
-              {/* Project Rows */}
-              <div className="divide-y divide-border/30">
-                {loading ? (
+              {/* Project Rows - Hierarchical Tree Structure */}
+              <div className="divide-y divide-border/30">{loading ? (
                   <div className="text-center py-16">
                     <div className="inline-flex items-center gap-3 text-muted-foreground">
                       <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -789,7 +796,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                   </div>
                 ) : (
                  <>
-                   {/* Regular Projects - Enhanced professional rows grouped by product group */}
+                   {/* Hierarchical Product Groups - Tree Structure */}
                   {(() => {
                     // Group projects by product group
                     const groupedProjects = filteredProjects.reduce((groups, project) => {
@@ -799,206 +806,217 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                       return groups;
                     }, {} as Record<string, Project[]>);
 
-                    return Object.entries(groupedProjects).map(([productGroup, projects]) => (
-                      <div key={productGroup}>
-                        {/* Product Group Header */}
-                        <div className="grid grid-cols-12 bg-gradient-to-r from-muted/40 via-muted/30 to-muted/40 border-l-4 border-l-primary">
-                          <div className="col-span-12 p-3">
-                            <div className="flex items-center justify-between">
+                    return Object.entries(groupedProjects).map(([productGroup, projects]) => {
+                      const isExpanded = expandedGroups.has(productGroup);
+                      const groupTotalQuantity = projects.reduce((sum, p) => sum + p.gesamtmenge, 0);
+                      
+                      return (
+                        <div key={productGroup}>
+                          {/* Product Group Header Row - Collapsible */}
+                          <div 
+                            className="grid grid-cols-12 bg-gradient-to-r from-blue-50/80 via-blue-50/50 to-blue-50/20 border-l-4 border-l-blue-500 hover:from-blue-100/80 hover:via-blue-100/50 hover:to-blue-100/20 transition-all duration-200 cursor-pointer"
+                            onClick={() => toggleGroup(productGroup)}
+                          >
+                            <div className="col-span-4 p-4 border-r border-border/50">
                               <div className="flex items-center gap-3">
-                                <div className="w-3 h-3 rounded-full bg-primary"></div>
-                                <h4 className="font-bold text-lg text-foreground">{productGroup}</h4>
-                                <Badge variant="secondary" className="font-medium">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-6 w-6 p-0 hover:bg-blue-200/50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleGroup(productGroup);
+                                  }}
+                                >
+                                  {isExpanded ? 
+                                    <Minus className="h-4 w-4 text-blue-600" /> : 
+                                    <Plus className="h-4 w-4 text-blue-600" />
+                                  }
+                                </Button>
+                                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                                <h4 className="font-bold text-lg text-blue-900">{productGroup}</h4>
+                                <Badge variant="secondary" className="font-medium bg-blue-100 text-blue-800 border-blue-200">
                                   {projects.length} Projekt{projects.length !== 1 ? 'e' : ''}
                                 </Badge>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm text-muted-foreground">Gesamtmenge:</span>
-                                <Badge variant="outline" className="font-bold bg-primary/5 border-primary/20 text-primary">
-                                  {projects.reduce((sum, p) => sum + p.gesamtmenge, 0).toLocaleString('de-DE')} kg
-                                </Badge>
-                              </div>
                             </div>
-                          </div>
-                        </div>
-                        
-                        {/* Projects in this group */}
-                        {projects.map((project) => (
-                    <div 
-                      key={project.id}
-                      className={`grid grid-cols-12 hover:bg-gradient-to-r hover:from-muted/20 hover:via-muted/10 hover:to-transparent transition-all duration-300 border-l-4 ${
-                        selectedProject === project.id ? 'bg-primary/5 border-l-primary shadow-lg' : 'border-l-transparent hover:border-l-primary/30'
-                      }`}
-                    >
-                      {/* Project Info */}
-                      <div className="col-span-4 p-5 border-r border-border/50">
-                        <div className="space-y-3">
-                          {/* Main project info row */}
-                          <div className="grid grid-cols-5 gap-3 items-start">
-                            <div className="space-y-2">
-                              <div className="font-bold text-sm text-foreground truncate" title={project.customer}>
-                                {project.customer}
-                              </div>
-                              <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20 text-primary font-medium">
-                                {project.produktgruppe || 'N/A'}
+                            <div className="col-span-3 p-4 border-r border-border/50 flex items-center justify-center">
+                              <Badge variant="outline" className="font-bold bg-blue-50 border-blue-300 text-blue-800">
+                                Σ {groupTotalQuantity.toLocaleString('de-DE')} kg
                               </Badge>
                             </div>
-                            <div>
-                              <div className="text-xs font-mono bg-muted/50 px-2 py-1 rounded text-muted-foreground border">
-                                {project.artikel_nummer}
-                              </div>
-                            </div>
-                            <div>
-                              <div className="text-sm font-semibold text-foreground line-clamp-2 leading-relaxed" title={project.artikel_bezeichnung}>
-                                {project.artikel_bezeichnung}
-                              </div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-xs text-muted-foreground mb-1">Erste</div>
-                              <div className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">
-                                {project.erste_anlieferung ? format(parseLocalDate(project.erste_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
-                              </div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-xs text-muted-foreground mb-1">Letzte</div>
-                              <div className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">
-                                {project.letzte_anlieferung ? format(parseLocalDate(project.letzte_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
+                            <div className="col-span-5 p-4 flex items-center justify-end">
+                              <div className="text-sm text-blue-600 font-medium">
+                                {isExpanded ? 'Einklappen' : 'Aufklappen'}
                               </div>
                             </div>
                           </div>
                           
-                          {/* Total quantity display */}
-                          <div className="flex items-center gap-2 pt-2 border-t border-border/30">
-                            <span className="text-xs text-muted-foreground">Gesamtmenge:</span>
-                            <Badge variant="secondary" className="font-bold bg-muted text-foreground border border-border/50">
-                              {project.gesamtmenge?.toLocaleString('de-DE')} kg
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Enhanced Location Columns with Visual Indicators */}
-                      <div className="col-span-3 p-5 border-r border-border/50">
-                        <div className="grid grid-cols-5 gap-2 h-full">
-                          {Object.keys(locationLabels).map((locationKey) => {
-                            const quantity = project.standort_verteilung?.[locationKey] || 0;
-                            const qty = Number(quantity);
-                            const totalProjectQty = project.gesamtmenge || 1;
-                            const percentage = (qty / totalProjectQty) * 100;
-                            
-                            const locationColors = {
-                              'brenz': 'bg-blue-500 border-blue-200 text-blue-50',
-                              'visbek': 'bg-green-500 border-green-200 text-green-50', 
-                              'doebeln': 'bg-yellow-500 border-yellow-200 text-yellow-900',
-                              'storkow': 'bg-purple-500 border-purple-200 text-purple-50',
-                              'gudensberg': 'bg-red-500 border-red-200 text-red-50'
-                            }[locationKey] || 'bg-gray-500 border-gray-200 text-gray-50';
-                            
-                            return (
-                              <div key={locationKey} className="text-center space-y-1">
-                                {qty > 0 ? (
-                                  <div className={`${locationColors} rounded-lg px-2 py-2 text-xs font-bold border-2 shadow-sm relative overflow-hidden`}>
-                                    <div className="relative z-10">
-                                      <div className="font-bold">{qty.toLocaleString('de-DE')}</div>
-                                      <div className="text-xs opacity-90">{percentage.toFixed(0)}%</div>
+                          {/* Individual Projects - Only show when expanded */}
+                          {isExpanded && projects.map((project) => (
+                            <div 
+                              key={project.id}
+                              className={`grid grid-cols-12 hover:bg-gradient-to-r hover:from-muted/20 hover:via-muted/10 hover:to-transparent transition-all duration-300 border-l-4 ${
+                                selectedProject === project.id ? 'bg-primary/5 border-l-primary shadow-lg' : 'border-l-blue-200 hover:border-l-blue-400'
+                              }`}
+                            >
+                              {/* Project Info */}
+                              <div className="col-span-4 p-4 border-r border-border/50">
+                                <div className="pl-8"> {/* Indented for hierarchy */}
+                                  <div className="grid grid-cols-4 gap-3 items-start">
+                                    <div className="space-y-1">
+                                      <div className="font-semibold text-sm text-foreground truncate" title={project.customer}>
+                                        {project.customer}
+                                      </div>
+                                      <Badge variant="secondary" className="text-xs font-bold bg-muted text-foreground border border-border/50">
+                                        {project.gesamtmenge?.toLocaleString('de-DE')} kg
+                                      </Badge>
                                     </div>
-                                    <div 
-                                      className="absolute bottom-0 left-0 bg-white/20 transition-all duration-300" 
-                                      style={{
-                                        height: `${Math.max(percentage * 0.8, 8)}%`,
-                                        width: '100%'
-                                      }}
-                                    ></div>
-                                  </div>
-                                ) : (
-                                  <div className="text-xs text-muted-foreground bg-muted/20 rounded-lg py-3 px-2 border-2 border-dashed border-muted/40">
-                                    <div>-</div>
-                                    <div className="text-xs">0%</div>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                      
-                      {/* Timeline - Show project span if it overlaps with current week */}
-                      <div className="col-span-5 p-4 relative">
-                        <div className="relative h-12">
-                          {/* Grid lines */}
-                          <div className="absolute inset-0 grid grid-cols-7 gap-0 pointer-events-none">
-                            {weekDays.map((_, index) => (
-                              <div key={index} className="flex justify-center">
-                                <div className="w-px bg-border/30 h-full" />
-                              </div>
-                            ))}
-                          </div>
-                          
-                          {/* Project bar - only show if project overlaps with current week */}
-                          {(() => {
-                            if (!project.erste_anlieferung || !project.letzte_anlieferung) return null;
-                            
-                            try {
-                              const startDate = parseLocalDate(project.erste_anlieferung);
-                              const endDate = parseLocalDate(project.letzte_anlieferung);
-                              const weekEnd = addDays(weekStart, 6);
-                              
-                              // Check if project overlaps with current week
-                              if (startDate > weekEnd || endDate < weekStart) return null;
-                              
-                              let startDay = -1;
-                              let endDay = -1;
-                              
-                              weekDays.forEach((day, index) => {
-                                if (startDate <= day && endDate >= day) {
-                                  if (startDay === -1) startDay = index;
-                                  endDay = index;
-                                }
-                              });
-                              
-                              if (startDay === -1 || endDay === -1) return null;
-                              
-                              return (
-                                <div
-                                  className={`absolute rounded-md border transition-all duration-200 cursor-pointer ${
-                                    selectedProject === project.id
-                                      ? 'bg-primary/20 border-primary ring-2 ring-primary/30'
-                                      : 'bg-blue-100 border-blue-300 hover:bg-blue-200'
-                                  }`}
-                                  style={{
-                                    left: `${(startDay / 7) * 100}%`,
-                                    width: `${((endDay - startDay + 1) / 7) * 100}%`,
-                                    height: '40px',
-                                    top: '4px'
-                                  }}
-                                  onClick={() => {
-                                    setSelectedProject(selectedProject === project.id ? null : project.id);
-                                    if (onShowProjectDetails) {
-                                      onShowProjectDetails(project);
-                                    }
-                                  }}
-                                >
-                                  <div className="p-2 h-full flex items-center justify-between">
-                                    <span className="text-xs font-medium text-foreground truncate">
-                                      {project.gesamtmenge?.toLocaleString('de-DE')} kg
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">
-                                      {Math.abs(differenceInCalendarDays(endDate, startDate)) + 1}d
-                                    </span>
+                                    <div>
+                                      <div className="text-xs font-mono bg-muted/50 px-2 py-1 rounded text-muted-foreground border">
+                                        {project.artikel_nummer}
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <div className="text-sm font-medium text-foreground line-clamp-2 leading-relaxed" title={project.artikel_bezeichnung}>
+                                        {project.artikel_bezeichnung}
+                                      </div>
+                                    </div>
+                                    <div className="text-center space-y-1">
+                                      <div className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">
+                                        {project.erste_anlieferung ? format(parseLocalDate(project.erste_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
+                                      </div>
+                                      <div className="text-xs font-bold text-secondary bg-secondary/10 px-2 py-1 rounded-md">
+                                        {project.letzte_anlieferung ? format(parseLocalDate(project.letzte_anlieferung), "dd.MM.yy", { locale: de }) : '-'}
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
-                              );
-                            } catch (error) {
-                              console.error('Error calculating project timeline:', error);
-                              return null;
-                            }
-                          })()}
-                        </div>
-                      </div>
+                              </div>
+                       
+                       {/* Enhanced Location Columns with Visual Indicators */}
+                       <div className="col-span-3 p-4 border-r border-border/50">
+                         <div className="grid grid-cols-5 gap-2 h-full">
+                           {Object.keys(locationLabels).map((locationKey) => {
+                             const quantity = project.standort_verteilung?.[locationKey] || 0;
+                             const qty = Number(quantity);
+                             const totalProjectQty = project.gesamtmenge || 1;
+                             const percentage = (qty / totalProjectQty) * 100;
+                             
+                             const locationColors = {
+                               'brenz': 'bg-blue-500 border-blue-200 text-blue-50',
+                               'visbek': 'bg-green-500 border-green-200 text-green-50', 
+                               'doebeln': 'bg-yellow-500 border-yellow-200 text-yellow-900',
+                               'storkow': 'bg-purple-500 border-purple-200 text-purple-50',
+                               'gudensberg': 'bg-red-500 border-red-200 text-red-50'
+                             }[locationKey] || 'bg-gray-500 border-gray-200 text-gray-50';
+                             
+                             return (
+                               <div key={locationKey} className="text-center space-y-1">
+                                 {qty > 0 ? (
+                                   <div className={`${locationColors} rounded-lg px-2 py-2 text-xs font-bold border-2 shadow-sm relative overflow-hidden`}>
+                                     <div className="relative z-10">
+                                       <div className="font-bold">{qty.toLocaleString('de-DE')}</div>
+                                       <div className="text-xs opacity-90">{percentage.toFixed(0)}%</div>
+                                     </div>
+                                     <div 
+                                       className="absolute bottom-0 left-0 bg-white/20 transition-all duration-300" 
+                                       style={{
+                                         height: `${Math.max(percentage * 0.8, 8)}%`,
+                                         width: '100%'
+                                       }}
+                                     ></div>
+                                   </div>
+                                 ) : (
+                                   <div className="text-xs text-muted-foreground bg-muted/20 rounded-lg py-3 px-2 border-2 border-dashed border-muted/40">
+                                     <div>-</div>
+                                     <div className="text-xs">0%</div>
+                                   </div>
+                                 )}
+                               </div>
+                             );
+                           })}
+                         </div>
+                       </div>
+                       
+                       {/* Timeline - Show project span if it overlaps with current week */}
+                       <div className="col-span-5 p-4 relative">
+                         <div className="relative h-12">
+                           {/* Grid lines */}
+                           <div className="absolute inset-0 grid grid-cols-7 gap-0 pointer-events-none">
+                             {weekDays.map((_, index) => (
+                               <div key={index} className="flex justify-center">
+                                 <div className="w-px bg-border/30 h-full" />
+                               </div>
+                             ))}
+                           </div>
+                           
+                           {/* Project bar - only show if project overlaps with current week */}
+                           {(() => {
+                             if (!project.erste_anlieferung || !project.letzte_anlieferung) return null;
+                             
+                             try {
+                               const startDate = parseLocalDate(project.erste_anlieferung);
+                               const endDate = parseLocalDate(project.letzte_anlieferung);
+                               const weekEnd = addDays(weekStart, 6);
+                               
+                               // Check if project overlaps with current week
+                               if (startDate > weekEnd || endDate < weekStart) return null;
+                               
+                               let startDay = -1;
+                               let endDay = -1;
+                               
+                               weekDays.forEach((day, index) => {
+                                 if (startDate <= day && endDate >= day) {
+                                   if (startDay === -1) startDay = index;
+                                   endDay = index;
+                                 }
+                               });
+                               
+                               if (startDay === -1 || endDay === -1) return null;
+                               
+                               return (
+                                 <div
+                                   className={`absolute rounded-md border transition-all duration-200 cursor-pointer ${
+                                     selectedProject === project.id
+                                       ? 'bg-primary/20 border-primary ring-2 ring-primary/30'
+                                       : 'bg-blue-100 border-blue-300 hover:bg-blue-200'
+                                   }`}
+                                   style={{
+                                     left: `${(startDay / 7) * 100}%`,
+                                     width: `${((endDay - startDay + 1) / 7) * 100}%`,
+                                     height: '40px',
+                                     top: '4px'
+                                   }}
+                                   onClick={() => {
+                                     setSelectedProject(selectedProject === project.id ? null : project.id);
+                                     if (onShowProjectDetails) {
+                                       onShowProjectDetails(project);
+                                     }
+                                   }}
+                                 >
+                                   <div className="p-2 h-full flex items-center justify-between">
+                                     <span className="text-xs font-medium text-foreground truncate">
+                                       {project.gesamtmenge?.toLocaleString('de-DE')} kg
+                                     </span>
+                                     <span className="text-xs text-muted-foreground">
+                                       {Math.abs(differenceInCalendarDays(endDate, startDate)) + 1}d
+                                     </span>
+                                   </div>
+                                 </div>
+                               );
+                             } catch (error) {
+                               console.error('Error calculating project timeline:', error);
+                               return null;
+                             }
+                           })()}
+                         </div>
+                       </div>
                      </div>
-                        ))}
-                      </div>
-                    ));
+                          ))}
+                        </div>
+                      );
+                    });
                   })()}
 
                    {/* Preview Project */}
