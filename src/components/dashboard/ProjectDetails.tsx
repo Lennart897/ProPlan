@@ -714,7 +714,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                   <Label className="text-sm font-medium text-muted-foreground">Grammatur Verkaufseinheit</Label>
                   <p className="font-medium">
                     {articleData?.grammatur_verkaufseinheit ? 
-                      `${articleData.grammatur_verkaufseinheit.toLocaleString('de-DE')} g` : 
+                      `${(articleData.grammatur_verkaufseinheit / 1000).toFixed(3)} kg` : 
                       "Nicht verfügbar"
                     }
                   </p>
