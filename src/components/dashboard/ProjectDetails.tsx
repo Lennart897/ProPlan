@@ -21,6 +21,8 @@ interface Project {
   artikel_bezeichnung: string;
   produktgruppe?: string;
   produktgruppe_2?: string;
+  verkaufseinheit?: string;
+  grammatur_verkaufseinheit?: number;
   gesamtmenge: number;
   beschreibung?: string;
   erste_anlieferung?: string;
@@ -684,6 +686,21 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Produktgruppe 2</Label>
                   <p className="font-medium">{project.produktgruppe_2 || "Nicht angegeben"}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Verkaufseinheit</Label>
+                  <p className="font-medium">{project.verkaufseinheit || "Nicht angegeben"}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Grammatur Verkaufseinheit</Label>
+                  <p className="font-medium">
+                    {project.grammatur_verkaufseinheit ? 
+                      `${project.grammatur_verkaufseinheit.toLocaleString('de-DE')} g` : 
+                      "Nicht angegeben"
+                    }
+                  </p>
                 </div>
               </div>
             </div>
