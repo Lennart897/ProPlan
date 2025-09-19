@@ -328,7 +328,8 @@ export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
                                 <div className="mt-3">
                                   <p className="text-sm font-medium mb-1">
                                     {entry.action === 'rejected' ? 'Ablehnungsbegründung:' : 
-                                     entry.action === 'correction' ? 'Begründung der Korrektur:' : 'Begründung:'}
+                                     entry.action === 'correction' ? 'Begründung der Korrektur:' :
+                                     entry.action === 'approve' ? 'Kommentar zur Genehmigung:' : 'Begründung:'}
                                   </p>
                                   <p className="text-sm text-muted-foreground">{entry.reason}</p>
                                 </div>
