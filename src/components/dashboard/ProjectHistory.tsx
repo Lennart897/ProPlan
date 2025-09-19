@@ -31,8 +31,10 @@ interface ProjectHistoryProps {
 const actionIcons = {
   created: Send,
   submitted: Send,
+  approve: CheckCircle,
   approved: CheckCircle,
   rejected: XCircle,
+  reject: XCircle,
   corrected: Edit,
 };
 
