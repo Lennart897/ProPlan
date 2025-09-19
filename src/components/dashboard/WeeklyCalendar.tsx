@@ -762,7 +762,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                           {/* Total quantity display */}
                           <div className="flex items-center gap-2 pt-2 border-t border-border/30">
                             <span className="text-xs text-muted-foreground">Gesamtmenge:</span>
-                            <Badge variant="secondary" className="font-bold bg-accent/10 text-accent">
+                            <Badge variant="secondary" className="font-bold bg-muted text-foreground border border-border/50">
                               {project.gesamtmenge?.toLocaleString('de-DE')} kg
                             </Badge>
                           </div>
