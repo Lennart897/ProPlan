@@ -59,6 +59,14 @@ const locationLabels = {
   gudensberg: "Gudensberg"
 };
 
+const locationAbbreviations = {
+  brenz: "BRZ",
+  visbek: "VIS", 
+  doebeln: "DÖB",
+  storkow: "STK",
+  gudensberg: "GUD"
+};
+
 const statusColors = {
   approved: "bg-green-100 text-green-800"
 };
@@ -717,11 +725,18 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                 
                 {/* Location Headers */}
                 <div className="col-span-3 p-4 border-r border-border/50">
-                  <div className="grid grid-cols-5 gap-1 text-xs font-bold text-muted-foreground uppercase tracking-wider text-center">
+                  <div className="grid grid-cols-5 gap-3 text-xs font-bold text-muted-foreground uppercase tracking-wider text-center">
                     {Object.entries(locationLabels).map(([key, label]) => (
-                      <div key={key} className="flex flex-col items-center gap-1 min-w-0">
+                      <div key={key} className="flex flex-col items-center gap-2 min-w-0">
                         <div className="w-2 h-2 rounded-full bg-accent/60"></div>
-                        <span className="truncate text-[10px] leading-tight px-1" title={label}>{label}</span>
+                        <div className="text-center">
+                          <div className="text-xs font-black tracking-wide" title={label}>
+                            {locationAbbreviations[key as keyof typeof locationAbbreviations]}
+                          </div>
+                          <div className="text-[9px] text-muted-foreground/70 mt-0.5 font-medium">
+                            {label}
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
