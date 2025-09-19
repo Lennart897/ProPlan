@@ -25,7 +25,11 @@ const PRODUCT_GROUPS = [
   "Keulenfilet",
   "Nebenprodukt",
   "Nebenprodukte",
-  "Oberkeule"
+  "Oberkeule",
+  "Putenhackfleisch",
+  "Schenkel",
+  "Unterkeule",
+  "Leer"
 ] as const;
 
 const PRODUCT_GROUPS_2 = [
