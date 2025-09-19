@@ -94,7 +94,7 @@ export function ActivityLog({ userId, userRole }: ActivityLogProps) {
       }
 
       const projectIds = (visibleProjects || []).map((p: any) => p.id);
-      if (projectIds.length === 0) {
+      if (projectIds.length === 0 && userRole === 'admin') {
         if (!isMounted) return;
         setRows([]);
         setProjects({});
@@ -102,17 +102,19 @@ export function ActivityLog({ userId, userRole }: ActivityLogProps) {
         return;
       }
 
-      // 2) Historie für sichtbare Projekte laden (Admin sieht alle, andere nur eigene)
+      // 2) Historie für alle Benutzer laden - auch ohne sichtbare Projekte
       const historyQuery = supabase
         .from('project_history')
         .select('*')
-        .in('project_id', projectIds)
         .order('created_at', { ascending: false })
         .limit(200);
       
-      // Nur Admins sehen alle Aktivitäten, alle anderen nur ihre eigenen
+      // Alle Benutzer sehen nur ihre eigenen Aktivitäten, außer Admins
       if (userRole !== 'admin') {
         historyQuery.eq('user_id', userId);
+      } else if (projectIds.length > 0) {
+        // Admins sehen Aktivitäten nur für sichtbare Projekte
+        historyQuery.in('project_id', projectIds);
       }
       
       const { data: history, error } = await historyQuery;
@@ -124,21 +126,26 @@ export function ActivityLog({ userId, userRole }: ActivityLogProps) {
       if (!isMounted) return;
       setRows(history as HistoryRow[]);
 
-      // 3) Projekt-Metadaten für Anzeige laden
-      const { data: projs } = await supabase
-        .from('manufacturing_projects')
-        .select('id, project_number, customer, artikel_nummer, artikel_bezeichnung')
-        .in('id', projectIds);
-      const map: Record<string, ProjectMinimal> = {};
-      (projs || []).forEach((p: any) => {
-        map[p.id] = {
-          id: p.id,
-          project_number: p.project_number ?? null,
-          customer: p.customer,
-          artikel_nummer: p.artikel_nummer,
-          artikel_bezeichnung: p.artikel_bezeichnung,
-        };
-      });
+      // 3) Projekt-Metadaten für Anzeige laden (nur für gefundene Aktivitäten)
+      const historyProjectIds = Array.from(new Set((history as HistoryRow[]).map(h => h.project_id)));
+      let map: Record<string, ProjectMinimal> = {};
+      
+      if (historyProjectIds.length > 0) {
+        const { data: projs } = await supabase
+          .from('manufacturing_projects')
+          .select('id, project_number, customer, artikel_nummer, artikel_bezeichnung')
+          .in('id', historyProjectIds);
+        
+        (projs || []).forEach((p: any) => {
+          map[p.id] = {
+            id: p.id,
+            project_number: p.project_number ?? null,
+            customer: p.customer,
+            artikel_nummer: p.artikel_nummer,
+            artikel_bezeichnung: p.artikel_bezeichnung,
+          };
+        });
+      }
       if (!isMounted) return;
       setProjects(map);
 
