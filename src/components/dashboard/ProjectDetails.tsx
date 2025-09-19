@@ -687,13 +687,15 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div>
-                <Label className="text-sm font-medium text-muted-foreground">Artikelbezeichnung</Label>
-                <p className="font-medium">{project.artikel_bezeichnung}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-muted-foreground">Artikel-Nummer</Label>
-                <p className="font-medium">{project.artikel_nummer}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Artikel-Nummer</Label>
+                  <p className="font-medium">{project.artikel_nummer}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Artikelbezeichnung</Label>
+                  <p className="font-medium">{project.artikel_bezeichnung}</p>
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
