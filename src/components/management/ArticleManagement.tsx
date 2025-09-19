@@ -14,16 +14,18 @@ import { Plus, Edit, Package, Package2, Scale, Tag, ArrowLeft, Calendar, CheckCi
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 
-// Product groups - Chicken raw materials for Product Group 1
+// Product groups for Product Group 1
 const PRODUCT_GROUPS = [
-  "Hähnchenbrust",
-  "Hähnchenschenkel", 
-  "Hähnchen-Flügel",
-  "Hähnchen-Keule",
-  "Hähnchen-Innereien",
-  "Hähnchen-Haut",
-  "Hähnchen-Knochen",
-  "Hähnchen-Hals"
+  "Alles auswählen",
+  "Brustfilet",
+  "Flügel",
+  "Ganzes Tier",
+  "Innenfilet",
+  "Innereien",
+  "Keulenfilet",
+  "Nebenprodukt",
+  "Nebenprodukte",
+  "Oberkeule"
 ] as const;
 
 const PRODUCT_GROUPS_2 = [
