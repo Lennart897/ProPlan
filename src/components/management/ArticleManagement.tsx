@@ -29,10 +29,32 @@ const PRODUCT_GROUPS = [
 ] as const;
 
 const PRODUCT_GROUPS_2 = [
+  "Brustkappe",
+  "Flügel",
+  "ganze Tiere",
+  "Gelenkschnitt",
+  "Geschnitten",
+  "Gespießt",
+  "Griller",
+  "Hähnchenteile",
+  "Herzen",
+  "Hühnerklein",
+  "Innenfilet",
+  "Knochenprodukte",
+  "Leber",
+  "Magen",
+  "Mägen",
+  "Mit Haut",
+  "Mit Rst",
+  "Nebenprodukte",
+  "Oberkeule",
+  "Ohne Haut",
+  "Ohne Spitze",
+  "Schenkel",
+  "Schenkelpfanne",
+  "Spieße",
   "Teilstück",
-  "mit Rst", 
-  "geschnitten",
-  "mariniert"
+  "Unterkeule"
 ] as const;
 
 const SALES_UNITS = [
