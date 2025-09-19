@@ -125,7 +125,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
     return () => { cancelled = true; };
   }, [project.artikel_nummer]);
 
-  const logProjectAction = async (action: string, oldData?: any, newData?: any) => {
+  const logProjectAction = async (action: string, oldData?: any, newData?: any, comment?: string) => {
     try {
       const { data: profile } = await supabase
         .from('profiles')
@@ -144,7 +144,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
             action: action,
             previous_status: oldData?.status ? getStatusLabel(oldData.status) : null,
             new_status: newData?.status ? getStatusLabel(newData.status) : null,
-            reason: newData?.rejection_reason || newData?.correction_reason || newData?.approval_comment || null,
+            reason: newData?.rejection_reason || newData?.correction_reason || comment || null,
            old_data: action === 'correction' ? JSON.stringify({
              gesamtmenge: oldData?.gesamtmenge,
              standort_verteilung: oldData?.standort_verteilung
@@ -295,7 +295,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
 
       // Log the action first
       try {
-        await logProjectAction(action, { status: project.status }, updateData);
+        await logProjectAction(action, { status: project.status }, updateData, comment);
       } catch (logError) {
         console.error('Error logging project action:', logError);
         // Continue with update even if logging fails
