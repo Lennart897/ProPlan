@@ -69,6 +69,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
 
   const [attachmentUrl, setAttachmentUrl] = useState<string | undefined>(project.attachment_url);
   const [creatorDisplayName, setCreatorDisplayName] = useState<string | null>(null);
+  const [articleData, setArticleData] = useState<any>(null);
 
   useEffect(() => {
     setAttachmentUrl(project.attachment_url);
@@ -105,6 +106,22 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
     })();
     return () => { cancelled = true; };
   }, [project.created_by_id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!project.artikel_nummer) return;
+      const { data, error } = await supabase
+        .from('articles')
+        .select('verkaufseinheit, grammatur_verkaufseinheit')
+        .eq('artikel_nummer', project.artikel_nummer)
+        .maybeSingle();
+      if (!cancelled) {
+        setArticleData(error ? null : data);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [project.artikel_nummer]);
 
   const logProjectAction = async (action: string, oldData?: any, newData?: any) => {
     try {
@@ -691,14 +708,14 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Verkaufseinheit</Label>
-                  <p className="font-medium">{project.verkaufseinheit || "Nicht angegeben"}</p>
+                  <p className="font-medium">{articleData?.verkaufseinheit || "Nicht verfügbar"}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Grammatur Verkaufseinheit</Label>
                   <p className="font-medium">
-                    {project.grammatur_verkaufseinheit ? 
-                      `${project.grammatur_verkaufseinheit.toLocaleString('de-DE')} g` : 
-                      "Nicht angegeben"
+                    {articleData?.grammatur_verkaufseinheit ? 
+                      `${articleData.grammatur_verkaufseinheit.toLocaleString('de-DE')} g` : 
+                      "Nicht verfügbar"
                     }
                   </p>
                 </div>
