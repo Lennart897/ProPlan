@@ -900,7 +900,7 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
                                       </Badge>
                                     </div>
                                     <div>
-                                      <div className="text-xs font-bold bg-muted text-foreground border border-border/50 px-2 py-1 rounded">
+                                      <div className="inline-flex items-center justify-center text-xs font-bold bg-gradient-to-br from-secondary/10 to-secondary/5 text-secondary-foreground border border-secondary/20 px-3 py-2 rounded-xl shadow-sm ring-1 ring-secondary/10 hover:shadow-md transition-all duration-200">
                                         {project.artikel_nummer}
                                       </div>
                                     </div>
