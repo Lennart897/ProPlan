@@ -110,7 +110,7 @@ export function ActivityLog({ userId, userRole }: ActivityLogProps) {
         .order('created_at', { ascending: false })
         .limit(200);
       
-      // Nur für nicht-Admin Benutzer nach user_id filtern
+      // Alle Benutzer sehen ihre eigenen Aktivitäten, Admins sehen alle
       if (userRole !== 'admin') {
         historyQuery.eq('user_id', userId);
       }
