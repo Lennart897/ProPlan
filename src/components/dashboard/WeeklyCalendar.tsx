@@ -633,8 +633,8 @@ export const WeeklyCalendar = ({ user, onBack, previewProject, onShowProjectDeta
           </div>
 
           {/* Professional Table Layout */}
-          <div className="overflow-x-auto">
-            <div className="min-w-[1400px]">
+          <div className="w-full">
+            <div className="w-full">
               {/* Enhanced Header */}
               <div className="grid grid-cols-12 border-b bg-gradient-to-r from-muted/20 via-muted/10 to-muted/20">
                 {/* Project Info Headers */}
