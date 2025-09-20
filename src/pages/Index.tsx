@@ -4,6 +4,7 @@ import { AuthForm } from "@/components/auth/AuthForm";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
+import { Footer } from "@/components/layout/Footer";
 
 interface AppUser {
   id: string;
@@ -218,51 +219,54 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-4">
-            <span className="text-2xl font-bold text-primary-foreground">PP</span>
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center space-y-2">
+            <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-4">
+              <span className="text-2xl font-bold text-primary-foreground">PP</span>
+            </div>
+            <h1 className="text-3xl font-bold text-foreground">ProPlan</h1>
+            <p className="text-sm text-muted-foreground">Anmelden um fortzufahren</p>
           </div>
-          <h1 className="text-3xl font-bold text-foreground">ProPlan</h1>
-          <p className="text-sm text-muted-foreground">Anmelden um fortzufahren</p>
-        </div>
-        
-        <AuthForm mode="signin" onSuccess={() => {}} />
+          
+          <AuthForm mode="signin" onSuccess={() => {}} />
 
-        {/* Passwort vergessen Link */}
-        <div className="text-center pt-4">
-          <Button 
-            variant="link" 
-            onClick={() => window.location.href = '/password-settings'}
-            className="text-sm text-primary hover:underline"
-          >
-            Passwort vergessen?
-          </Button>
-        </div>
-
-        {/* Demo Login for Testing */}
-        <div className="text-center pt-4 border-t space-y-3">
-          <p className="text-sm text-muted-foreground">Demo Accounts:</p>
-          <div className="space-y-2">
-            <Button variant="outline" onClick={() => demoLogin("vertriebdemo@proplansystem.de")} className="w-full">
-              Vertrieb Demo
-            </Button>
-            <Button variant="outline" onClick={() => demoLogin("supplychaindemo@proplansystem.de")} className="w-full">
-              Supply Chain Demo
-            </Button>
-            <Button variant="outline" onClick={() => demoLogin("planungdemo@proplansystem.de")} className="w-full">
-              Planung Demo
-            </Button>
-            <Button variant="outline" onClick={() => demoLogin("admin@demo.com")} className="w-full">
-              Admin Demo
+          {/* Passwort vergessen Link */}
+          <div className="text-center pt-4">
+            <Button 
+              variant="link" 
+              onClick={() => window.location.href = '/password-settings'}
+              className="text-sm text-primary hover:underline"
+            >
+              Passwort vergessen?
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Password für alle Demo Accounts: demo123
-          </p>
+
+          {/* Demo Login for Testing */}
+          <div className="text-center pt-4 border-t space-y-3">
+            <p className="text-sm text-muted-foreground">Demo Accounts:</p>
+            <div className="space-y-2">
+              <Button variant="outline" onClick={() => demoLogin("vertriebdemo@proplansystem.de")} className="w-full">
+                Vertrieb Demo
+              </Button>
+              <Button variant="outline" onClick={() => demoLogin("supplychaindemo@proplansystem.de")} className="w-full">
+                Supply Chain Demo
+              </Button>
+              <Button variant="outline" onClick={() => demoLogin("planungdemo@proplansystem.de")} className="w-full">
+                Planung Demo
+              </Button>
+              <Button variant="outline" onClick={() => demoLogin("admin@demo.com")} className="w-full">
+                Admin Demo
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Password für alle Demo Accounts: demo123
+            </p>
+          </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

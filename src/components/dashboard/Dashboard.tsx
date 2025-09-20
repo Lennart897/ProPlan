@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Filter, Search, Bell, User, LogOut, Calendar, Archive, ArrowLeft, Building2, Package, Scale, LayoutGrid, List, History, Users, FileText } from "lucide-react";
+import { Plus, Filter, Search, Bell, User, LogOut, Calendar, Archive, ArrowLeft, Building2, Package, Scale, LayoutGrid, List, History, Users, FileText, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProjectForm } from "./ProjectForm";
@@ -16,6 +16,7 @@ import { getStatusLabel, getStatusColor, canArchiveProject, PROJECT_STATUS } fro
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { UserDataManagement } from "@/components/gdpr/UserDataManagement";
 
 // Import the Project type from WeeklyCalendar to avoid type conflicts
 type CalendarProject = {
@@ -91,6 +92,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const [activeTab, setActiveTab] = useState<'projects' | 'archive'>('projects');
   const [viewMode, setViewMode] = useState<'matrix' | 'list'>('list');
   const [showActivity, setShowActivity] = useState(false);
+  const [showDataPrivacy, setShowDataPrivacy] = useState(false);
   const [previewInitialWeek, setPreviewInitialWeek] = useState<Date | null>(null);
   const [displayNameMap, setDisplayNameMap] = useState<Record<string, string>>({});
   const { toast } = useToast();
@@ -675,6 +677,17 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                   <span className="hidden sm:inline">Aktivitäten</span>
                   <span className="sm:hidden">Log</span>
                 </Button>
+                
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDataPrivacy(true)}
+                  size="sm"
+                  className="h-8"
+                >
+                  <Shield className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">DSGVO</span>
+                  <span className="sm:hidden">DSGVO</span>
+                </Button>
               </div>
             </div>
           </div>
@@ -864,6 +877,19 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                 <DialogDescription>Ihr persönliches Aktivitätenprotokoll</DialogDescription>
               </DialogHeader>
               <ActivityLog userId={user.id} userRole={user.role} />
+            </DialogContent>
+          </Dialog>
+
+          {/* DSGVO-Dialog */}
+          <Dialog open={showDataPrivacy} onOpenChange={setShowDataPrivacy}>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+              <DialogHeader>
+                <DialogTitle>Datenschutz & DSGVO</DialogTitle>
+                <DialogDescription>Verwalten Sie Ihre Datenschutzrechte und persönlichen Daten</DialogDescription>
+              </DialogHeader>
+              <div className="overflow-y-auto max-h-[calc(90vh-8rem)]">
+                <UserDataManagement user={{ id: user.id, email: user.email }} />
+              </div>
             </DialogContent>
           </Dialog>
         </div>
