@@ -486,7 +486,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-primary">ProPlan</h1>
                 <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
-                  Willkommen, {user.full_name || "Unbekannter Benutzer"} ({roleLabel[user.role]})
+                  Willkommen, {user.full_name || user.email || "Unbekannter Benutzer"}
                 </p>
                 <p className="text-xs text-muted-foreground sm:hidden">
                   {roleLabel[user.role]}
