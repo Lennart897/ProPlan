@@ -59,6 +59,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
   const [showCorrectionDialog, setShowCorrectionDialog] = useState(false);
   const [showRejectionDialog, setShowRejectionDialog] = useState(false);
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+  const [creatorCancelMode, setCreatorCancelMode] = useState(false);
   const [correctedQuantity, setCorrectedQuantity] = useState(project.gesamtmenge.toString());
   const [locationQuantities, setLocationQuantities] = useState<Record<string, number>>(
     project.standort_verteilung || {}
@@ -421,12 +422,12 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
     if (!rejectionReason.trim()) {
       toast({
         title: "Fehler",
-        description: "Bitte geben Sie einen Ablehnungsgrund an.",
+        description: "Bitte geben Sie einen Grund an.",
         variant: "destructive",
       });
       return;
     }
-    await handleAction('reject');
+    await handleAction(creatorCancelMode ? 'cancel' : 'reject');
   };
 
   const handleApproval = () => {
@@ -479,10 +480,10 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
             </Button>
           );
           buttons.push(
-             <Button key="reject" variant="destructive" size="default" className="w-64" onClick={() => setShowRejectionDialog(true)}>
-              Projekt ablehnen
-            </Button>
-          );
+             <Button key="reject" variant="destructive" size="default" className="w-64" onClick={() => { setCreatorCancelMode(false); setShowRejectionDialog(true); }}>
+               Projekt ablehnen
+             </Button>
+           );
         }
         break;
 
@@ -494,10 +495,10 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
             </Button>
           );
           buttons.push(
-             <Button key="reject" variant="destructive" size="default" className="w-64" onClick={() => setShowRejectionDialog(true)}>
-              Projekt ablehnen
-            </Button>
-          );
+             <Button key="reject" variant="destructive" size="default" className="w-64" onClick={() => { setCreatorCancelMode(false); setShowRejectionDialog(true); }}>
+               Projekt ablehnen
+             </Button>
+           );
         }
         // Vertrieb kann genehmigte, abgelehnte und abgeschlossene Projekte archivieren
         if (canArchiveProject(project.status)) {
@@ -529,7 +530,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           // Nur allgemeine 'planung' Rolle darf ablehnen, nicht die standortspezifischen
           if (user.role === 'planung') {
             buttons.push(
-              <Button key="reject" variant="destructive" size="default" className="w-64" onClick={() => setShowRejectionDialog(true)}>
+              <Button key="reject" variant="destructive" size="default" className="w-64" onClick={() => { setCreatorCancelMode(false); setShowRejectionDialog(true); }}>
                 Projekt ablehnen
               </Button>
             );
@@ -599,6 +600,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
       buttons.push(
         <Button key="creator_reject" variant="destructive" className="w-64" onClick={() => {
           console.log('Creator cancellation button clicked');
+          setCreatorCancelMode(true);
           setShowRejectionDialog(true);
         }}>
           Projekt absagen
@@ -610,7 +612,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
     if (user.role === 'vertrieb' && project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
       // If vertrieb user is NOT the creator, they get no buttons for status 4 projects
       if (!(project.created_by_id === user.id || project.created_by === user.id)) {
-        return []; // No actions allowed for vertrieb on status 4 projects they didn't create
+        return buttons; // Only keep what was added before (e.g., preview), no other actions
       }
       // If they are the creator, the cancellation button was already added above
     }
