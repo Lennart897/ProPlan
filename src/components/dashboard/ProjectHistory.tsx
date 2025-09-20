@@ -119,23 +119,52 @@ export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
 
         const userIds = Array.from(new Set(historyData.map((h) => h.user_id).filter(Boolean)));
         if (userIds.length > 0) {
+          // Try direct select first
           const { data: profilesData, error: profilesError } = await supabase
             .from('profiles')
             .select('user_id, display_name, role')
             .in('user_id', userIds);
 
+          const nameMap: Record<string, string> = {};
+          const roleMap: Record<string, string> = {};
+
           if (!profilesError && profilesData) {
-            const nameMap: Record<string, string> = {};
-            const roleMap: Record<string, string> = {};
-            profilesData.forEach((p: UserProfile) => {
+            (profilesData as UserProfile[]).forEach((p) => {
               if (p.user_id && p.display_name) nameMap[p.user_id] = p.display_name;
-              if (p.user_id && p.role) {
-                roleMap[p.user_id] = p.role;
-              }
+              if (p.user_id && p.role) roleMap[p.user_id] = p.role;
             });
-            setDisplayNames(nameMap);
-            setUserRoles(roleMap);
+          } else {
+            console.warn('Profiles select failed or blocked by RLS, using RPC fallback');
           }
+
+          // Fallback via RPC for missing IDs (bypasses RLS)
+          const missing = userIds.filter((id) => !nameMap[id]);
+          if (missing.length > 0) {
+            const results = await Promise.all(
+              missing.map(async (id) => {
+                const { data: info, error: rpcError } = await supabase.rpc('get_user_profile_info', { user_uuid: id });
+                if (rpcError) {
+                  console.warn('RPC get_user_profile_info failed for', id, rpcError.message);
+                  return null;
+                }
+                const row = Array.isArray(info) ? (info as any[])[0] : (info as any);
+                if (row && row.display_name) {
+                  return { id, display_name: row.display_name as string, role: (row.role as string) || undefined };
+                }
+                return null;
+              })
+            );
+            for (const r of results) {
+              if (r && (r as any).id) {
+                const { id, display_name, role } = r as any;
+                if (display_name) nameMap[id] = display_name;
+                if (role) roleMap[id] = role;
+              }
+            }
+          }
+
+          setDisplayNames(nameMap);
+          setUserRoles(roleMap);
         }
       } catch (error) {
         console.error('Error fetching project history:', error);
@@ -158,7 +187,22 @@ export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
           filter: `project_id=eq.${projectId}`
         },
         (payload) => {
-          setHistory(prev => [payload.new as HistoryEntry, ...prev]);
+          const newEntry = payload.new as HistoryEntry;
+          setHistory(prev => [newEntry, ...prev]);
+          if (newEntry?.user_id && !displayNames[newEntry.user_id]) {
+            supabase
+              .rpc('get_user_profile_info', { user_uuid: newEntry.user_id })
+              .then(({ data, error }) => {
+                if (error) return;
+                const row = Array.isArray(data) ? (data as any[])[0] : (data as any);
+                if (row && row.display_name) {
+                  setDisplayNames(prev => ({ ...prev, [newEntry.user_id]: row.display_name as string }));
+                  if (row.role) {
+                    setUserRoles(prev => ({ ...prev, [newEntry.user_id]: row.role as string }));
+                  }
+                }
+              });
+          }
         }
       )
       .subscribe();
