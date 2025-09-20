@@ -1,11 +1,26 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const Imprint = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <Card>
         <CardHeader>
+          <div className="flex items-center gap-4 mb-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate(-1)}
+              size="sm"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Zurück
+            </Button>
+          </div>
           <CardTitle className="text-3xl font-bold">Impressum</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
