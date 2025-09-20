@@ -465,6 +465,18 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
       );
     }
 
+    // Vertriebs-Einschränkung: In Status 4 nur Vorschau + Absage
+    if (user.role === 'vertrieb' && project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
+      if (project.created_by_id === user.id || project.created_by === user.id) {
+        buttons.push(
+          <Button key="creator_reject" variant="destructive" className="w-64" onClick={() => { setCreatorCancelMode(true); setShowRejectionDialog(true); }}>
+            Projekt absagen
+          </Button>
+        );
+      }
+      return buttons;
+    }
+
     // Status-spezifische Aktionen basierend auf Benutzerrolle
     switch (user.role) {
       case 'supply_chain':
@@ -587,6 +599,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
       (project.status === PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN ||
        project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG ||
        project.status === PROJECT_STATUS.GENEHMIGT) &&
+      !(user.role === 'vertrieb' && project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) &&
       (project.created_by_id === user.id || project.created_by === user.id)
     ) {
       console.log('Creator cancellation button should show:', {
@@ -606,15 +619,6 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           Projekt absagen
         </Button>
       );
-    }
-
-    // Special case: vertrieb users can ONLY cancel projects in status 4, no other actions allowed
-    if (user.role === 'vertrieb' && project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
-      // If vertrieb user is NOT the creator, they get no buttons for status 4 projects
-      if (!(project.created_by_id === user.id || project.created_by === user.id)) {
-        return buttons; // Only keep what was added before (e.g., preview), no other actions
-      }
-      // If they are the creator, the cancellation button was already added above
     }
 
     return buttons;
