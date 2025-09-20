@@ -465,8 +465,10 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
       );
     }
 
+    const normalizedRole = (user.role || '').toLowerCase();
+
     // Vertriebs-Einschränkung: In Status 4 nur Vorschau + Absage
-    if (user.role === 'vertrieb' && project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
+    if (normalizedRole === 'vertrieb' && project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
       if (project.created_by_id === user.id || project.created_by === user.id) {
         buttons.push(
           <Button key="creator_reject" variant="destructive" className="w-64" onClick={() => { setCreatorCancelMode(true); setShowRejectionDialog(true); }}>
@@ -599,7 +601,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
       (project.status === PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN ||
        project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG ||
        project.status === PROJECT_STATUS.GENEHMIGT) &&
-      !(user.role === 'vertrieb' && project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) &&
+      !(((user.role || '').toLowerCase() === 'vertrieb') && project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) &&
       (project.created_by_id === user.id || project.created_by === user.id)
     ) {
       console.log('Creator cancellation button should show:', {
