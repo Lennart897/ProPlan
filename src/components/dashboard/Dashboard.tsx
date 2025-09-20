@@ -678,16 +678,18 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                   <span className="sm:hidden">Log</span>
                 </Button>
                 
-                <Button
-                  variant="outline"
-                  onClick={() => setShowDataPrivacy(true)}
-                  size="sm"
-                  className="h-8"
-                >
-                  <Shield className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">DSGVO</span>
-                  <span className="sm:hidden">DSGVO</span>
-                </Button>
+                {user.role === 'admin' && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDataPrivacy(true)}
+                    size="sm"
+                    className="h-8"
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">DSGVO</span>
+                    <span className="sm:hidden">DSGVO</span>
+                  </Button>
+                )}
               </div>
             </div>
           </div>
