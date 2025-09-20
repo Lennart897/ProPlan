@@ -480,7 +480,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
     }
 
     // Status-spezifische Aktionen basierend auf Benutzerrolle
-    switch (user.role) {
+    switch (normalizedRole) {
       case 'supply_chain':
         if (project.status === PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN) {
           buttons.push(
@@ -542,7 +542,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
             </Button>
           );
           // Nur allgemeine 'planung' Rolle darf ablehnen, nicht die standortspezifischen
-          if (user.role === 'planung') {
+          if (normalizedRole === 'planung') {
             buttons.push(
               <Button key="reject" variant="destructive" size="default" className="w-64" onClick={() => { setCreatorCancelMode(false); setShowRejectionDialog(true); }}>
                 Projekt ablehnen
