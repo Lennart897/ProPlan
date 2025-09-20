@@ -127,7 +127,8 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       if (error) throw error;
 
       setProjects(data || []);
-      await loadDisplayNames((data || []).map((p: any) => p.created_by_id));
+      const idsFromCreatedByName = (data || []).map((p: any) => (typeof p.created_by_name === 'string' && isUuid(p.created_by_name) ? p.created_by_name : null));
+      await loadDisplayNames([...(data || []).map((p: any) => p.created_by_id), ...idsFromCreatedByName]);
     } catch (error) {
       console.error('Fehler beim Laden der Projekte:', error);
       toast({
@@ -149,7 +150,8 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       if (error) throw error;
 
       setArchivedProjects(data || []);
-      await loadDisplayNames((data || []).map((p: any) => p.created_by_id));
+      const idsFromCreatedByName = (data || []).map((p: any) => (typeof p.created_by_name === 'string' && isUuid(p.created_by_name) ? p.created_by_name : null));
+      await loadDisplayNames([...(data || []).map((p: any) => p.created_by_id), ...idsFromCreatedByName]);
     } catch (error) {
       console.error('Fehler beim Laden der archivierten Projekte:', error);
       toast({
@@ -358,6 +360,10 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
     admin: "Admin"
   };
 
+  // Utility: check if a string looks like a UUID
+  const isUuid = (s?: string | null) =>
+    !!s && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+
   // Load display names for given user ids
   const loadDisplayNames = async (ids: (string | null | undefined)[]) => {
     const unique = Array.from(new Set(ids.filter(Boolean) as string[]));
@@ -366,18 +372,44 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
       .from('profiles')
       .select('user_id, display_name')
       .in('user_id', unique);
-    if (error) {
-      console.error('Fehler beim Laden der Anzeigenamen:', error);
-      return;
-    }
+
     const map: Record<string, string> = {};
-    for (const p of (data as any[]) || []) {
-      const user_id = (p as any).user_id;
-      const display_name = (p as any).display_name;
-      if (user_id && display_name) {
-        map[user_id] = display_name;
+    if (!error && data) {
+      for (const p of (data as any[]) || []) {
+        const user_id = (p as any).user_id;
+        const display_name = (p as any).display_name;
+        if (user_id && display_name) {
+          map[user_id] = display_name;
+        }
+      }
+    } else {
+      console.warn('Profile RLS prevented direct fetch or error occurred, falling back to RPC:', (error as any)?.message);
+    }
+
+    // Fallback via RPC for any IDs we still don't have (bypasses RLS via SECURITY DEFINER)
+    const missing = unique.filter((id) => !map[id]);
+    if (missing.length > 0) {
+      const results = await Promise.all(
+        missing.map(async (id) => {
+          const { data: info, error: rpcError } = await supabase.rpc('get_user_profile_info', { user_uuid: id });
+          if (rpcError) {
+            console.warn('RPC get_user_profile_info failed for', id, rpcError.message);
+            return null;
+          }
+          const row = Array.isArray(info) ? (info as any[])[0] : (info as any);
+          if (row && row.display_name) {
+            return { id, display_name: row.display_name as string };
+          }
+          return null;
+        })
+      );
+      for (const r of results) {
+        if (r && (r as any).id && (r as any).display_name) {
+          map[(r as any).id] = (r as any).display_name;
+        }
       }
     }
+
     setDisplayNameMap(prev => ({ ...prev, ...map }));
   };
 
@@ -385,8 +417,10 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const resolveUserName = (p: Project) => {
     const byId = p.created_by_id ? displayNameMap[p.created_by_id] : undefined;
     if (byId) return byId;
+    const byUuidName = isUuid(p.created_by_name || '') ? displayNameMap[p.created_by_name as string] : undefined;
+    if (byUuidName) return byUuidName;
     const candidate = p.created_by_name || p.created_by || '';
-    if (candidate && !candidate.includes('@')) return candidate;
+    if (candidate && !candidate.includes('@') && !isUuid(candidate)) return candidate;
     return 'Unbekannt';
   };
 
