@@ -1160,19 +1160,21 @@ onClick={async () => {
         <Dialog open={showRejectionDialog} onOpenChange={setShowRejectionDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Projekt ablehnen</DialogTitle>
+              <DialogTitle>{creatorCancelMode ? 'Projekt absagen' : 'Projekt ablehnen'}</DialogTitle>
               <DialogDescription>
-                Bitte geben Sie einen Grund für die Ablehnung an.
+                {creatorCancelMode
+                  ? 'Bitte geben Sie einen Grund für die Absage an.'
+                  : 'Bitte geben Sie einen Grund für die Ablehnung an.'}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="rejection-reason">Ablehnungsgrund</Label>
+                <Label htmlFor="rejection-reason">{creatorCancelMode ? 'Absagegrund' : 'Ablehnungsgrund'}</Label>
                 <Textarea
                   id="rejection-reason"
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Beschreiben Sie den Grund für die Ablehnung..."
+                  placeholder={creatorCancelMode ? 'Beschreiben Sie den Grund für die Absage...' : 'Beschreiben Sie den Grund für die Ablehnung...'}
                   rows={4}
                   required
                 />
