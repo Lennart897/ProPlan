@@ -581,6 +581,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
     }
 
     // Allow project creators to cancel projects in status 3, 4, or 5 - regardless of role
+    // BUT for vertrieb users in status 4 (PRUEFUNG_PLANUNG): they can ONLY cancel, no other actions
     if (
       (project.status === PROJECT_STATUS.PRUEFUNG_SUPPLY_CHAIN ||
        project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG ||
@@ -603,6 +604,15 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
           Projekt absagen
         </Button>
       );
+    }
+
+    // Special case: vertrieb users can ONLY cancel projects in status 4, no other actions allowed
+    if (user.role === 'vertrieb' && project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG) {
+      // If vertrieb user is NOT the creator, they get no buttons for status 4 projects
+      if (!(project.created_by_id === user.id || project.created_by === user.id)) {
+        return []; // No actions allowed for vertrieb on status 4 projects they didn't create
+      }
+      // If they are the creator, the cancellation button was already added above
     }
 
     return buttons;
