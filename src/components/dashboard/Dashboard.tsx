@@ -95,6 +95,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   const [showDataPrivacy, setShowDataPrivacy] = useState(false);
   const [previewInitialWeek, setPreviewInitialWeek] = useState<Date | null>(null);
   const [displayNameMap, setDisplayNameMap] = useState<Record<string, string>>({});
+  const [currentDisplayName, setCurrentDisplayName] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Load saved view preference per user
@@ -112,10 +113,32 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
     localStorage.setItem(key, viewMode);
   }, [viewMode, user.id]);
 
+  // Load current user's display name once
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_user_profile_info', { user_uuid: user.id });
+        if (!error) {
+          const row = Array.isArray(data) ? (data as any[])[0] : (data as any);
+          if (row?.display_name && isMounted) {
+            setCurrentDisplayName(row.display_name as string);
+          } else if (isMounted) {
+            setCurrentDisplayName(user.full_name ?? null);
+          }
+        } else if (isMounted) {
+          setCurrentDisplayName(user.full_name ?? null);
+        }
+      } catch {
+        if (isMounted) setCurrentDisplayName(user.full_name ?? null);
+      }
+    })();
+    return () => { isMounted = false; };
+  }, [user.id, user.full_name]);
+
   useEffect(() => {
     fetchProjects();
   }, []);
-
   const fetchProjects = async () => {
     try {
       const { data, error } = await supabase
@@ -520,7 +543,7 @@ export const Dashboard = ({ user, onSignOut }: DashboardProps) => {
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-primary">ProPlan</h1>
                 <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
-                  Willkommen, {user.full_name || user.email || "Unbekannter Benutzer"}
+                  Willkommen, {currentDisplayName || user.full_name || "Unbekannter Benutzer"}
                 </p>
                 <p className="text-xs text-muted-foreground sm:hidden">
                   {roleLabel[user.role]}
