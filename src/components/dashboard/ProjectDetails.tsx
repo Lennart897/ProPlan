@@ -465,6 +465,20 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
       );
     }
 
+    // ERSTELLER-Einschränkung: In Status 4 darf der Ersteller nur absagen (unabhängig von Rolle)
+    const isCreator = project.created_by_id === user.id || project.created_by === user.id;
+    if (project.status === PROJECT_STATUS.PRUEFUNG_PLANUNG && isCreator) {
+      buttons.push(
+        <Button key="creator_reject" variant="destructive" className="w-64" onClick={() => {
+          setCreatorCancelMode(true);
+          setShowRejectionDialog(true);
+        }}>
+          Projekt absagen
+        </Button>
+      );
+      return buttons;
+    }
+
     const normalizedRole = (user.role || '').toLowerCase();
 
     // Vertriebs-Einschränkung: In Status 4 nur Vorschau + Absage
