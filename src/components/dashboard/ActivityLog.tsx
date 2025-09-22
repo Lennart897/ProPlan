@@ -191,7 +191,7 @@ export function ActivityLog({ userId, userRole }: ActivityLogProps) {
   const formatted = useMemo(() => rows.map(r => ({
     ...r,
     project: projects[r.project_id],
-    userDisplayName: userProfiles[r.user_id]?.display_name || userProfiles[r.user_id]?.display_name || 'Unbekannter Benutzer',
+    userDisplayName: userProfiles[r.user_id]?.display_name || r.user_name || 'Unbekannter Benutzer',
   })), [rows, projects, userProfiles]);
 
   if (loading) {
