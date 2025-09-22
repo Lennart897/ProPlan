@@ -200,7 +200,7 @@ export function ActivityLog({ userId, userRole }: ActivityLogProps) {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Activity className="h-5 w-5" />
-            Aktivitätenprotokoll
+            Meine Aktivitäten
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -225,7 +225,7 @@ export function ActivityLog({ userId, userRole }: ActivityLogProps) {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Activity className="h-5 w-5" />
-            Aktivitätenprotokoll
+            Meine Aktivitäten
           </CardTitle>
         </CardHeader>
         <CardContent className="py-12">
@@ -246,7 +246,7 @@ export function ActivityLog({ userId, userRole }: ActivityLogProps) {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <Activity className="h-4 w-4" />
-          Aktivitätenprotokoll
+          Meine Aktivitäten
           <Badge variant="outline" className="ml-auto text-xs">
             {formatted.length}
           </Badge>
