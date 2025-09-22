@@ -21,31 +21,46 @@ const Index = () => {
   // Fetch user profile from profiles table
   const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
     try {
+      // Try direct profiles table first
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('display_name, role, user_id')
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching profile:', error);
-        return null;
-      }
-
-      if (!profile) {
-        console.warn('No profile found for user:', userId);
-        return null;
-      }
-
-      // Get user data from auth
+      // Get user data from auth once
       const { data: { user: authUser } } = await supabase.auth.getUser();
-      
+
+      if (!error && profile) {
         return {
           id: profile.user_id,
           email: authUser?.email || '',
-          role: (profile.role as "vertrieb" | "supply_chain" | "planung" | "planung_storkow" | "planung_brenz" | "planung_gudensberg" | "planung_doebeln" | "planung_visbek" | "admin") || 'planung',
-          full_name: profile.display_name || authUser?.email || 'Unbekannter Benutzer'
+          role: (profile.role as AppUser['role']) || 'planung',
+          full_name: profile.display_name || authUser?.email || 'Unbekannter Benutzer',
         };
+      }
+
+      // Fallback via RPC to bypass RLS issues on profiles
+      const { data: info, error: rpcError } = await supabase.rpc('get_user_profile_info', { user_uuid: userId });
+      if (!rpcError && info) {
+        const row = Array.isArray(info) ? (info as any[])[0] : (info as any);
+        if (row) {
+          return {
+            id: userId,
+            email: authUser?.email || '',
+            role: (row.role as AppUser['role']) || 'planung',
+            full_name: row.display_name || authUser?.email || 'Unbekannter Benutzer',
+          };
+        }
+      }
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+      }
+      if (rpcError) {
+        console.error('Error fetching profile via RPC:', rpcError);
+      }
+      return null;
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
       return null;
