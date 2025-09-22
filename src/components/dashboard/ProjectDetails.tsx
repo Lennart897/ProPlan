@@ -555,14 +555,7 @@ export const ProjectDetails = ({ project, user, onBack, onProjectAction, onShowP
               Korrigieren
             </Button>
           );
-          // Nur allgemeine 'planung' Rolle darf ablehnen, nicht die standortspezifischen
-          if (normalizedRole === 'planung') {
-            buttons.push(
-              <Button key="reject" variant="destructive" size="default" className="w-64" onClick={() => { setCreatorCancelMode(false); setShowRejectionDialog(true); }}>
-                Projekt ablehnen
-              </Button>
-            );
-          }
+          // Planungsrollen dürfen nicht ablehnen - nur genehmigen und korrigieren
         }
         break;
 
