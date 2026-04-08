@@ -9,11 +9,21 @@ interface TaskPayload {
   id: string;
   title: string;
   description?: string | null;
-  assigned_to: string; // email address
+  assigned_to: string;
+}
+
+/** Escape HTML special characters to prevent injection */
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 serve(async (req: Request) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -41,7 +51,10 @@ serve(async (req: Request) => {
       });
     }
 
-    // Send email via SendGrid
+    const safeTitle = escapeHtml(title);
+    const safeDescription = escapeHtml(description);
+    const safeAssignedTo = escapeHtml(assigned_to);
+
     const htmlContent = `
       <h1>📋 ProPlan System – Neue Aufgabe zugewiesen</h1>
       <p>Hallo,</p>
@@ -49,9 +62,9 @@ serve(async (req: Request) => {
       <hr>
       <h2>📋 Aufgabendetails</h2>
       <ul>
-        <li><strong>Titel:</strong> ${title}</li>
-        ${description ? `<li><strong>Beschreibung:</strong> ${description}</li>` : ''}
-        <li><strong>Zugewiesen an:</strong> ${assigned_to}</li>
+        <li><strong>Titel:</strong> ${safeTitle}</li>
+        ${safeDescription ? `<li><strong>Beschreibung:</strong> ${safeDescription}</li>` : ''}
+        <li><strong>Zugewiesen an:</strong> ${safeAssignedTo}</li>
       </ul>
       <hr>
       <p>🔗 <a href="https://demo-proplan.de" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p>
@@ -64,7 +77,7 @@ serve(async (req: Request) => {
       personalizations: [
         {
           to: [{ email: assigned_to }],
-          subject: `📋 ProPlan - Neue Aufgabe: ${title}`
+          subject: `📋 ProPlan - Neue Aufgabe: ${safeTitle}`
         }
       ],
       from: {
@@ -79,7 +92,7 @@ serve(async (req: Request) => {
       ]
     };
 
-    console.log("Sending task email via SendGrid", { id, assigned_to, title });
+    console.log("Sending task email via SendGrid", { id, assigned_to });
 
     const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
       method: "POST",
@@ -91,8 +104,7 @@ serve(async (req: Request) => {
     });
 
     if (!res.ok) {
-      const txt = await res.text();
-      console.error("SendGrid API failed", res.status, txt);
+      console.error("SendGrid API failed", res.status);
       throw new Error(`SendGrid API error: ${res.status}`);
     }
 
@@ -104,7 +116,7 @@ serve(async (req: Request) => {
     });
   } catch (err: any) {
     console.error("send-task-email error", err?.message || err);
-    return new Response(JSON.stringify({ error: err?.message || "Unknown error" }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });

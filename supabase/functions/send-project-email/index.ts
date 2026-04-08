@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -14,19 +13,29 @@ interface ProjectPayload {
   artikel_nummer: string;
   artikel_bezeichnung: string;
   gesamtmenge?: number | null;
-  erste_anlieferung?: string | null; // ISO date
-  letzte_anlieferung?: string | null; // ISO date
+  erste_anlieferung?: string | null;
+  letzte_anlieferung?: string | null;
   beschreibung?: string | null;
   standort_verteilung?: Record<string, any> | null;
   created_by_id: string;
   created_by_name: string;
 }
 
+/** Escape HTML special characters to prevent injection */
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // Global cache to track processed requests
 const processedRequests = new Map<string, number>();
 
 serve(async (req: Request) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -49,52 +58,33 @@ serve(async (req: Request) => {
 
     const body = (await req.json()) as ProjectPayload;
     
-    // Create a unique key for this request to prevent duplicates
+    // Duplicate request check
     const requestKey = `project-${body.id}`;
     const now = Date.now();
-    
-    // Check if we've processed this request recently (within 30 seconds)
     if (processedRequests.has(requestKey)) {
       const lastProcessed = processedRequests.get(requestKey)!;
-      if (now - lastProcessed < 30000) { // 30 seconds
-        console.log(`Duplicate request detected for project ${body.id}, skipping...`);
-        return new Response(JSON.stringify({ 
-          message: "Duplicate request skipped",
-          id: body.id 
-        }), {
+      if (now - lastProcessed < 30000) {
+        return new Response(JSON.stringify({ message: "Duplicate request skipped" }), {
           status: 200,
           headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
     }
-    
-    // Mark this request as processed
     processedRequests.set(requestKey, now);
     
-    // Clean up old entries (older than 5 minutes)
+    // Clean up old entries
     for (const [key, timestamp] of processedRequests.entries()) {
-      if (now - timestamp > 300000) { // 5 minutes
-        processedRequests.delete(key);
-      }
+      if (now - timestamp > 300000) processedRequests.delete(key);
     }
+
     const {
-      id,
-      project_number,
-      customer,
-      artikel_nummer,
-      artikel_bezeichnung,
-      gesamtmenge,
-      erste_anlieferung,
-      letzte_anlieferung,
-      beschreibung,
-      standort_verteilung,
-      created_by_id,
-      created_by_name,
+      id, project_number, customer, artikel_nummer, artikel_bezeichnung,
+      gesamtmenge, erste_anlieferung, letzte_anlieferung, beschreibung,
+      standort_verteilung, created_by_id, created_by_name,
     } = body;
 
-    console.log("send-project-email payload", { id, project_number, customer, artikel_bezeichnung });
+    console.log("send-project-email payload", { id, project_number });
 
-    // Admin client to fetch potential recipients (supply_chain role)
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
@@ -106,41 +96,33 @@ serve(async (req: Request) => {
 
     if (profErr) {
       console.error('profiles query failed', profErr);
-      return new Response(JSON.stringify({ error: profErr.message }), {
+      return new Response(JSON.stringify({ error: 'Internal server error' }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    console.log('Supply chain profiles found:', profiles?.length || 0);
-    console.log('Raw profiles:', profiles?.map(p => ({ user_id: p.user_id, display_name: p.display_name })));
-
-    // Get unique user IDs from profiles (remove duplicates at source)
     const uniqueUserIds = Array.from(new Set((profiles || []).map((p: any) => p.user_id).filter(Boolean)));
-    console.log('Unique supply chain user IDs:', uniqueUserIds.length);
-    console.log('User IDs to fetch emails for:', uniqueUserIds);
 
-    // Map user_id -> email using auth admin list - load ALL users
+    if (uniqueUserIds.length === 0) {
+      return new Response(JSON.stringify({ error: 'No supply chain users found' }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     const getAllUsers = async () => {
       const allUsers: any[] = [];
       let page = 1;
       const perPage = 1000;
-      
       while (true) {
         const { data: list, error: listErr } = await admin.auth.admin.listUsers({ page, perPage });
-        if (listErr) {
-          console.error('listUsers failed', listErr);
-          throw new Error(listErr.message);
-        }
-        
+        if (listErr) throw new Error(listErr.message);
         if (!list.users || list.users.length === 0) break;
         allUsers.push(...list.users);
-        
-        // If we got less than perPage users, we've reached the end
         if (list.users.length < perPage) break;
         page++;
       }
-      
       return allUsers;
     };
 
@@ -148,145 +130,67 @@ serve(async (req: Request) => {
     try {
       allUsers = await getAllUsers();
     } catch (err: any) {
-      console.error('Failed to load all users:', err);
-      return new Response(JSON.stringify({ error: `Failed to load users: ${err.message}` }), {
+      console.error('Failed to load users:', err);
+      return new Response(JSON.stringify({ error: 'Internal server error' }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    console.log('Total auth users loaded:', allUsers.length);
-
-    // Create email mapping and track inconsistencies
     const emailById = new Map<string, string>();
-    const authUserIds = new Set<string>();
-    
     for (const u of allUsers) {
-      if (u.id) {
-        authUserIds.add(u.id);
-        if (u.email) {
-          emailById.set(u.id, u.email);
-        } else {
-          console.warn(`Auth user ${u.id} has no email address`);
-        }
-      }
+      if (u.id && u.email) emailById.set(u.id, u.email);
     }
 
-    // Check for inconsistencies between profiles and auth
-    const missingInAuth: string[] = [];
-    const missingEmails: string[] = [];
-    const foundEmails: Array<{userId: string, email: string}> = [];
+    const recipientEmails = Array.from(new Set(
+      uniqueUserIds.map(uid => emailById.get(uid)).filter((e): e is string => Boolean(e))
+    ));
 
-    for (const userId of uniqueUserIds) {
-      if (!authUserIds.has(userId)) {
-        missingInAuth.push(userId);
-        console.warn(`Profile user ${userId} not found in auth users`);
-      } else {
-        const email = emailById.get(userId);
-        if (!email) {
-          missingEmails.push(userId);
-          console.warn(`Auth user ${userId} has no valid email address`);
-        } else {
-          foundEmails.push({ userId, email });
-        }
-      }
-    }
-
-    // Log inconsistency summary
-    console.log('Inconsistency check summary:', {
-      totalProfileUsers: uniqueUserIds.length,
-      missingInAuth: missingInAuth.length,
-      missingEmails: missingEmails.length,
-      validEmailUsers: foundEmails.length,
-      missingInAuthIds: missingInAuth,
-      missingEmailIds: missingEmails
-    });
-
-    // Get emails for supply chain users and deduplicate by email address
-    const emailSet = new Set<string>();
-    const recipientEmails: string[] = [];
-    
-    for (const { email } of foundEmails) {
-      if (!emailSet.has(email)) {
-        emailSet.add(email);
-        recipientEmails.push(email);
-      } else {
-        console.log(`Duplicate email found and skipped: ${email}`);
-      }
-    }
-
-    console.log('Final email processing summary:', {
-      uniqueEmails: recipientEmails.length,
-      duplicatesRemoved: foundEmails.length - recipientEmails.length,
-      finalRecipientEmails: recipientEmails
-    });
-
-    // Final deduplicated list - this ensures no email is sent twice even if there are multiple user accounts with same email
-    const assignedTo = Array.from(new Set(recipientEmails));
-    
-    // Ensure we have at least one recipient
-    if (assignedTo.length === 0) {
-      console.error('No valid recipients found for supply chain role');
-      return new Response(JSON.stringify({ error: 'No valid recipients found for supply chain role' }), {
+    if (recipientEmails.length === 0) {
+      return new Response(JSON.stringify({ error: 'No valid recipients found' }), {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
-    
-    // Create toRecipients array in the format expected by Make Outlook webhook
-    const toRecipients = assignedTo.map(email => ({
-      emailAddress: {
-        address: email
-      }
-    }));
-    
-    console.log('Final recipient list before webhook:', {
-      totalRecipients: assignedTo.length,
-      recipientEmails: assignedTo,
-      toRecipientsFormat: toRecipients
-    });
 
-    // Helper functions for professional formatting
+    // Sanitize all user-provided content
+    const safeProjectNumber = escapeHtml(String(project_number));
+    const safeCustomer = escapeHtml(customer);
+    const safeArtikelNummer = escapeHtml(artikel_nummer);
+    const safeArtikelBezeichnung = escapeHtml(artikel_bezeichnung);
+    const safeCreatedByName = escapeHtml(created_by_name);
+    const safeBeschreibung = escapeHtml(beschreibung);
+
     const formatDate = (dateStr: string | null) => {
       if (!dateStr) return 'Nicht angegeben';
       return new Date(dateStr).toLocaleDateString('de-DE');
     };
 
-    const formatQuantity = (quantity: number | null) => {
+    const formatQuantity = (quantity: number | null | undefined) => {
       if (!quantity) return 'Nicht angegeben';
       return new Intl.NumberFormat('de-DE').format(quantity) + ' kg';
     };
 
-    const formatLocationDistribution = (distribution: Record<string, any> | null) => {
+    const formatLocationDistribution = (distribution: Record<string, any> | null | undefined) => {
       if (!distribution) return '<li>Keine Verteilung angegeben</li>';
       return Object.entries(distribution)
         .filter(([_, qty]) => Number(qty) > 0)
-        .map(([location, qty]) => `<li><strong>${location.charAt(0).toUpperCase() + location.slice(1)}:</strong> ${formatQuantity(Number(qty))}</li>`)
+        .map(([location, qty]) => `<li><strong>${escapeHtml(location.charAt(0).toUpperCase() + location.slice(1))}:</strong> ${formatQuantity(Number(qty))}</li>`)
         .join('');
     };
 
-    // Clean HTML email content without line breaks in template
-    const professionalEmailContent = `<h1>🏭 ProPlan System – Neues Projekt zur Bearbeitung</h1><p>Sehr geehrte Damen und Herren,</p><p>ein neues Fertigungsprojekt wurde im ProPlan System erfasst und wartet auf Ihre fachkundige Prüfung und Bearbeitung.</p><hr><h2>📋 Projektübersicht</h2><ul><li><strong>Projekt-Nr.:</strong> #${project_number}</li><li><strong>🏢 Kunde:</strong> ${customer}</li><li><strong>📦 Artikelnummer:</strong> ${artikel_nummer}</li><li><strong>📋 Artikelbezeichnung:</strong> ${artikel_bezeichnung}</li><li><strong>⚖️ Gesamtmenge:</strong> ${formatQuantity(gesamtmenge)}</li><li><strong>📅 Erste Anlieferung:</strong> ${formatDate(erste_anlieferung)}</li><li><strong>📅 Letzte Anlieferung:</strong> ${formatDate(letzte_anlieferung)}</li><li><strong>👤 Erstellt von:</strong> ${created_by_name}</li></ul><hr><h2>📍 Standortverteilung</h2><ul>${formatLocationDistribution(standort_verteilung)}</ul>${beschreibung ? `<hr><h2>📝 Projektbeschreibung</h2><p>${beschreibung}</p>` : ''}<hr><div style="border: 2px solid #ff6b35; border-radius: 8px; padding: 16px; background-color: #fff3f0; margin: 20px 0;"><h3 style="color: #ff6b35; margin-top: 0;">⚠️ Handlungserfordernis</h3><p>Dieses Projekt wurde zur Bearbeitung durch die Supply Chain freigegeben und benötigt Ihre fachliche Bewertung sowie entsprechende Maßnahmen.</p><p>Bitte loggen Sie sich in das ProPlan System ein und führen Sie die erforderlichen Prüfungen durch.</p></div><p>🔗 <a href="https://demo-proplan.de" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p><hr><p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>ProPlan Benachrichtigungssystem</p><p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em><br>Bei Rückfragen wenden Sie sich bitte an: <strong>${created_by_name}</strong></p>`;
+    const professionalEmailContent = `<h1>🏭 ProPlan System – Neues Projekt zur Bearbeitung</h1><p>Sehr geehrte Damen und Herren,</p><p>ein neues Fertigungsprojekt wurde im ProPlan System erfasst und wartet auf Ihre Prüfung.</p><hr><h2>📋 Projektübersicht</h2><ul><li><strong>Projekt-Nr.:</strong> #${safeProjectNumber}</li><li><strong>🏢 Kunde:</strong> ${safeCustomer}</li><li><strong>📦 Artikelnummer:</strong> ${safeArtikelNummer}</li><li><strong>📋 Artikelbezeichnung:</strong> ${safeArtikelBezeichnung}</li><li><strong>⚖️ Gesamtmenge:</strong> ${formatQuantity(gesamtmenge)}</li><li><strong>📅 Erste Anlieferung:</strong> ${formatDate(erste_anlieferung ?? null)}</li><li><strong>📅 Letzte Anlieferung:</strong> ${formatDate(letzte_anlieferung ?? null)}</li><li><strong>👤 Erstellt von:</strong> ${safeCreatedByName}</li></ul><hr><h2>📍 Standortverteilung</h2><ul>${formatLocationDistribution(standort_verteilung)}</ul>${safeBeschreibung ? `<hr><h2>📝 Projektbeschreibung</h2><p>${safeBeschreibung}</p>` : ''}<hr><div style="border: 2px solid #ff6b35; border-radius: 8px; padding: 16px; background-color: #fff3f0; margin: 20px 0;"><h3 style="color: #ff6b35; margin-top: 0;">⚠️ Handlungserfordernis</h3><p>Dieses Projekt wurde zur Bearbeitung durch die Supply Chain freigegeben und benötigt Ihre fachliche Bewertung.</p></div><p>🔗 <a href="https://demo-proplan.de" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p><hr><p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>ProPlan Benachrichtigungssystem</p><p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em></p>`;
 
-    // Send emails via SendGrid
-    const emailPromises = assignedTo.map(async (email) => {
+    const emailPromises = recipientEmails.map(async (email) => {
       const sendgridPayload = {
         personalizations: [
           {
             to: [{ email }],
-            subject: `📬 ProPlan - Neues Projekt #${project_number}: ${customer}`
+            subject: `📬 ProPlan - Neues Projekt #${safeProjectNumber}: ${safeCustomer}`
           }
         ],
-      from: {
-        email: "noreply@proplansystem.de",
-        name: "ProPlan System"
-      },
-        content: [
-          {
-            type: "text/html",
-            value: professionalEmailContent
-          }
-        ]
+        from: { email: "noreply@proplansystem.de", name: "ProPlan System" },
+        content: [{ type: "text/html", value: professionalEmailContent }]
       };
 
       const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
@@ -299,24 +203,21 @@ serve(async (req: Request) => {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`SendGrid API error for ${email}:`, response.status, errorText);
+        console.error(`SendGrid API error for ${email}:`, response.status);
         throw new Error(`SendGrid API error: ${response.status}`);
       }
-
-      console.log(`Project email sent via SendGrid to: ${email}, status:`, response.status);
     });
 
     await Promise.all(emailPromises);
-    console.log("Project emails sent via SendGrid", { id, emailsSent: assignedTo.length, recipients: assignedTo });
+    console.log("Project emails sent", { id, count: recipientEmails.length });
 
-    return new Response(JSON.stringify({ success: true, recipients: assignedTo }), {
+    return new Response(JSON.stringify({ success: true, recipients: recipientEmails.length }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (err: any) {
     console.error("send-project-email error", err?.message || err);
-    return new Response(JSON.stringify({ error: err?.message || "Unknown error" }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });

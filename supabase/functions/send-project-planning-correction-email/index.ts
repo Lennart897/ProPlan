@@ -23,20 +23,26 @@ interface ProjectPayload {
   new_standort_verteilung: any;
 }
 
+/** Escape HTML special characters to prevent injection */
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 serve(async (req) => {
-  console.log('=== PROJECT PLANNING CORRECTION EMAIL FUNCTION CALLED ===');
-  console.log('Request method:', req.method);
-  console.log('Request headers:', Object.fromEntries(req.headers.entries()));
-  
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { 
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), { 
       status: 405,
-      headers: corsHeaders 
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
   }
 
@@ -47,9 +53,9 @@ serve(async (req) => {
 
     if (!supabaseUrl || !supabaseServiceKey || !sendGridApiKey) {
       console.error('Missing required environment variables');
-      return new Response('Server configuration error', { 
+      return new Response(JSON.stringify({ error: 'Server configuration error' }), { 
         status: 500, 
-        headers: corsHeaders 
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
 
@@ -58,162 +64,122 @@ serve(async (req) => {
     const payload: ProjectPayload = await req.json();
     console.log('Processing planning correction notification for project:', payload.id);
 
-    // Check for recent duplicate notifications within the last 10 seconds only
-    const { data: recentNotification, error: notificationError } = await supabase
+    // Duplicate check
+    const { data: recentNotification } = await supabase
       .from('email_notifications')
       .select('id')
       .eq('project_id', payload.id)
       .eq('notification_type', 'planning_correction')
       .eq('project_status', 3)
-      .gte('created_at', new Date(Date.now() - 10000).toISOString()) // Last 10 seconds only
+      .gte('created_at', new Date(Date.now() - 10000).toISOString())
       .maybeSingle();
 
-    if (notificationError) {
-      console.error('Error checking for duplicate notifications:', notificationError);
-    } else if (recentNotification) {
-      console.log('Duplicate notification detected - email already sent recently (within 10 seconds) for this project');
-      return new Response('Duplicate notification prevented', { 
+    if (recentNotification) {
+      console.log('Duplicate notification detected - skipping');
+      return new Response(JSON.stringify({ message: 'Duplicate notification prevented' }), { 
         status: 200, 
-        headers: corsHeaders 
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
 
-    // Get all users with supply_chain role
     const { data: supplyChainProfiles, error: profilesError } = await supabase
       .from('profiles')
       .select('user_id, display_name')
       .eq('role', 'supply_chain');
 
-    if (profilesError) {
-      console.error('Error fetching supply chain profiles:', profilesError);
-      return new Response('Could not find supply chain users', { 
-        status: 400, 
-        headers: corsHeaders 
-      });
-    }
-
-    if (!supplyChainProfiles || supplyChainProfiles.length === 0) {
-      console.log('No supply chain users found');
-      return new Response('No supply chain users to notify', { 
+    if (profilesError || !supplyChainProfiles || supplyChainProfiles.length === 0) {
+      return new Response(JSON.stringify({ message: 'No supply chain users to notify' }), { 
         status: 200, 
-        headers: corsHeaders 
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
 
-    // Get all auth users to map user IDs to emails
     const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
-    
     if (authError) {
       console.error('Error fetching auth users:', authError);
-      return new Response('Could not fetch user emails', { 
+      return new Response(JSON.stringify({ error: 'Internal server error' }), { 
         status: 500, 
-        headers: corsHeaders 
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
 
-    // Create a map of user IDs to emails
-    const userEmailMap = new Map();
+    const userEmailMap = new Map<string, string>();
     users.forEach(user => {
-      if (user.email) {
-        userEmailMap.set(user.id, user.email);
-      }
+      if (user.email) userEmailMap.set(user.id, user.email);
     });
 
-    // Find valid recipients
     const recipients = supplyChainProfiles
       .map(profile => ({
         email: userEmailMap.get(profile.user_id),
         name: profile.display_name || 'SupplyChain Nutzer'
       }))
-      .filter(recipient => recipient.email);
+      .filter((r): r is { email: string; name: string } => Boolean(r.email));
 
-    if (recipients.length === 0) {
-      console.log('No valid email addresses found for supply chain users');
-      return new Response('No valid recipients found', { 
+    // Deduplicate
+    const seen = new Set<string>();
+    const uniqueRecipients = recipients.filter(r => {
+      if (seen.has(r.email)) return false;
+      seen.add(r.email);
+      return true;
+    });
+
+    if (uniqueRecipients.length === 0) {
+      return new Response(JSON.stringify({ message: 'No valid recipients found' }), { 
         status: 200, 
-        headers: corsHeaders 
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
 
-    console.log(`Found ${recipients.length} supply chain recipients`);
+    const currentDate = new Date().toLocaleDateString('de-DE', { year: 'numeric', month: 'long', day: 'numeric' });
 
-    // Deduplicate recipients to prevent sending multiple emails to the same user
-    const uniqueRecipients = recipients.reduce((acc, current) => {
-      const exists = acc.find(recipient => recipient.email === current.email);
-      if (!exists) {
-        acc.push(current);
-      }
-      return acc;
-    }, [] as typeof recipients);
+    const safeProjectNumber = escapeHtml(payload.project_number);
+    const safeCustomer = escapeHtml(payload.customer);
+    const safeArtikelNummer = escapeHtml(payload.artikel_nummer);
+    const safeArtikelBezeichnung = escapeHtml(payload.artikel_bezeichnung);
+    const safeCreatedByName = escapeHtml(payload.created_by_name);
+    const safeCorrectedByName = escapeHtml(payload.corrected_by_name);
+    const safeCorrectionReason = escapeHtml(payload.correction_reason);
 
-    console.log(`Deduplicated to ${uniqueRecipients.length} unique recipients`);
-
-    // Format the current date
-    const currentDate = new Date().toLocaleDateString('de-DE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-
-    // Helper function to format location distribution
     const formatLocationDistribution = (locations: any) => {
       if (!locations || typeof locations !== 'object') return 'Keine Standortverteilung';
-      
-      const entries = Object.entries(locations);
-      if (entries.length === 0) return 'Keine Standortverteilung';
-      
-      return entries
+      return Object.entries(locations)
         .filter(([_, quantity]) => Number(quantity) > 0)
-        .map(([location, quantity]) => `${location}: ${quantity} Stück`)
+        .map(([location, quantity]) => `${escapeHtml(location)}: ${Number(quantity)} Stück`)
         .join(', ');
     };
 
-    // Generate quantity comparison section
+    const oldMenge = Number(payload.old_gesamtmenge) || 0;
+    const newMenge = Number(payload.new_gesamtmenge) || 0;
+    const mengeDiff = newMenge - oldMenge;
+
     const quantityComparisonHtml = `
-      <hr>
-      <h2>📊 Mengenänderungen</h2>
+      <hr><h2>📊 Mengenänderungen</h2>
       <div style="border: 2px solid #4caf50; border-radius: 8px; padding: 16px; background-color: #f1f8e9; margin: 20px 0;">
         <h3 style="color: #4caf50; margin-top: 0;">Gesamtmenge</h3>
-        <p><strong>Vorher:</strong> ${payload.old_gesamtmenge?.toLocaleString() || 0} Stück</p>
-        <p><strong>Nachher:</strong> ${payload.new_gesamtmenge?.toLocaleString() || 0} Stück</p>
-        ${payload.old_gesamtmenge !== payload.new_gesamtmenge ? 
-          `<p style="color: #f57c00;"><strong>Änderung:</strong> ${((payload.new_gesamtmenge || 0) - (payload.old_gesamtmenge || 0)) > 0 ? '+' : ''}${((payload.new_gesamtmenge || 0) - (payload.old_gesamtmenge || 0)).toLocaleString()} Stück</p>` : 
-          '<p style="color: #4caf50;"><strong>Keine Änderung der Gesamtmenge</strong></p>'
-        }
+        <p><strong>Vorher:</strong> ${oldMenge.toLocaleString()} Stück</p>
+        <p><strong>Nachher:</strong> ${newMenge.toLocaleString()} Stück</p>
+        ${oldMenge !== newMenge ? 
+          `<p style="color: #f57c00;"><strong>Änderung:</strong> ${mengeDiff > 0 ? '+' : ''}${mengeDiff.toLocaleString()} Stück</p>` : 
+          '<p style="color: #4caf50;"><strong>Keine Änderung der Gesamtmenge</strong></p>'}
       </div>
-      
       <div style="border: 2px solid #9c27b0; border-radius: 8px; padding: 16px; background-color: #f3e5f5; margin: 20px 0;">
         <h3 style="color: #9c27b0; margin-top: 0;">Standortverteilung</h3>
         <p><strong>Vorher:</strong><br>${formatLocationDistribution(payload.old_standort_verteilung)}</p>
         <p><strong>Nachher:</strong><br>${formatLocationDistribution(payload.new_standort_verteilung)}</p>
-      </div>
-    `;
+      </div>`;
 
-    // Professional email content for supply chain team
-    const professionalEmailContent = `<h1>🔄 ProPlan System – Projekt wurde von Planung korrigiert</h1><p>Sehr geehrtes SupplyChain-Team,</p><p>Ein Fertigungsprojekt wurde von der Planung geprüft und korrigiert. Das Projekt wurde zur erneuten Prüfung an SupplyChain zurückgesendet.</p><hr><h2>📋 Projektübersicht</h2><ul><li><strong>Projekt-Nr.:</strong> #${payload.project_number}</li><li><strong>🏢 Kunde:</strong> ${payload.customer}</li><li><strong>📦 Artikelnummer:</strong> ${payload.artikel_nummer}</li><li><strong>📋 Artikelbezeichnung:</strong> ${payload.artikel_bezeichnung}</li><li><strong>👤 Projektersteller:</strong> ${payload.created_by_name}</li><li><strong>⚙️ Bearbeitet von:</strong> ${payload.corrected_by_name}</li><li><strong>📅 Korrektur am:</strong> ${currentDate}</li></ul>${quantityComparisonHtml}${payload.correction_reason ? `<hr><h2>📝 Korrekturgrund</h2><div style="border: 2px solid #ff9800; border-radius: 8px; padding: 16px; background-color: #fff8e1; margin: 20px 0;"><p><strong>${payload.correction_reason}</strong></p></div>` : ''}<hr><div style="border: 2px solid #2196f3; border-radius: 8px; padding: 16px; background-color: #e3f2fd; margin: 20px 0;"><h3 style="color: #2196f3; margin-top: 0;">💡 Nächste Schritte</h3><p>Das Projekt wurde mit Korrekturen an der Gesamtmenge oder Standortverteilung von der Planung an SupplyChain zurückgesendet.</p><p>Bitte prüfen Sie das korrigierte Projekt erneut und leiten gegebenenfalls weitere Schritte ein.</p></div><p>🔗 <a href="https://demo-proplan.de" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p><hr><p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>Ihr ProPlan Team</p><p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em><br>Bei Rückfragen wenden Sie sich bitte an die Planungsabteilung.</p>`;
+    const professionalEmailContent = `<h1>🔄 ProPlan System – Projekt wurde von Planung korrigiert</h1><p>Sehr geehrtes SupplyChain-Team,</p><p>Ein Fertigungsprojekt wurde von der Planung geprüft und korrigiert.</p><hr><h2>📋 Projektübersicht</h2><ul><li><strong>Projekt-Nr.:</strong> #${safeProjectNumber}</li><li><strong>🏢 Kunde:</strong> ${safeCustomer}</li><li><strong>📦 Artikelnummer:</strong> ${safeArtikelNummer}</li><li><strong>📋 Artikelbezeichnung:</strong> ${safeArtikelBezeichnung}</li><li><strong>👤 Projektersteller:</strong> ${safeCreatedByName}</li><li><strong>⚙️ Bearbeitet von:</strong> ${safeCorrectedByName}</li><li><strong>📅 Korrektur am:</strong> ${currentDate}</li></ul>${quantityComparisonHtml}${safeCorrectionReason ? `<hr><h2>📝 Korrekturgrund</h2><div style="border: 2px solid #ff9800; border-radius: 8px; padding: 16px; background-color: #fff8e1; margin: 20px 0;"><p><strong>${safeCorrectionReason}</strong></p></div>` : ''}<hr><div style="border: 2px solid #2196f3; border-radius: 8px; padding: 16px; background-color: #e3f2fd; margin: 20px 0;"><h3 style="color: #2196f3; margin-top: 0;">💡 Nächste Schritte</h3><p>Bitte prüfen Sie das korrigierte Projekt erneut.</p></div><p>🔗 <a href="https://demo-proplan.de" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p><hr><p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>Ihr ProPlan Team</p><p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em></p>`;
 
-    // Send emails to unique supply chain users only
     const emailPromises = uniqueRecipients.map(async (recipient) => {
       const emailBody = {
         personalizations: [
           {
-            to: [{ 
-              email: recipient.email, 
-              name: recipient.name 
-            }],
-            subject: `🔄 ProPlan - Projekt #${payload.project_number} wurde von Planung korrigiert`
+            to: [{ email: recipient.email, name: escapeHtml(recipient.name) }],
+            subject: `🔄 ProPlan - Projekt #${safeProjectNumber} wurde von Planung korrigiert`
           }
         ],
-        from: { 
-          email: "noreply@proplansystem.de", 
-          name: "ProPlan System" 
-        },
-        content: [
-          {
-            type: "text/html",
-            value: professionalEmailContent
-          }
-        ]
+        from: { email: "noreply@proplansystem.de", name: "ProPlan System" },
+        content: [{ type: "text/html", value: professionalEmailContent }]
       };
 
       const emailResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
@@ -226,21 +192,16 @@ serve(async (req) => {
       });
 
       if (!emailResponse.ok) {
-        const errorText = await emailResponse.text();
-        console.error(`SendGrid error for ${recipient.email}:`, emailResponse.status, errorText);
+        console.error(`SendGrid error for ${recipient.email}:`, emailResponse.status);
         throw new Error(`Failed to send email to ${recipient.email}`);
       }
 
-      console.log('Planning correction email sent successfully to:', recipient.email);
       return recipient.email;
     });
 
-    // Wait for all emails to be sent
     const sentEmails = await Promise.all(emailPromises);
 
-    console.log(`All planning correction emails sent successfully to: ${sentEmails.join(', ')}`);
-
-    // Record successful email sending for each recipient
+    // Record notifications
     try {
       await supabase
         .from('email_notifications')
@@ -254,42 +215,20 @@ serve(async (req) => {
             correction_reason: payload.correction_reason || ''
           }))
         );
-      console.log('Email notifications recorded successfully');
     } catch (recordError) {
-      console.error('Error recording email notifications:', recordError);
-      // Don't fail the request if recording fails
+      console.error('Error recording notifications:', recordError);
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Planning correction notifications sent successfully',
-        recipients: sentEmails,
-        count: sentEmails.length
-      }), 
-      { 
-        status: 200, 
-        headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders 
-        } 
-      }
+      JSON.stringify({ success: true, count: sentEmails.length }), 
+      { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
 
   } catch (error) {
     console.error('Error in send-project-planning-correction-email function:', error);
     return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error', 
-        details: error.message 
-      }), 
-      { 
-        status: 500, 
-        headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders 
-        } 
-      }
+      JSON.stringify({ error: 'Internal server error' }), 
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   }
 });
