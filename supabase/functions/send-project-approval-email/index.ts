@@ -21,16 +21,26 @@ interface ProjectPayload {
   created_by_name: string;
 }
 
+/** Escape HTML special characters to prevent injection */
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { 
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), { 
       status: 405, 
-      headers: corsHeaders 
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
   }
 
@@ -41,52 +51,42 @@ serve(async (req) => {
 
     if (!supabaseUrl || !supabaseServiceKey || !sendgridApiKey) {
       console.error('Missing required environment variables');
-      return new Response('Server configuration error', { 
+      return new Response(JSON.stringify({ error: 'Server configuration error' }), { 
         status: 500, 
-        headers: corsHeaders 
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
 
     const project: ProjectPayload = await req.json();
     console.log('Processing project approval notification:', project.project_number);
 
-    // Create Supabase admin client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get the project creator (Vertrieb user) to notify them about approval
     if (!project.created_by_id) {
-      console.log('No created_by_id found in project');
-      return new Response('No project creator found', { 
+      return new Response(JSON.stringify({ message: 'No project creator found' }), { 
         status: 200, 
-        headers: corsHeaders 
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
 
-    console.log('Project created by user ID:', project.created_by_id);
-
-    // Get the creator's email from auth.users
     const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(project.created_by_id);
     
-    if (authError) {
+    if (authError || !authUser.user?.email) {
       console.error('Error fetching creator email:', authError);
-      return new Response('Error fetching creator email', { 
+      return new Response(JSON.stringify({ error: 'Could not find creator email' }), { 
         status: 500, 
-        headers: corsHeaders 
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
 
-    if (!authUser.user?.email) {
-      console.log('No email found for project creator');
-      return new Response('No email for creator', { 
-        status: 200, 
-        headers: corsHeaders 
-      });
-    }
+    const safeCreatedByName = escapeHtml(project.created_by_name);
+    const safeProjectNumber = escapeHtml(String(project.project_number));
+    const safeCustomer = escapeHtml(project.customer);
+    const safeArtikelNummer = escapeHtml(project.artikel_nummer);
+    const safeArtikelBezeichnung = escapeHtml(project.artikel_bezeichnung);
+    const safeBeschreibung = escapeHtml(project.beschreibung);
+    const safeGesamtmenge = Number(project.gesamtmenge) || 0;
 
-    const recipientEmails = [authUser.user.email];
-    console.log('Sending approval notification to project creator:', authUser.user.email);
-
-    // Helper functions
     const formatDate = (dateStr?: string): string => {
       if (!dateStr) return 'Nicht angegeben';
       return new Date(dateStr).toLocaleDateString('de-DE');
@@ -98,82 +98,50 @@ serve(async (req) => {
 
     const formatLocationDistribution = (distribution?: Record<string, number>): string => {
       if (!distribution) return '<li>Keine Standortverteilung verfügbar</li>';
-      
       return Object.entries(distribution)
         .filter(([_, quantity]) => quantity > 0)
-        .map(([location, quantity]) => {
-          const locationLabels: Record<string, string> = {
-            'mainz': 'Mainz',
-            'berlin': 'Berlin', 
-            'muenchen': 'München',
-            'hamburg': 'Hamburg',
-            'koeln': 'Köln',
-            'stuttgart': 'Stuttgart'
-          };
-          const locationName = locationLabels[location] || location;
-          return `<li><strong>${locationName}:</strong> ${formatQuantity(quantity)} Stück</li>`;
-        })
+        .map(([location, quantity]) => `<li><strong>${escapeHtml(location)}:</strong> ${formatQuantity(quantity)} Stück</li>`)
         .join('');
     };
 
-    // Create HTML email content for approval notification to project creator
     const htmlContent = `<h1>🎉 ProPlan System – Ihr Projekt wurde genehmigt!</h1>
-<p>Hallo ${project.created_by_name},</p>
-<p>Ihr Fertigungsprojekt wurde erfolgreich von allen beteiligten Standorten genehmigt und ist nun vollständig freigegeben!</p>
+<p>Hallo ${safeCreatedByName},</p>
+<p>Ihr Fertigungsprojekt wurde erfolgreich von allen beteiligten Standorten genehmigt!</p>
 <hr>
 <h2>📊 Projektübersicht</h2>
 <ul>
-  <li><strong>Projekt-Nr.:</strong> #${project.project_number}</li>
-  <li><strong>Kunde:</strong> ${project.customer}</li>
-  <li><strong>Artikelnummer:</strong> ${project.artikel_nummer}</li>
-  <li><strong>Artikelbezeichnung:</strong> ${project.artikel_bezeichnung}</li>
-  <li><strong>Gesamtmenge:</strong> ${formatQuantity(project.gesamtmenge)} Stück</li>
+  <li><strong>Projekt-Nr.:</strong> #${safeProjectNumber}</li>
+  <li><strong>Kunde:</strong> ${safeCustomer}</li>
+  <li><strong>Artikelnummer:</strong> ${safeArtikelNummer}</li>
+  <li><strong>Artikelbezeichnung:</strong> ${safeArtikelBezeichnung}</li>
+  <li><strong>Gesamtmenge:</strong> ${formatQuantity(safeGesamtmenge)} Stück</li>
   <li><strong>Erste Anlieferung:</strong> 📅 ${formatDate(project.erste_anlieferung)}</li>
   <li><strong>Letzte Anlieferung:</strong> 📅 ${formatDate(project.letzte_anlieferung)}</li>
-  <li><strong>Erstellt von:</strong> ${project.created_by_name}</li>
+  <li><strong>Erstellt von:</strong> ${safeCreatedByName}</li>
 </ul>
-${project.beschreibung ? `<h2>📝 Beschreibung</h2><p>${project.beschreibung}</p>` : ''}
+${safeBeschreibung ? `<h2>📝 Beschreibung</h2><p>${safeBeschreibung}</p>` : ''}
 <h2>📍 Standortverteilung</h2>
-<ul>
-${formatLocationDistribution(project.standort_verteilung)}
-</ul>
+<ul>${formatLocationDistribution(project.standort_verteilung)}</ul>
 <hr>
 <div style="background-color: #e8f5e8; border-left: 4px solid #4caf50; padding: 16px; margin: 16px 0;">
   <h2 style="margin-top: 0; color: #2e7d32;">✅ Status: Vollständig genehmigt</h2>
-  <p style="margin-bottom: 0;"><strong>Alle beteiligten Standorte haben Ihr Projekt genehmigt. Die Produktion kann beginnen!</strong></p>
+  <p style="margin-bottom: 0;"><strong>Alle Standorte haben Ihr Projekt genehmigt. Die Produktion kann beginnen!</strong></p>
 </div>
-<p>🔗 <a href="https://demo-proplan.de" style="color: #2196f3; text-decoration: none;">Zum Projekt im ProPlan System</a></p>
+<p>🔗 <a href="https://demo-proplan.de" style="color: #2196f3;">Zum Projekt im ProPlan System</a></p>
 <hr>
 <p style="color: #666; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em></p>
 <p><strong>Mit freundlichen Grüßen,<br>ProPlan Benachrichtigungssystem</strong></p>`;
 
-    const toRecipients = recipientEmails.map(email => ({
-      emailAddress: {
-        address: email
-      }
-    }));
-
-    // Send email via SendGrid
     const sendgridPayload = {
       personalizations: [
         {
           to: [{ email: authUser.user.email }],
-          subject: `✅ ProPlan - Projekt genehmigt: #${project.project_number}`
+          subject: `✅ ProPlan - Projekt genehmigt: #${safeProjectNumber}`
         }
       ],
-      from: {
-        email: "noreply@proplansystem.de",
-        name: "ProPlan System"
-      },
-      content: [
-        {
-          type: "text/html",
-          value: htmlContent
-        }
-      ]
+      from: { email: "noreply@proplansystem.de", name: "ProPlan System" },
+      content: [{ type: "text/html", value: htmlContent }]
     };
-
-    console.log('Sending approval email via SendGrid to:', authUser.user.email);
 
     const sendgridResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
       method: "POST",
@@ -185,28 +153,21 @@ ${formatLocationDistribution(project.standort_verteilung)}
     });
 
     if (!sendgridResponse.ok) {
-      const errorText = await sendgridResponse.text();
-      console.error('SendGrid API error:', errorText);
-      throw new Error(`SendGrid API failed: ${sendgridResponse.status} ${errorText}`);
+      console.error('SendGrid API error:', sendgridResponse.status);
+      throw new Error(`SendGrid API failed: ${sendgridResponse.status}`);
     }
 
-    console.log('Project approval email sent successfully via SendGrid');
-    return new Response('Email sent successfully', { 
+    console.log('Project approval email sent successfully');
+    return new Response(JSON.stringify({ success: true }), { 
       status: 200, 
-      headers: corsHeaders 
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
 
   } catch (error) {
     console.error('Error in send-project-approval-email function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500, 
-        headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders 
-        } 
-      }
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   }
 });

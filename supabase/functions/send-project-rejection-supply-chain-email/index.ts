@@ -22,16 +22,26 @@ interface ProjectPayload {
   rejection_reason?: string;
 }
 
+/** Escape HTML special characters to prevent injection */
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { 
-      status: 405, 
-      headers: corsHeaders 
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 
@@ -45,156 +55,141 @@ serve(async (req) => {
     if (!SENDGRID_API_KEY) throw new Error("Missing SENDGRID_API_KEY secret");
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+    // Verify JWT auth - allow both user tokens and trigger calls
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      // If it's not the service role key being passed, validate as user token
+      if (token !== SERVICE_ROLE_KEY) {
+        const { data: authData, error: authErr } = await supabase.auth.getUser(token);
+        if (authErr || !authData?.user) {
+          return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          });
+        }
+      }
+    }
+    // Note: trigger-called requests via net.http_post may not have auth headers
     
     const payload: ProjectPayload = await req.json();
     console.log('Processing supply chain rejection notification for project:', payload.id);
 
-    // Check for recent duplicate notifications to prevent spam - check if ANY notification was sent for this project status change
+    // Duplicate check
     const { data: existingNotifications } = await supabase
       .from('email_notifications')
       .select('id')
       .eq('project_id', payload.id)
       .eq('notification_type', 'supply_chain_rejection')
       .eq('project_status', 6)
-      .gte('created_at', new Date(Date.now() - 30000).toISOString()); // Last 30 seconds
+      .gte('created_at', new Date(Date.now() - 30000).toISOString());
 
     if (existingNotifications && existingNotifications.length > 0) {
-      console.log('Recent duplicate notification found for project', payload.id, '- skipping to prevent spam');
-      return new Response(JSON.stringify({ message: 'Duplicate notification prevented - already sent within last 30 seconds' }), {
+      console.log('Recent duplicate notification found for project', payload.id, '- skipping');
+      return new Response(JSON.stringify({ message: 'Duplicate notification prevented' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
 
-    // Get affected locations from standort_verteilung
     const affectedLocations = Object.keys(payload.standort_verteilung || {}).filter(
       location => payload.standort_verteilung[location] > 0
     );
 
     if (affectedLocations.length === 0) {
-      console.log('No affected locations found for project:', payload.id);
       return new Response(JSON.stringify({ message: 'No affected locations' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
 
-    console.log('Affected locations:', affectedLocations);
-
-    // Get planning users for affected locations and admin users as fallback
     const affectedPlanningRoles = affectedLocations.map(location => `planung_${location}`);
     const { data: supplyChainUsers, error: usersError } = await supabase
       .from('profiles')
       .select('user_id, display_name, role')
-      .or(`role.in.(${affectedPlanningRoles.join(',')}),role.eq.admin,role.eq.supply_chain`); // Include planning users for affected locations, admin and supply_chain as fallback
+      .or(`role.in.(${affectedPlanningRoles.join(',')}),role.eq.admin,role.eq.supply_chain`);
 
-    if (usersError) {
-      console.error('Error fetching supply chain users:', usersError);
-      return new Response('Error fetching users', { 
-        status: 500, 
-        headers: corsHeaders 
-      });
-    }
-
-    if (!supplyChainUsers || supplyChainUsers.length === 0) {
-      console.log('No planning, supply chain or admin users found');
-      return new Response(JSON.stringify({ message: 'No planning, supply chain or admin users found' }), {
+    if (usersError || !supplyChainUsers || supplyChainUsers.length === 0) {
+      return new Response(JSON.stringify({ message: 'No recipients found' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
 
-    // Get all authenticated users to map user IDs to emails
     const { data: allUsers, error: allUsersError } = await supabase.auth.admin.listUsers();
-    
     if (allUsersError) {
       console.error('Error fetching all users:', allUsersError);
-      return new Response('Error fetching user emails', { 
+      return new Response(JSON.stringify({ error: 'Internal server error' }), { 
         status: 500, 
-        headers: corsHeaders 
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
 
-    // Create a map of user IDs to emails
-    const userEmailMap = new Map(
-      allUsers.users.map(user => [user.id, user.email])
-    );
+    const userEmailMap = new Map(allUsers.users.map(user => [user.id, user.email]));
 
-    // Build recipient list
     const recipients: Array<{ email: string, name: string, user_id: string }> = [];
-    
     for (const user of supplyChainUsers) {
       const email = userEmailMap.get(user.user_id);
       if (email) {
-        const userName = user.display_name || 
-          (user.role === 'admin' ? 'Administrator' : 
-           user.role === 'supply_chain' ? 'SupplyChain Mitarbeiter' : 
-           'Planungsmitarbeiter');
         recipients.push({
           email,
-          name: userName,
+          name: user.display_name || 'Mitarbeiter',
           user_id: user.user_id
         });
       }
     }
 
     if (recipients.length === 0) {
-      console.log('No valid email recipients found');
       return new Response(JSON.stringify({ message: 'No valid email recipients' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
 
-    console.log(`Sending notifications to ${recipients.length} planning/supply chain/admin users for affected locations:`, affectedLocations);
-
-    // Format the current date
     const currentDate = new Date().toLocaleDateString('de-DE', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
 
-    // Format location distribution for email
+    const safeProjectNumber = escapeHtml(String(payload.project_number));
+    const safeCustomer = escapeHtml(payload.customer);
+    const safeArtikelNummer = escapeHtml(payload.artikel_nummer);
+    const safeArtikelBezeichnung = escapeHtml(payload.artikel_bezeichnung);
+    const safeCreatedByName = escapeHtml(payload.created_by_name);
+    const safeRejectionReason = escapeHtml(payload.rejection_reason);
+    const safeGesamtmenge = Number(payload.gesamtmenge) || 0;
+
     const locationDistributionHtml = affectedLocations.map(location => 
-      `<li><strong>${location}:</strong> ${payload.standort_verteilung[location]} kg</li>`
+      `<li><strong>${escapeHtml(location)}:</strong> ${Number(payload.standort_verteilung[location]) || 0} kg</li>`
     ).join('');
 
-    // Professional email content for supply chain users
     const emailContent = `
       <h1>🚨 ProPlan System – Projekt abgesagt (Standortbetroffenheit)</h1>
       <p>Sehr geehrtes Team,</p>
       <p>Ein genehmigtes Fertigungsprojekt wurde abgesagt. Ihr Standort ist von dieser Absage betroffen.</p>
-      
       <hr>
       <h2>📋 Projektübersicht</h2>
       <ul>
-        <li><strong>Projekt-Nr.:</strong> #${payload.project_number}</li>
-        <li><strong>🏢 Kunde:</strong> ${payload.customer}</li>
-        <li><strong>📦 Artikelnummer:</strong> ${payload.artikel_nummer}</li>
-        <li><strong>📋 Artikelbezeichnung:</strong> ${payload.artikel_bezeichnung}</li>
-        <li><strong>📊 Gesamtmenge:</strong> ${payload.gesamtmenge} kg</li>
+        <li><strong>Projekt-Nr.:</strong> #${safeProjectNumber}</li>
+        <li><strong>🏢 Kunde:</strong> ${safeCustomer}</li>
+        <li><strong>📦 Artikelnummer:</strong> ${safeArtikelNummer}</li>
+        <li><strong>📋 Artikelbezeichnung:</strong> ${safeArtikelBezeichnung}</li>
+        <li><strong>📊 Gesamtmenge:</strong> ${safeGesamtmenge} kg</li>
         <li><strong>📅 Absage am:</strong> ${currentDate}</li>
-        <li><strong>👤 Projektersteller:</strong> ${payload.created_by_name}</li>
+        <li><strong>👤 Projektersteller:</strong> ${safeCreatedByName}</li>
       </ul>
-
-      ${payload.erste_anlieferung ? `<li><strong>🚚 Erste Anlieferung:</strong> ${new Date(payload.erste_anlieferung).toLocaleDateString('de-DE')}</li>` : ''}
-      ${payload.letzte_anlieferung ? `<li><strong>🏁 Letzte Anlieferung:</strong> ${new Date(payload.letzte_anlieferung).toLocaleDateString('de-DE')}</li>` : ''}
-      
       <hr>
       <h2>📍 Betroffene Standortverteilung</h2>
-      <ul>
-        ${locationDistributionHtml}
-      </ul>
-
-      ${payload.rejection_reason ? `
+      <ul>${locationDistributionHtml}</ul>
+      ${safeRejectionReason ? `
         <hr>
         <h2>📝 Ablehnungsgrund</h2>
         <div style="border: 2px solid #d32f2f; border-radius: 8px; padding: 16px; background-color: #ffebee; margin: 20px 0;">
-          <p><strong>${payload.rejection_reason}</strong></p>
+          <p><strong>${safeRejectionReason}</strong></p>
         </div>
       ` : ''}
-
       <hr>
       <div style="border: 2px solid #ff9800; border-radius: 8px; padding: 16px; background-color: #fff8e1; margin: 20px 0;">
         <h3 style="color: #ff9800; margin-top: 0;">⚠️ Wichtiger Hinweis</h3>
@@ -206,36 +201,22 @@ serve(async (req) => {
           <li>Kundenkommunikation bezüglich Lieferterminen</li>
         </ul>
       </div>
-
       <p>🔗 <a href="https://demo-proplan.de" style="color: #007acc; text-decoration: underline;">Zum ProPlan System</a></p>
-      
       <hr>
       <p style="color: #666; font-style: italic;">Mit freundlichen Grüßen<br>Ihr ProPlan Team</p>
-      <p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em><br>Bei Rückfragen wenden Sie sich bitte an die Projektverantwortlichen.</p>
+      <p style="color: #999; font-size: 12px;"><em>Diese E-Mail wurde automatisch generiert.</em></p>
     `;
 
-    // Send emails to all supply chain users
     const emailPromises = recipients.map(async (recipient) => {
       const emailBody = {
         personalizations: [
           {
-            to: [{ 
-              email: recipient.email, 
-              name: recipient.name 
-            }],
-            subject: `🚨 ProPlan - Projekt #${payload.project_number} abgesagt (Standort betroffen)`
+            to: [{ email: recipient.email, name: escapeHtml(recipient.name) }],
+            subject: `🚨 ProPlan - Projekt #${safeProjectNumber} abgesagt (Standort betroffen)`
           }
         ],
-        from: { 
-          email: "noreply@proplansystem.de", 
-          name: "ProPlan System" 
-        },
-        content: [
-          {
-            type: "text/html",
-            value: emailContent
-          }
-        ]
+        from: { email: "noreply@proplansystem.de", name: "ProPlan System" },
+        content: [{ type: "text/html", value: emailContent }]
       };
 
       const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
@@ -248,12 +229,10 @@ serve(async (req) => {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`SendGrid error for ${recipient.email}:`, response.status, errorText);
+        console.error(`SendGrid error for ${recipient.email}:`, response.status);
         throw new Error(`Failed to send email to ${recipient.email}`);
       }
 
-      // Record the email notification - use recipient's user_id if available, otherwise skip
       if (recipient.user_id) {
         await supabase
           .from('email_notifications')
@@ -275,46 +254,25 @@ serve(async (req) => {
       .filter(result => result.status === 'fulfilled')
       .map(result => (result as PromiseFulfilledResult<string>).value);
 
-    const failedEmails = sentEmails
-      .filter(result => result.status === 'rejected')
-      .map(result => (result as PromiseRejectedResult).reason);
-
-    console.log(`Project rejection emails sent successfully to affected locations: ${successfulEmails.join(', ')}`);
-    if (failedEmails.length > 0) {
-      console.error('Some emails failed:', failedEmails);
-    }
-
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Project rejection notifications sent to affected locations',
-        recipients: successfulEmails,
-        affectedLocations,
-        totalSent: successfulEmails.length,
-        totalFailed: failedEmails.length
+        message: 'Notifications sent',
+        totalSent: successfulEmails.length
       }), 
       { 
         status: 200, 
-        headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders 
-        } 
+        headers: { 'Content-Type': 'application/json', ...corsHeaders } 
       }
     );
 
   } catch (error) {
     console.error('Error in send-project-rejection-supply-chain-email function:', error);
     return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error', 
-        details: error.message 
-      }), 
+      JSON.stringify({ error: 'Internal server error' }), 
       { 
         status: 500, 
-        headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders 
-        } 
+        headers: { 'Content-Type': 'application/json', ...corsHeaders } 
       }
     );
   }
