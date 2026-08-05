@@ -1,0 +1,348 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://rhubaybwftyypfbiuoyc.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "proplan",
+      "version": "0.1.0",
+      "title": "proplan"
+    },
+    "tools": [
+      {
+        "name": "whoami",
+        "title": "Angemeldeter Benutzer",
+        "description": "Return the signed-in ProPlan user's profile, including display name and role.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_projects",
+        "title": "Projekte auflisten",
+        "description": "List manufacturing projects visible to the signed-in user, with optional text search, status filter and archive filter.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "search": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Optional text matched against customer, article number or article name."
+            },
+            "status": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional numeric project status filter."
+            },
+            "archived": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Optional archive filter; defaults to non-archived."
+            },
+            "limit": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Max rows to return (default 25)."
+            }
+          },
+          "required": [
+            "search",
+            "status",
+            "archived",
+            "limit"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_project",
+        "title": "Projekt-Details",
+        "description": "Get one manufacturing project with all fields, by project id (UUID) or by project number.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Project UUID. Use this or project_number."
+            },
+            "project_number": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Human-readable project number. Use this or id."
+            }
+          },
+          "required": [
+            "id",
+            "project_number"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_tasks",
+        "title": "Aufgaben auflisten",
+        "description": "List tasks visible to the signed-in user, optionally filtered by project or status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "project_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional project UUID filter."
+            },
+            "status": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Optional task status filter (e.g. 'open', 'done')."
+            },
+            "limit": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Max rows to return (default 25)."
+            }
+          },
+          "required": [
+            "project_id",
+            "status",
+            "limit"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_task",
+        "title": "Aufgabe erstellen",
+        "description": "Create a task for a project on behalf of the signed-in user.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "project_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID of the project the task belongs to."
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Short task title."
+            },
+            "description": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Optional longer description."
+            },
+            "priority": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional priority; defaults to medium."
+            },
+            "due_date": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Optional due date as ISO date (YYYY-MM-DD)."
+            }
+          },
+          "required": [
+            "project_id",
+            "title",
+            "description",
+            "priority",
+            "due_date"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_customers",
+        "title": "Kunden auflisten",
+        "description": "List customers, optionally filtered by a name or number search term.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "search": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Optional search term for customer name or number."
+            },
+            "limit": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Max rows to return (default 25)."
+            }
+          },
+          "required": [
+            "search",
+            "limit"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_articles",
+        "title": "Artikel auflisten",
+        "description": "List articles, optionally filtered by article number or name.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "search": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Optional search term for article number or name."
+            },
+            "limit": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Max rows to return (default 25)."
+            }
+          },
+          "required": [
+            "search",
+            "limit"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

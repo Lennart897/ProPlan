@@ -13,6 +13,7 @@ import ArticleManagement from "./pages/ArticleManagement";
 import { PrivacyPolicy } from "@/components/legal/PrivacyPolicy";
 import { Imprint } from "@/components/legal/Imprint";
 import { CookieConsent } from "@/components/legal/CookieConsent";
+import OAuthConsent from "./pages/OAuthConsent";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/password-settings" element={<PasswordSettings />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/imprint" element={<Imprint />} />
+          <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
