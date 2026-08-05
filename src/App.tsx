@@ -31,7 +31,7 @@ const App = () => (
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/password-settings" element={<PasswordSettings />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/imprint" element={<Imprint />} />
+          <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
