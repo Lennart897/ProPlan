@@ -13,6 +13,7 @@ import ArticleManagement from "./pages/ArticleManagement";
 import { PrivacyPolicy } from "@/components/legal/PrivacyPolicy";
 import { Imprint } from "@/components/legal/Imprint";
 import { CookieConsent } from "@/components/legal/CookieConsent";
+import OAuthConsent from "./pages/OAuthConsent";
 
 const queryClient = new QueryClient();
 
